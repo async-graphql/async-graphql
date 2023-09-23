@@ -44,6 +44,7 @@ pub struct Object {
     keys: Vec<String>,
     extends: bool,
     shareable: bool,
+    resolvable: bool,
     inaccessible: bool,
     interface_object: bool,
     tags: Vec<String>,
@@ -61,6 +62,7 @@ impl Object {
             keys: Vec::new(),
             extends: false,
             shareable: false,
+            resolvable: true,
             inaccessible: false,
             interface_object: false,
             tags: Vec::new(),
@@ -124,6 +126,30 @@ impl Object {
         self
     }
 
+    /// Make the entity unresolvable by the current subgraph
+    ///
+    /// Most commonly used to reference an entity without contributing fields.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_graphql::{dynamic::*, Value};
+    ///
+    /// let obj = Object::new("MyObj")
+    ///     .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+    ///         FieldFuture::new(async move { Ok(Some(Value::from(10))) })
+    ///     }))
+    ///     .unresolvable("a");
+    /// ```
+    ///
+    /// This references the `MyObj` entity with the key `a` that cannot be
+    /// resolved by the current subgraph.
+    pub fn unresolvable(mut self, fields: impl Into<String>) -> Self {
+        self.resolvable = false;
+        self.keys.push(fields.into());
+        self
+    }
+
     /// Returns the type name
     #[inline]
     pub fn type_name(&self) -> &str {
@@ -172,6 +198,7 @@ impl Object {
                 cache_control: Default::default(),
                 extends: self.extends,
                 shareable: self.shareable,
+                resolvable: self.resolvable,
                 keys: if !self.keys.is_empty() {
                     Some(self.keys.clone())
                 } else {

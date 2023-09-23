@@ -117,6 +117,32 @@ impl FromMeta for Deprecation {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum Resolvability {
+    #[default]
+    Resolvable,
+    Unresolvable {
+        key: Option<String>,
+    },
+}
+
+impl FromMeta for Resolvability {
+    fn from_word() -> darling::Result<Self> {
+        Ok(Resolvability::Unresolvable { key: None })
+    }
+
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        match value {
+            Lit::Bool(LitBool { value: true, .. }) => Ok(Resolvability::Unresolvable { key: None }),
+            Lit::Bool(LitBool { value: false, .. }) => Ok(Resolvability::Resolvable),
+            Lit::Str(str) => Ok(Resolvability::Unresolvable {
+                key: Some(str.value()),
+            }),
+            _ => Err(darling::Error::unexpected_lit_type(value)),
+        }
+    }
+}
+
 #[derive(FromField)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObjectField {
@@ -217,6 +243,8 @@ pub struct SimpleObject {
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]
     pub serial: bool,
+    #[darling(default, rename = "unresolvable")]
+    pub resolvability: Resolvability,
     // for InputObject
     #[darling(default)]
     pub input_name: Option<String>,
@@ -262,6 +290,8 @@ pub struct Object {
     pub use_type_description: bool,
     pub visible: Option<Visible>,
     pub serial: bool,
+    #[darling(default, rename = "unresolvable")]
+    pub resolvability: Resolvability,
     #[darling(multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
     #[darling(default)]

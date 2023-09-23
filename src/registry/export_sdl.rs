@@ -323,6 +323,7 @@ impl Registry {
                 keys,
                 description,
                 shareable,
+                resolvable,
                 inaccessible,
                 interface_object,
                 tags,
@@ -367,7 +368,11 @@ impl Registry {
                 if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
-                            write!(sdl, " @key(fields: \"{}\")", key).ok();
+                            write!(sdl, " @key(fields: \"{}\"", key).ok();
+                            if !resolvable {
+                                write!(sdl, ", resolvable: false").ok();
+                            }
+                            write!(sdl, ")").ok();
                         }
                     }
                     if *shareable {

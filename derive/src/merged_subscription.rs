@@ -81,6 +81,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         keys: ::std::option::Option::None,
                         visible: #visible,
                         shareable: false,
+                        resolvable: true,
                         inaccessible: false,
                         interface_object: false,
                         tags: ::std::default::Default::default(),
