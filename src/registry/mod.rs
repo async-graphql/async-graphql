@@ -277,6 +277,7 @@ impl MetaTypeId {
                 cache_control: Default::default(),
                 extends: false,
                 shareable: false,
+                resolvable: true,
                 inaccessible: false,
                 interface_object: false,
                 tags: vec![],
@@ -400,6 +401,14 @@ pub enum MetaType {
         ///
         /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#shareable>
         shareable: bool,
+        /// Indicates that the subgraph does not define a reference resolver
+        /// for this object. Objects are assumed to be resolvable by default.
+        ///
+        /// Most commonly used to reference an entity defined in another
+        /// subgraph without contributing fields. Part of the `@key` directive.
+        ///
+        /// Reference: <https://www.apollographql.com/docs/federation/federated-types/federated-directives/#key>
+        resolvable: bool,
         /// The keys of the object type
         ///
         /// Designates an object type as an [entity](https://www.apollographql.com/docs/federation/entities) and specifies
@@ -944,7 +953,9 @@ impl Registry {
     pub(crate) fn has_entities(&self) -> bool {
         self.types.values().any(|ty| match ty {
             MetaType::Object {
-                keys: Some(keys), ..
+                keys: Some(keys),
+                resolvable: true,
+                ..
             }
             | MetaType::Interface {
                 keys: Some(keys), ..
@@ -966,6 +977,7 @@ impl Registry {
                 MetaType::Object {
                     name,
                     keys: Some(keys),
+                    resolvable: true,
                     ..
                 } if !keys.is_empty() => Some(name.clone()),
                 MetaType::Interface {
@@ -1163,6 +1175,7 @@ impl Registry {
                 cache_control: Default::default(),
                 extends: false,
                 shareable: false,
+                resolvable: true,
                 interface_object: false,
                 keys: None,
                 visible: None,

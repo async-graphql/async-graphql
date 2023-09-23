@@ -9,7 +9,7 @@ use syn::{
 };
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    args::{self, RenameRuleExt, RenameTarget, Resolvability, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
         extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
@@ -30,6 +30,7 @@ pub fn generate(
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
     let interface_object = object_args.interface_object;
+    let resolvable = matches!(object_args.resolvability, Resolvability::Resolvable);
     let tags = object_args
         .tags
         .iter()
@@ -62,6 +63,8 @@ pub fn generate(
     let mut find_entities = Vec::new();
     let mut add_keys = Vec::new();
     let mut create_entity_types = Vec::new();
+
+    let mut unresolvable_key = String::new();
 
     // Computation of the derivated fields
     let mut derived_impls = vec![];
@@ -332,6 +335,9 @@ pub fn generate(
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+
+                unresolvable_key.push_str(&field_name);
+                unresolvable_key.push(' ');
 
                 let directives = gen_directive_calls(
                     &method_args.directives,
@@ -626,6 +632,20 @@ pub fn generate(
         .into());
     }
 
+    let keys = match &object_args.resolvability {
+        Resolvability::Resolvable => quote!(::std::option::Option::None),
+        Resolvability::Unresolvable { key: Some(key) } => quote!(::std::option::Option::Some(
+            ::std::vec![ ::std::string::ToString::to_string(#key)]
+        )),
+        Resolvability::Unresolvable { key: None } => {
+            unresolvable_key.pop(); // need to remove the trailing space
+
+            quote!(::std::option::Option::Some(
+                ::std::vec![ ::std::string::ToString::to_string(#unresolvable_key)]
+            ))
+        }
+    };
+
     let visible = visible_fn(&object_args.visible);
     let resolve_container = if object_args.serial {
         quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
@@ -682,10 +702,11 @@ pub fn generate(
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        resolvable: #resolvable,
                         inaccessible: #inaccessible,
                         interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
-                        keys: ::std::option::Option::None,
+                        keys: #keys,
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
@@ -726,10 +747,11 @@ pub fn generate(
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        resolvable: #resolvable,
                         inaccessible: #inaccessible,
                         interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
-                        keys: ::std::option::Option::None,
+                        keys: #keys,
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),

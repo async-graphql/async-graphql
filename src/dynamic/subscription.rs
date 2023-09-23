@@ -176,6 +176,7 @@ impl Subscription {
                 cache_control: Default::default(),
                 extends: false,
                 shareable: false,
+                resolvable: true,
                 keys: None,
                 visible: None,
                 inaccessible: false,

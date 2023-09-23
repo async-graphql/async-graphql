@@ -119,6 +119,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        resolvable: true,
                         inaccessible: #inaccessible,
                         interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],

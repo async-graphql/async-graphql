@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql", "rocket"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-rocket"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "6.0.6"
+version = "6.0.7"
 
 [dependencies]
 async-graphql = { workspace = true }

@@ -885,3 +885,108 @@ pub async fn test_interface_object() {
     assert!(schema_sdl.contains("type MyInterfaceObject1 @key(fields: \"id\") @interfaceObject"));
     assert!(schema_sdl.contains("type MyInterfaceObject2 @key(fields: \"id\") @interfaceObject"));
 }
+
+#[tokio::test]
+pub async fn test_unresolvable_entity() {
+    #[derive(SimpleObject)]
+    struct ResolvableObject {
+        id: u64,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(unresolvable = "id")]
+    struct SimpleExplicitUnresolvable {
+        id: u64,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(unresolvable)]
+    struct SimpleImplicitUnresolvable {
+        a: u64,
+        #[graphql(skip)]
+        _skipped: bool,
+    }
+
+    struct ExplicitUnresolvable;
+
+    #[Object(unresolvable = "id1 id2")]
+    impl ExplicitUnresolvable {
+        async fn id1(&self) -> u64 {
+            todo!()
+        }
+
+        async fn id2(&self) -> u64 {
+            todo!()
+        }
+    }
+
+    struct ImplicitUnresolvable;
+
+    #[Object(unresolvable)]
+    impl ImplicitUnresolvable {
+        async fn a(&self) -> &'static str {
+            todo!()
+        }
+
+        async fn b(&self) -> bool {
+            todo!()
+        }
+
+        #[graphql(skip)]
+        async fn _skipped(&self) {}
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn simple_explicit_reference(&self, _id: u64) -> SimpleExplicitUnresolvable {
+            todo!()
+        }
+
+        async fn simple_implicit_reference(&self, _a: u64) -> SimpleImplicitUnresolvable {
+            todo!()
+        }
+
+        async fn explicit_reference(&self, _id1: u64, _id2: u64) -> ExplicitUnresolvable {
+            todo!()
+        }
+
+        async fn implicit_unresolvable(&self, _a: String, _b: bool) -> ImplicitUnresolvable {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn object_entity(&self, _id: u64) -> ResolvableObject {
+            todo!()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let schema_sdl = schema.sdl_with_options(SDLExportOptions::new().federation());
+
+    assert!(schema_sdl.contains(r#"type ResolvableObject @key(fields: "id")"#));
+    assert!(schema_sdl
+        .contains(r#"type SimpleExplicitUnresolvable @key(fields: "id", resolvable: false)"#));
+    assert!(schema_sdl
+        .contains(r#"type SimpleImplicitUnresolvable @key(fields: "a", resolvable: false)"#));
+    assert!(schema_sdl
+        .contains(r#"type ExplicitUnresolvable @key(fields: "id1 id2", resolvable: false)"#));
+    assert!(
+        schema_sdl.contains(r#"type ImplicitUnresolvable @key(fields: "a b", resolvable: false)"#)
+    );
+
+    let query = r#"{
+            __type(name: "_Entity") { possibleTypes { name } }
+        }"#;
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "__type": {
+                "possibleTypes": [
+                    {"name": "ResolvableObject"},
+                ]
+            }
+        })
+    );
+}

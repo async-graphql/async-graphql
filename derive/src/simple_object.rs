@@ -6,7 +6,9 @@ use quote::quote;
 use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget, SimpleObjectField, TypeDirectiveLocation},
+    args::{
+        self, RenameRuleExt, RenameTarget, Resolvability, SimpleObjectField, TypeDirectiveLocation,
+    },
     utils::{
         gen_deprecation, gen_directive_calls, generate_guards, get_crate_name, get_rustdoc,
         visible_fn, GeneratorResult,
@@ -34,6 +36,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
     let interface_object = object_args.interface_object;
+    let resolvable = matches!(object_args.resolvability, Resolvability::Resolvable);
     let tags = object_args
         .tags
         .iter()
@@ -310,6 +313,40 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         }
     };
 
+    let keys = match &object_args.resolvability {
+        Resolvability::Resolvable => quote!(::std::option::Option::None),
+        Resolvability::Unresolvable { key: Some(key) } => quote!(::std::option::Option::Some(
+            ::std::vec![ ::std::string::ToString::to_string(#key)]
+        )),
+        Resolvability::Unresolvable { key: None } => {
+            let keys = processed_fields
+                .iter()
+                .filter(|g| !g.field.skip && !g.field.skip_output)
+                .map(|generator| {
+                    let ident = if let Some(derived) = &generator.derived {
+                        &derived.ident
+                    } else {
+                        generator.field.ident.as_ref().unwrap()
+                    };
+                    generator.field.name.clone().unwrap_or_else(|| {
+                        object_args
+                            .rename_fields
+                            .rename(ident.unraw().to_string(), RenameTarget::Field)
+                    })
+                })
+                .reduce(|mut keys, key| {
+                    keys.push(' ');
+                    keys.push_str(&key);
+                    keys
+                })
+                .unwrap();
+
+            quote!(::std::option::Option::Some(
+                ::std::vec![ ::std::string::ToString::to_string(#keys) ]
+            ))
+        }
+    };
+
     let visible = visible_fn(&object_args.visible);
 
     let mut concat_complex_fields = quote!();
@@ -370,10 +407,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        resolvable: #resolvable,
                         inaccessible: #inaccessible,
                         interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
-                        keys: ::std::option::Option::None,
+                        keys: #keys,
                         visible: #visible,
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
@@ -439,6 +477,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         cache_control: #cache_control,
                         extends: #extends,
                         shareable: #shareable,
+                        resolvable: #resolvable,
                         inaccessible: #inaccessible,
                         interface_object: #interface_object,
                         tags: ::std::vec![ #(#tags),* ],
