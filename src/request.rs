@@ -339,6 +339,27 @@ mod tests {
     }
 
     #[test]
+    fn test_deserialize_request_with_empty_object_variables() {
+        let request: Request = from_value(value! ({
+            "query": "{ a b c }",
+            "variables": {}
+        }))
+        .unwrap();
+        assert!(request.operation_name.is_none());
+        assert!(request.variables.is_empty());
+    }
+
+    #[test]
+    fn test_deserialize_request_with_empty_array_variables() {
+        let error: DeserializerError = from_value::<Request>(value! ({
+            "query": "{ a b c }",
+            "variables": []
+        }))
+        .unwrap_err();
+        assert_eq!(error.to_string(), "invalid type: sequence, expected a map");
+    }
+
+    #[test]
     fn test_deserialize_request_with_null_variables() {
         let request: Request = from_value(value! ({
             "query": "{ a b c }",
