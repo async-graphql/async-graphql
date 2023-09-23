@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [6.0.6]
+# [6.0.7] 2023-09-23
+
+- initialize source field in tracing extension parse_query method [#1367](https://github.com/async-graphql/async-graphql/pull/1367)
+- test(variables): empty object passes but empty array fails [#1377](https://github.com/async-graphql/async-graphql/pull/1377)
+- Add support for entities without a reference resolver [#1378](https://github.com/async-graphql/async-graphql/pull/1378)
+- Fixes [#1356](https://github.com/async-graphql/async-graphql/pull/1356)
+
+# [6.0.6] 2023-09-04
 
 - fixed SDL formatting for resolver argument comments regressed [#1363](https://github.com/async-graphql/async-graphql/issues/1363)
 
-# [6.0.5]
+# [6.0.5] 2023-08-20
 
 - Implement exporting argument documentation [#1352](https://github.com/async-graphql/async-graphql/pull/1352)
 - Add `ValueAccessor::as_value` and `ListAccessor::as_values_slice` methods [#1353](https://github.com/async-graphql/async-graphql/pull/1353)
