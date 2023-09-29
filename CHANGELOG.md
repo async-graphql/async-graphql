@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [6.0.8] 2023-09-29
+
+- add support uploading files in dynamic schema [#1384](https://github.com/async-graphql/async-graphql/discussions/1384)
+
 # [6.0.7] 2023-09-23
 
 - initialize source field in tracing extension parse_query method [#1367](https://github.com/async-graphql/async-graphql/pull/1367)

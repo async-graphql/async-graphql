@@ -40,6 +40,9 @@ impl TypeRef {
     /// A ID scalar type
     pub const ID: &'static str = "ID";
 
+    /// A Upload type
+    pub const UPLOAD: &'static str = "Upload";
+
     /// Returns the nullable type reference
     ///
     /// GraphQL Type: `T`

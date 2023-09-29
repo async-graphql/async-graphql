@@ -7,7 +7,8 @@ use indexmap::IndexMap;
 use crate::{
     dynamic::{
         field::BoxResolverFn, r#type::Type, resolve::resolve_container, DynamicRequest,
-        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription, Union,
+        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription,
+        TypeRef, Union,
     },
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
@@ -40,6 +41,12 @@ impl SchemaBuilder {
     pub fn register(mut self, ty: impl Into<Type>) -> Self {
         let ty = ty.into();
         self.types.insert(ty.name().to_string(), ty);
+        self
+    }
+
+    /// Enable uploading files (register Upload type).
+    pub fn enable_uploading(mut self) -> Self {
+        self.types.insert(TypeRef::UPLOAD.to_string(), Type::Upload);
         self
     }
 

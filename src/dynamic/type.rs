@@ -1,6 +1,7 @@
 use crate::{
     dynamic::{Enum, InputObject, Interface, Object, Scalar, SchemaError, Subscription, Union},
     registry::Registry,
+    Upload,
 };
 
 /// A GraphQL type
@@ -20,6 +21,8 @@ pub enum Type {
     Union(Union),
     /// Subscription
     Subscription(Subscription),
+    /// Upload
+    Upload,
 }
 
 impl Type {
@@ -32,6 +35,7 @@ impl Type {
             Type::Interface(interface) => &interface.name,
             Type::Union(union) => &union.name,
             Type::Subscription(subscription) => &subscription.name,
+            Type::Upload => "Upload",
         }
     }
 
@@ -80,6 +84,7 @@ impl Type {
             Type::Interface(_) => true,
             Type::Union(_) => true,
             Type::Subscription(_) => false,
+            Type::Upload => false,
         }
     }
 
@@ -92,6 +97,7 @@ impl Type {
             Type::Interface(_) => false,
             Type::Union(_) => false,
             Type::Subscription(_) => false,
+            Type::Upload => true,
         }
     }
 
@@ -108,6 +114,10 @@ impl Type {
             Type::Interface(interface) => interface.register(registry),
             Type::Union(union) => union.register(registry),
             Type::Subscription(subscription) => subscription.register(registry),
+            Type::Upload => {
+                <Upload as crate::InputType>::create_type_info(registry);
+                Ok(())
+            }
         }
     }
 }

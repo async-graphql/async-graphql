@@ -652,13 +652,16 @@ async fn resolve_value(
             ))
             .into_server_error(ctx.item.pos),
         )),
-
         (Type::Subscription(subscription), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: cannot use subscription \"{}\" as output value",
                 subscription.name
             ))
             .into_server_error(ctx.item.pos),
+        )),
+        (Type::Upload, _) => Err(ctx.set_error_path(
+            Error::new("internal: cannot use upload as output value")
+                .into_server_error(ctx.item.pos),
         )),
     }
 }
