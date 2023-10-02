@@ -186,9 +186,6 @@ Add the extension crate [`async_graphql_apollo_studio_extension`](https://github
 - [Nando's](https://www.nandos.co.uk/)
 - [Prima.it](https://www.prima.it/)
 - [VoxJar](https://voxjar.com/)
-- [Zenly](https://zen.ly/)
-- [Brevz](https://brevz.io/)
-- [thorndyke](https://www.thorndyke.ai/)
 - [My Data My Consent](https://mydatamyconsent.com/)
 
 ## Community Showcase
