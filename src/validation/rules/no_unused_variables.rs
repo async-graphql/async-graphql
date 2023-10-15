@@ -121,7 +121,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         if let Some(ref scope) = self.current_scope {
             self.used_variables
                 .entry(*scope)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .append(&mut referenced_variables(&value.node));
         }
     }
@@ -134,7 +134,7 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         if let Some(ref scope) = self.current_scope {
             self.spreads
                 .entry(*scope)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(&fragment_spread.node.fragment_name.node);
         }
     }

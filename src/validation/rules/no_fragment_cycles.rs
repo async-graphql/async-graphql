@@ -99,13 +99,10 @@ impl<'a> Visitor<'a> for NoFragmentCycles<'a> {
         fragment_spread: &'a Positioned<FragmentSpread>,
     ) {
         if let Some(current_fragment) = self.current_fragment {
-            self.spreads
-                .entry(current_fragment)
-                .or_insert_with(Vec::new)
-                .push((
-                    &fragment_spread.node.fragment_name.node,
-                    fragment_spread.pos,
-                ));
+            self.spreads.entry(current_fragment).or_default().push((
+                &fragment_spread.node.fragment_name.node,
+                fragment_spread.pos,
+            ));
         }
     }
 }

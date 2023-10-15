@@ -21,7 +21,7 @@ pub(super) fn parse_if_rule<T>(
 pub(super) fn exactly_one<T>(iter: impl IntoIterator<Item = T>) -> T {
     let mut iter = iter.into_iter();
     let res = iter.next().unwrap();
-    debug_assert!(matches!(iter.next(), None));
+    debug_assert!(iter.next().is_none());
     res
 }
 
