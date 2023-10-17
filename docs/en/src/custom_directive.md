@@ -73,6 +73,11 @@ Current only the `FieldDefinition` and `Object` locations are supported, you can
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
+# #[TypeDirective(
+# location = "FieldDefinition",
+# location = "Object",
+# )]
+# fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
 #[derive(SimpleObject)]
 #[graphql(
     directive = testDirective::apply("simple object type".to_string(), 1, Some(3))
