@@ -493,4 +493,28 @@ struct User {
 }
 ```
 
+## `@composeDirective`
+
+The [`@composeDirective` directive](https://www.apollographql.com/docs/federation/federation-spec/#composedirective) is used to add a custom type system directive to the supergraph schema. Without `@composeDirective`, and [custom type system directives](./custom_directive#type-system-directives) are omitted from the composed supergraph schema. To include a custom type system directive as a composed directive, just add the `composable` attribute to the `#[TypeDirective]` macro:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[TypeDirective(
+    location = "Object",
+    composable = "https://custom.spec.dev/extension/v1.0",
+)]
+fn custom() {}
+```
+
+In addition to the [normal type system directive behavior](./custom_directive#type-system-directives), this will add the following bits to the output schema:
+
+```graphql
+extend schema @link(
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@custom"]
+)
+	@composeDirective(name: "@custom")
+```
+
 [`@key`]: https://www.apollographql.com/docs/federation/entities#1-define-a-key

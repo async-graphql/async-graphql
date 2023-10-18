@@ -86,9 +86,9 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
                 return OutputType::resolve(
                     &Service {
                         sdl: Some(
-                            ctx.schema_env
-                                .registry
-                                .export_sdl(SDLExportOptions::new().federation()),
+                            ctx.schema_env.registry.export_sdl(
+                                SDLExportOptions::new().federation().compose_directive(),
+                            ),
                         ),
                     },
                     &ctx_obj,

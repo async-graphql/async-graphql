@@ -154,7 +154,7 @@ fn collect_service_field<'a>(
                     sdl: Some(
                         ctx.schema_env
                             .registry
-                            .export_sdl(SDLExportOptions::new().federation()),
+                            .export_sdl(SDLExportOptions::new().federation().compose_directive()),
                     ),
                 },
                 &ctx_obj,
