@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="sidebar-visible no-js light">
+<html lang="en" class="light" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -10,7 +10,7 @@
         
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ffffff" />
+        <meta name="theme-color" content="#ffffff">
 
         <link rel="icon" href="favicon.svg">
         <link rel="shortcut icon" href="favicon.png">
@@ -31,7 +31,7 @@
         <!-- Custom theme stylesheets -->
 
     </head>
-    <body>
+    <body class="sidebar-visible no-js">
     <div id="body-container">
         <!-- Provide site root to javascript -->
         <script>
@@ -61,24 +61,29 @@
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
             var html = document.querySelector('html');
-            html.classList.remove('no-js')
             html.classList.remove('light')
             html.classList.add(theme);
-            html.classList.add('js');
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
         </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var html = document.querySelector('html');
+            var body = document.querySelector('body');
             var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
             }
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -116,9 +121,9 @@
                                 <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
                             <i class="fa fa-bars"></i>
-                        </button>
+                        </label>
                         <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
                             <i class="fa fa-paint-brush"></i>
                         </button>
@@ -167,10 +172,11 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="custom-directive"><a class="header" href="#custom-directive">Custom directive</a></h1>
-<p><code>Async-graphql</code> can easily customize directives, which can extend the behavior of GraphQL.</p>
-<p>To create a custom directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to 
+<p>There are two types of directives in GraphQL: executable and type system. Executable directives are used by the client within an operation to modify the behavior (like the built-in <code>@include</code> and <code>@skip</code> directives). Type system directives provide additional information about the types, potentially modifying how the server behaves (like <code>@deprecated</code> and <code>@oneOf</code>). <code>async-graphql</code> allows you to declare both types of custom directives, with different limitations on each. </p>
+<h2 id="executable-directives"><a class="header" href="#executable-directives">Executable directives</a></h2>
+<p>To create a custom executable directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to 
 generate a factory function that receives the parameters of the directive and returns an instance of the directive.</p>
-<p>Currently <code>Async-graphql</code> only supports directive located at <code>FIELD</code>.</p>
+<p>Currently <code>async-graphql</code> only supports custom executable directives located at <code>FIELD</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
@@ -215,6 +221,47 @@ fn concat(value: String) -&gt; impl CustomDirective {
     .directive(concat)
     .finish();
 <span class="boring">}</span></code></pre></pre>
+<h2 id="type-system-directives"><a class="header" href="#type-system-directives">Type system directives</a></h2>
+<p>To create a custom type system directive, you can use the <code>#[TypeDirective]</code> macro on a function:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[TypeDirective(
+    location = &quot;FieldDefinition&quot;,
+    location = &quot;Object&quot;,
+)]
+fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
+<span class="boring">}</span></code></pre></pre>
+<p>Current only the <code>FieldDefinition</code> and <code>Object</code> locations are supported, you can select one or both. After declaring the directive, you can apply it to a relevant location (after importing the function) like this:</p>
+<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[TypeDirective(
+</span><span class="boring">location = &quot;FieldDefinition&quot;,
+</span><span class="boring">location = &quot;Object&quot;,
+</span><span class="boring">)]
+</span><span class="boring">fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
+</span>#[derive(SimpleObject)]
+#[graphql(
+    directive = testDirective::apply(&quot;simple object type&quot;.to_string(), 1, Some(3))
+)]
+struct SimpleValue {
+    #[graphql(
+        directive = testDirective::apply(&quot;field and param with \&quot; symbol&quot;.to_string(), 2, Some(3))
+    )]
+    some_data: String,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>This example produces a schema like this:</p>
+<pre><code class="language-graphql">type SimpleValue @testDirective(scope: &quot;simple object type&quot;, input: 1, opt: 3) {
+	someData: String! @testDirective(scope: &quot;field and param with \&quot; symbol&quot;, input: 2, opt: 3)
+}
+
+directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
+</code></pre>
+<p>Note: To use a type-system directive with Apollo Federation's <code>@composeDirective</code>, see <a href="./apollo_federation#composeDirective">the federation docs</a></p>
 
                     </main>
 
@@ -224,7 +271,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next" href="apollo_federation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="apollo_federation.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -238,7 +285,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next" href="apollo_federation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="apollo_federation.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
