@@ -1,11 +1,13 @@
 # Custom directive
 
-`Async-graphql` can easily customize directives, which can extend the behavior of GraphQL.
+There are two types of directives in GraphQL: executable and type system. Executable directives are used by the client within an operation to modify the behavior (like the built-in `@include` and `@skip` directives). Type system directives provide additional information about the types, potentially modifying how the server behaves (like `@deprecated` and `@oneOf`). `async-graphql` allows you to declare both types of custom directives, with different limitations on each. 
 
-To create a custom directive, you need to implement the `CustomDirective` trait, and then use the `Directive` macro to 
+## Executable directives
+
+To create a custom executable directive, you need to implement the `CustomDirective` trait, and then use the `Directive` macro to 
 generate a factory function that receives the parameters of the directive and returns an instance of the directive.
 
-Currently `Async-graphql` only supports directive located at `FIELD`.
+Currently `async-graphql` only supports custom executable directives located at `FIELD`.
 
 ```rust
 # extern crate async_graphql;
@@ -51,3 +53,51 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)
     .finish();
 ```
+
+## Type system directives
+
+To create a custom type system directive, you can use the `#[TypeDirective]` macro on a function:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[TypeDirective(
+    location = "FieldDefinition",
+    location = "Object",
+)]
+fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
+```
+
+Current only the `FieldDefinition` and `Object` locations are supported, you can select one or both. After declaring the directive, you can apply it to a relevant location (after importing the function) like this:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+# #[TypeDirective(
+# location = "FieldDefinition",
+# location = "Object",
+# )]
+# fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
+#[derive(SimpleObject)]
+#[graphql(
+    directive = testDirective::apply("simple object type".to_string(), 1, Some(3))
+)]
+struct SimpleValue {
+    #[graphql(
+        directive = testDirective::apply("field and param with \" symbol".to_string(), 2, Some(3))
+    )]
+    some_data: String,
+}
+```
+
+This example produces a schema like this:
+
+```graphql
+type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
+	someData: String! @testDirective(scope: "field and param with \" symbol", input: 2, opt: 3)
+}
+
+directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
+```
+
+Note: To use a type-system directive with Apollo Federation's `@composeDirective`, see [the federation docs](./apollo_federation#composeDirective)

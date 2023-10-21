@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use indexmap::IndexMap;
 use serde::de::DeserializeOwned;
 
-use crate::{Error, Name, Result, Value};
+use crate::{Error, Name, Result, Upload, Value};
 
 /// A value accessor
 pub struct ValueAccessor<'a>(&'a Value);
@@ -108,6 +108,12 @@ impl<'a> ValueAccessor<'a> {
     #[inline]
     pub fn as_value(&self) -> &'a Value {
         self.0
+    }
+
+    /// Returns a upload object
+    pub fn upload(&self) -> Result<Upload> {
+        <Upload as crate::InputType>::parse(Some(self.0.clone()))
+            .map_err(|_| Error::new("internal: not a upload"))
     }
 }
 

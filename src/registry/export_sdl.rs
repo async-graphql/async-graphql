@@ -137,10 +137,7 @@ impl Registry {
                             .map(|ext_url| (ext_url, format!("\"@{}\"", d.name)))
                     })
                     .for_each(|(ext_url, name)| {
-                        compose_directives
-                            .entry(ext_url)
-                            .or_insert_with(Vec::new)
-                            .push(name)
+                        compose_directives.entry(ext_url).or_default().push(name)
                     });
                 for (url, directives) in compose_directives {
                     writeln!(sdl, "extend schema @link(").ok();

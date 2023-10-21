@@ -107,7 +107,7 @@ impl SchemaInner {
                         })
                         .flatten(),
                 )?,
-                Type::Scalar(_) | Type::Enum(_) => {}
+                Type::Scalar(_) | Type::Enum(_) | Type::Upload => {}
             }
         }
 
