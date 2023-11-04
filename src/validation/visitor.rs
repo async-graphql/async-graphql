@@ -324,6 +324,10 @@ where
     A: Visitor<'a> + 'a,
     B: Visitor<'a> + 'a,
 {
+    fn mode(&self) -> VisitMode {
+        self.0.mode()
+    }
+
     fn enter_document(&mut self, ctx: &mut VisitorContext<'a>, doc: &'a ExecutableDocument) {
         self.0.enter_document(ctx, doc);
         self.1.enter_document(ctx, doc);
