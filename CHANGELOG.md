@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [6.0.10] 2023-11-04
+
+- bump opentelemetry 0.20.0 [#1406](https://github.com/async-graphql/async-graphql/pull/1406)
+- fix check for serial [#1405](https://github.com/async-graphql/async-graphql/pull/1405)
+- fixes complexity visitor
+- bump Rocket from `0.5.0-rc.2` to `0.5.0-rc.4`
+
 # [6.0.9] 2023-10-21
 
 - add support uploading files in dynamic schema [#1384](https://github.com/async-graphql/async-graphql/discussions/1384)
@@ -26,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `ValueAccessor::as_value` and `ListAccessor::as_values_slice` methods [#1353](https://github.com/async-graphql/async-graphql/pull/1353)
 - dynamic: fixes key not found when using entity resolver [#1362](https://github.com/async-graphql/async-graphql/issues/1362)
 - fix panic in complexity visitor [#1359](https://github.com/async-graphql/async-graphql/pull/1359)
-- update MSRV to `1.68.0`
+- update MSRV to `1.70.0`
 
 # [6.0.4] 2023-08-18
 

@@ -68,7 +68,7 @@ impl<'r> FromData<'r> for GraphQLBatchRequest {
 
         match request {
             Ok(request) => data::Outcome::Success(Self(request)),
-            Err(e) => data::Outcome::Failure((
+            Err(e) => data::Outcome::Error((
                 match e {
                     ParseRequestError::PayloadTooLarge => Status::PayloadTooLarge,
                     _ => Status::BadRequest,
@@ -165,7 +165,7 @@ impl<'r> FromData<'r> for GraphQLRequest {
             .await
             .and_then(|request| match request.0.into_single() {
                 Ok(single) => data::Outcome::Success(Self(single)),
-                Err(e) => data::Outcome::Failure((Status::BadRequest, e)),
+                Err(e) => data::Outcome::Error((Status::BadRequest, e)),
             })
     }
 }
