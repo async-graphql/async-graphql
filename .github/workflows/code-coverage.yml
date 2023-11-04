@@ -13,7 +13,7 @@ jobs:
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.68.0
+          toolchain: 1.70.0
           override: true
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
