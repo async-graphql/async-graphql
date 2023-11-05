@@ -127,6 +127,8 @@ git submodule update # update the examples repo
 cd examples && cargo run --bin [name]
 ```
 
+For more information, see the [sub-repository](https://github.com/async-graphql/examples) README.md.
+
 ## Integrations
 
 Integrations are what glue `async-graphql` with your web server, here are provided ones, or you can build your own!
