@@ -41,7 +41,7 @@ impl<T> From<T> for Json<T> {
     }
 }
 
-impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
+impl<T: DeserializeOwned + Serialize> InputType for Json<T> {
     type RawValueType = T;
 
     fn type_name() -> Cow<'static, str> {
@@ -73,8 +73,8 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
     }
 }
 
-#[async_trait::async_trait]
-impl<T: Serialize + Send + Sync> OutputType for Json<T> {
+#[async_trait::async_trait(?Send)]
+impl<T: Serialize> OutputType for Json<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")
     }
@@ -134,7 +134,7 @@ impl InputType for serde_json::Value {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl OutputType for serde_json::Value {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")

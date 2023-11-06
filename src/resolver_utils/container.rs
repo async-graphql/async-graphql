@@ -12,7 +12,7 @@ use crate::{
 ///
 /// This helper trait allows the type to call `resolve_container` on itself in
 /// its `OutputType::resolve` implementation.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait ContainerType: OutputType {
     /// This function returns true of type `EmptyMutation` only.
     #[doc(hidden)]
@@ -35,10 +35,7 @@ pub trait ContainerType: OutputType {
         &'a self,
         ctx: &ContextSelectionSet<'a>,
         fields: &mut Fields<'a>,
-    ) -> ServerResult<()>
-    where
-        Self: Send + Sync,
-    {
+    ) -> ServerResult<()> {
         fields.add_set(ctx, self)
     }
 
@@ -50,7 +47,7 @@ pub trait ContainerType: OutputType {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ContainerType + ?Sized> ContainerType for &T {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(*self, ctx).await
@@ -61,7 +58,7 @@ impl<T: ContainerType + ?Sized> ContainerType for &T {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ContainerType + ?Sized> ContainerType for Arc<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(self, ctx).await
@@ -72,7 +69,7 @@ impl<T: ContainerType + ?Sized> ContainerType for Arc<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ContainerType + ?Sized> ContainerType for Box<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(self, ctx).await
@@ -83,8 +80,8 @@ impl<T: ContainerType + ?Sized> ContainerType for Box<T> {
     }
 }
 
-#[async_trait::async_trait]
-impl<T: ContainerType, E: Into<Error> + Send + Sync + Clone> ContainerType for Result<T, E> {
+#[async_trait::async_trait(?Send)]
+impl<T: ContainerType, E: Into<Error> + Clone> ContainerType for Result<T, E> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         match self {
             Ok(value) => T::resolve_field(value, ctx).await,
@@ -171,7 +168,7 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     Ok(create_value_object(res))
 }
 
-type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
+type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a>>;
 
 /// A set of fields on an container that are being selected.
 pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
@@ -258,7 +255,7 @@ impl<'a> Fields<'a> {
                                             .unwrap_or_default(),
                                     ))
                                 } else {
-                                    let mut resolve_fut = resolve_fut.boxed();
+                                    let mut resolve_fut = resolve_fut.boxed_local();
 
                                     for directive in &field.node.directives {
                                         if let Some(directive_factory) = ctx

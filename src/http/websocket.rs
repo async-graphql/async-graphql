@@ -76,7 +76,7 @@ pin_project! {
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
         executor: E,
-        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response> + Send>>>,
+        streams: HashMap<String, Pin<Box<dyn Stream<Item = Response>>>>,
         #[pin]
         stream: S,
         protocol: Protocols,
@@ -151,8 +151,8 @@ where
     #[must_use]
     pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F>
     where
-        F: FnOnce(serde_json::Value) -> R + Send + 'static,
-        R: Future<Output = Result<Data>> + Send + 'static,
+        F: FnOnce(serde_json::Value) -> R + 'static,
+        R: Future<Output = Result<Data>> + 'static,
     {
         WebSocket {
             on_connection_init: Some(callback),

@@ -52,7 +52,7 @@ impl<T: InputType, const N: usize> InputType for [T; N] {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType, const N: usize> OutputType for [T; N] {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))

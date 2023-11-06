@@ -51,7 +51,7 @@ impl UploadValue {
     /// Convert to a `Read`.
     ///
     /// **Note**: this is a *synchronous/blocking* reader.
-    pub fn into_read(self) -> impl Read + Sync + Send + 'static {
+    pub fn into_read(self) -> impl Read + 'static {
         #[cfg(feature = "tempfile")]
         {
             self.content
@@ -66,7 +66,7 @@ impl UploadValue {
     /// Convert to a `AsyncRead`.
     #[cfg(feature = "unblock")]
     #[cfg_attr(docsrs, doc(cfg(feature = "unblock")))]
-    pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
+    pub fn into_async_read(self) -> impl AsyncRead + 'static {
         #[cfg(feature = "tempfile")]
         {
             blocking::Unblock::new(self.content)

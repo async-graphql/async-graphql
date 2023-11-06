@@ -70,7 +70,7 @@ pub fn parse_query_string(input: &str) -> Result<Request, ParseRequestError> {
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_body(
     content_type: Option<impl AsRef<str>>,
-    body: impl AsyncRead + Send,
+    body: impl AsyncRead + Send + Sync,
     opts: MultipartOptions,
 ) -> Result<Request, ParseRequestError> {
     receive_batch_body(content_type, body, opts)
@@ -81,7 +81,7 @@ pub async fn receive_body(
 /// Receive a GraphQL request from a content type and body.
 pub async fn receive_batch_body(
     content_type: Option<impl AsRef<str>>,
-    body: impl AsyncRead + Send,
+    body: impl AsyncRead + Send + Sync,
     opts: MultipartOptions,
 ) -> Result<BatchRequest, ParseRequestError> {
     // if no content-type header is set, we default to json
@@ -116,7 +116,7 @@ pub async fn receive_batch_body(
 /// and [``multipart::receive_batch_multipart``]
 pub(super) async fn receive_batch_body_no_multipart(
     content_type: &mime::Mime,
-    body: impl AsyncRead + Send,
+    body: impl AsyncRead,
 ) -> Result<BatchRequest, ParseRequestError> {
     assert_ne!(content_type.type_(), mime::MULTIPART, "received multipart");
     match (content_type.type_(), content_type.subtype()) {

@@ -165,7 +165,7 @@ impl<T> CursorType for OpaqueCursor<T>
 where
     T: Serialize + DeserializeOwned,
 {
-    type Error = Box<dyn std::error::Error + Send + Sync>;
+    type Error = Box<dyn std::error::Error>;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
         let data = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;

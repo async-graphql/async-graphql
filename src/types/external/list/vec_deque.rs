@@ -46,7 +46,7 @@ impl<T: InputType> InputType for VecDeque<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType> OutputType for VecDeque<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))

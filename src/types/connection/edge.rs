@@ -11,7 +11,7 @@ use crate::{
 #[graphql(internal, name_type, shareable, complex)]
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
@@ -30,7 +30,7 @@ where
 #[ComplexObject(internal)]
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
@@ -43,7 +43,7 @@ where
 
 impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
@@ -57,7 +57,7 @@ where
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Name: EdgeNameType,
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     EdgeFields: ObjectType,
 {
@@ -79,7 +79,7 @@ where
 
 impl<Cursor, Node, Name> Edge<Cursor, Node, EmptyFields, Name>
 where
-    Cursor: CursorType + Send + Sync,
+    Cursor: CursorType,
     Node: OutputType,
     Name: EdgeNameType,
 {
