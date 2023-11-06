@@ -120,12 +120,9 @@ impl Registry {
             writeln!(sdl).ok();
         }
 
-        self.directives
-            .values()
-            .filter(|directive| !matches!(directive.name.as_str(), "include" | "skip"))
-            .for_each(|directive| {
-                writeln!(sdl, "{}", directive.sdl()).ok();
-            });
+        self.directives.values().for_each(|directive| {
+            writeln!(sdl, "{}", directive.sdl()).ok();
+        });
 
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
