@@ -22,7 +22,7 @@ use poem::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GraphQLProtocol(pub WebSocketProtocols);
 
-#[poem::async_trait]
+#[poem::async_trait(?Send)]
 impl<'a> FromRequest<'a> for GraphQLProtocol {
     async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self> {
         req.headers()
@@ -82,7 +82,7 @@ impl<E> GraphQLSubscription<E> {
     }
 }
 
-#[poem::async_trait]
+#[poem::async_trait(?Send)]
 impl<E> Endpoint for GraphQLSubscription<E>
 where
     E: Executor,

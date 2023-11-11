@@ -13,7 +13,7 @@ use crate::{
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<A, B> ContainerType for MergedObject<A, B>
 where
     A: ContainerType,
@@ -36,7 +36,7 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<A, B> OutputType for MergedObject<A, B>
 where
     A: OutputType,
@@ -100,7 +100,7 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<A, B> SubscriptionType for MergedObject<A, B>
 where
     A: SubscriptionType,
@@ -158,7 +158,7 @@ where
     fn create_field_stream<'a>(
         &'a self,
         _ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>> {
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + 'a>>> {
         unreachable!()
     }
 }
@@ -196,7 +196,7 @@ impl SubscriptionType for MergedObjectTail {
     fn create_field_stream<'a>(
         &'a self,
         _ctx: &'a Context<'_>,
-    ) -> Option<Pin<Box<dyn Stream<Item = Response> + Send + 'a>>> {
+    ) -> Option<Pin<Box<dyn Stream<Item = Response> + 'a>>> {
         unreachable!()
     }
 }

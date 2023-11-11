@@ -2,8 +2,6 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
-use once_cell::sync::Lazy;
-
 use crate::{
     futures_util::stream::Stream,
     parser::types::ExecutableDocument,
@@ -372,18 +370,15 @@ impl Subscription {
     }
 }
 
-static TEST_HARNESS: Lazy<Schema<Query, Mutation, Subscription>> =
-    Lazy::new(|| Schema::new(Query, Mutation, Subscription));
-
 pub(crate) fn validate<'a, V, F>(
     doc: &'a ExecutableDocument,
     factory: F,
+    schema: &'a Schema<Query, Mutation, Subscription>
 ) -> Result<(), Vec<RuleError>>
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    let schema = &*TEST_HARNESS;
     let registry = &schema.0.env.registry;
     let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();
@@ -395,12 +390,12 @@ where
     }
 }
 
-pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
+pub(crate) fn expect_passes_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F, schema: &'a Schema<Query, Mutation, Subscription>)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if let Err(errors) = validate(doc, factory) {
+    if let Err(errors) = validate(doc, factory, &schema) {
         for err in errors {
             if let Some(position) = err.locations.first() {
                 print!("[{}:{}] ", position.line, position.column);
@@ -413,24 +408,26 @@ where
 
 macro_rules! expect_passes_rule {
     ($factory:expr, $query_source:literal $(,)?) => {
+        let schema = crate::schema::Schema::new(crate::validation::test_harness::Query, crate::validation::test_harness::Mutation, crate::validation::test_harness::Subscription);
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
-        crate::validation::test_harness::expect_passes_rule_(&doc, $factory);
+        crate::validation::test_harness::expect_passes_rule_(&doc, $factory, &schema);
     };
 }
 
-pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F)
+pub(crate) fn expect_fails_rule_<'a, V, F>(doc: &'a ExecutableDocument, factory: F, schema: &'a Schema<Query, Mutation, Subscription>)
 where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    if validate(doc, factory).is_ok() {
+    if validate(doc, factory, &schema).is_ok() {
         panic!("Expected rule to fail, but no errors were found");
     }
 }
 
 macro_rules! expect_fails_rule {
     ($factory:expr, $query_source:literal $(,)?) => {
+        let schema = crate::schema::Schema::new(crate::validation::test_harness::Query, crate::validation::test_harness::Mutation, crate::validation::test_harness::Subscription);
         let doc = crate::parser::parse_query($query_source).expect("Parse error");
-        crate::validation::test_harness::expect_fails_rule_(&doc, $factory);
+        crate::validation::test_harness::expect_fails_rule_(&doc, $factory, &schema);
     };
 }

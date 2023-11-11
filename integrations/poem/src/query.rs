@@ -43,7 +43,7 @@ impl<E> GraphQL<E> {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl<E> Endpoint for GraphQL<E>
 where
     E: Executor,

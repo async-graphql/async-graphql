@@ -63,7 +63,7 @@ pub trait InputType: Send + Sync + Sized {
 }
 
 /// Represents a GraphQL output type.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait OutputType: Send + Sync {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
@@ -92,7 +92,7 @@ pub trait OutputType: Send + Sync {
     ) -> ServerResult<Value>;
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType + ?Sized> OutputType for &T {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -112,7 +112,7 @@ impl<T: OutputType + ?Sized> OutputType for &T {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for Result<T, E> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -139,13 +139,13 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
 /// A GraphQL object.
 pub trait ObjectType: ContainerType {}
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ObjectType + ?Sized> ObjectType for &T {}
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ObjectType + ?Sized> ObjectType for Box<T> {}
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: ObjectType + ?Sized> ObjectType for Arc<T> {}
 
 /// A GraphQL interface.
@@ -160,7 +160,7 @@ pub trait InputObjectType: InputType {}
 /// A GraphQL oneof input object.
 pub trait OneofObjectType: InputObjectType {}
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType + ?Sized> OutputType for Box<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -180,7 +180,7 @@ impl<T: OutputType + ?Sized> OutputType for Box<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: InputType> InputType for Box<T> {
     type RawValueType = T::RawValueType;
 
@@ -207,7 +207,7 @@ impl<T: InputType> InputType for Box<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType + ?Sized> OutputType for Arc<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -253,7 +253,7 @@ impl<T: InputType> InputType for Arc<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType + ?Sized> OutputType for Weak<T> {
     fn type_name() -> Cow<'static, str> {
         <Option<Arc<T>> as OutputType>::type_name()
@@ -273,7 +273,7 @@ impl<T: OutputType + ?Sized> OutputType for Weak<T> {
 }
 
 #[doc(hidden)]
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait ComplexObject {
     fn fields(registry: &mut registry::Registry) -> Vec<(String, registry::MetaField)>;
 

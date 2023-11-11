@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[doc(hidden)]
-pub trait CustomDirectiveFactory: Send + Sync + 'static {
+pub trait CustomDirectiveFactory: 'static {
     fn name(&self) -> Cow<'static, str>;
 
     fn register(&self, registry: &mut Registry);
@@ -27,7 +27,7 @@ pub trait TypeDirective {
 }
 
 /// Represents a custom directive.
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 #[allow(unused_variables)]
 pub trait CustomDirective: Sync + Send + 'static {
     /// Called at resolve field.

@@ -18,7 +18,7 @@ impl ExtensionFactory for Logger {
 
 struct LoggerExtension;
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Extension for LoggerExtension {
     async fn parse_query(
         &self,

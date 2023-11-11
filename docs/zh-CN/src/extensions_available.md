@@ -17,7 +17,7 @@
 ```rust
 # extern crate async_graphql;
 # use async_graphql::*;
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait CacheStorage: Send + Sync + Clone + 'static {
     /// Load the query by `key`.
     async fn get(&self, key: String) -> Option<String>;

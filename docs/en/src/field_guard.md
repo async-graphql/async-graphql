@@ -21,7 +21,7 @@ impl RoleGuard {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Role>() == Some(&self.role) {
@@ -42,7 +42,7 @@ Use it with the `guard` attribute:
 # enum Role { Admin, Guest, }
 # struct RoleGuard { role: Role, }
 # impl RoleGuard { fn new(role: Role) -> Self { Self { role } } }
-# #[async_trait::async_trait]
+# #[async_trait::async_trait(?Send)]
 # impl Guard for RoleGuard { async fn check(&self, ctx: &Context<'_>) -> Result<()> { todo!() } }
 #[derive(SimpleObject)]
 struct Query {
@@ -73,7 +73,7 @@ impl EqGuard {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Guard for EqGuard {
     async fn check(&self, _ctx: &Context<'_>) -> Result<()> {
         if self.expect != self.actual {

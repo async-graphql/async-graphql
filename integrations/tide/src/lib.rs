@@ -71,7 +71,7 @@ impl<E: Executor> Clone for GraphQLEndpoint<E> {
     }
 }
 
-#[async_trait]
+#[async_trait(?Send)]
 impl<E, TideState> tide::Endpoint<TideState> for GraphQLEndpoint<E>
 where
     E: Executor,

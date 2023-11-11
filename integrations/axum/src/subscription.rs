@@ -17,7 +17,7 @@ use axum::{
 };
 use futures_util::{
     future,
-    future::{BoxFuture, Ready},
+    future::{LocalBoxFuture, Ready},
     stream::{SplitSink, SplitStream},
     Sink, SinkExt, Stream, StreamExt,
 };
@@ -29,11 +29,8 @@ use tower_service::Service;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GraphQLProtocol(WebSocketProtocols);
 
-#[async_trait::async_trait]
-impl<S> FromRequestParts<S> for GraphQLProtocol
-where
-    S: Send + Sync,
-{
+#[async_trait::async_trait(?Send)]
+impl<S> FromRequestParts<S> for GraphQLProtocol {
     type Rejection = StatusCode;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
@@ -79,12 +76,12 @@ where
 
 impl<B, E> Service<Request<B>> for GraphQLSubscription<E>
 where
-    B: HttpBody + Send + 'static,
+    B: HttpBody + 'static,
     E: Executor,
 {
     type Response = Response<BoxBody>;
     type Error = Infallible;
-    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))
@@ -174,8 +171,8 @@ where
     Sink: futures_util::sink::Sink<Message>,
     Stream: futures_util::stream::Stream<Item = Result<Message, Error>>,
     E: Executor,
-    OnConnInit: FnOnce(serde_json::Value) -> OnConnInitFut + Send + 'static,
-    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    OnConnInit: FnOnce(serde_json::Value) -> OnConnInitFut + 'static,
+    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + 'static,
 {
     /// Specify the initial subscription context data, usually you can get
     /// something from the incoming request to create it.

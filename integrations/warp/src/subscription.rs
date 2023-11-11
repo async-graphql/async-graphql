@@ -210,8 +210,8 @@ where
     Sink: futures_util::sink::Sink<Message>,
     Stream: futures_util::stream::Stream<Item = Result<Message, Error>>,
     E: Executor,
-    OnConnInit: FnOnce(serde_json::Value) -> OnConnInitFut + Send + 'static,
-    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    OnConnInit: FnOnce(serde_json::Value) -> OnConnInitFut + 'static,
+    OnConnInitFut: Future<Output = async_graphql::Result<Data>> + 'static,
 {
     /// Specify the initial subscription context data, usually you can get
     /// something from the incoming request to create it.
@@ -231,8 +231,8 @@ where
         callback: OnConnInit2,
     ) -> GraphQLWebSocket<Sink, Stream, E, OnConnInit2>
     where
-        OnConnInit2: FnOnce(serde_json::Value) -> Fut + Send + 'static,
-        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+        OnConnInit2: FnOnce(serde_json::Value) -> Fut + 'static,
+        Fut: Future<Output = async_graphql::Result<Data>> + 'static,
     {
         GraphQLWebSocket {
             sink: self.sink,

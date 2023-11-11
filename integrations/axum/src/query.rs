@@ -16,7 +16,7 @@ use axum::{
     BoxError,
 };
 use bytes::Bytes;
-use futures_util::{future::BoxFuture, StreamExt};
+use futures_util::StreamExt;
 use tower_service::Service;
 
 use crate::{
@@ -38,14 +38,14 @@ impl<E> GraphQL<E> {
 
 impl<B, E> Service<HttpRequest<B>> for GraphQL<E>
 where
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
     E: Executor,
 {
     type Response = HttpResponse<BoxBody>;
     type Error = Infallible;
-    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+    type Future = LocalBoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
         Poll::Ready(Ok(()))

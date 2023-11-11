@@ -80,7 +80,7 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
 
 #[cfg(test)]
 mod tests {
-    use futures_util::stream::BoxStream;
+    use futures_util::stream::LocalBoxStream;
 
     use super::*;
     use crate::{
@@ -142,11 +142,11 @@ mod tests {
 
     #[Subscription(internal)]
     impl Subscription {
-        async fn value(&self) -> BoxStream<'static, i32> {
+        async fn value(&self) -> LocalBoxStream<'static, i32> {
             todo!()
         }
 
-        async fn obj(&self) -> BoxStream<'static, MyObj> {
+        async fn obj(&self) -> LocalBoxStream<'static, MyObj> {
             todo!()
         }
 
@@ -155,12 +155,12 @@ mod tests {
         async fn objs(
             &self,
             #[graphql(default_with = "5")] count: usize,
-        ) -> BoxStream<'static, Vec<MyObj>> {
+        ) -> LocalBoxStream<'static, Vec<MyObj>> {
             todo!()
         }
 
         #[graphql(complexity = 3)]
-        async fn d(&self) -> BoxStream<'static, MyObj> {
+        async fn d(&self) -> LocalBoxStream<'static, MyObj> {
             todo!()
         }
     }

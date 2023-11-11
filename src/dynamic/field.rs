@@ -5,7 +5,7 @@ use std::{
     ops::Deref,
 };
 
-use futures_util::{future::BoxFuture, Future, FutureExt};
+use futures_util::{future::LocalBoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
 use crate::{
@@ -234,7 +234,7 @@ impl<'a> FieldValue<'a> {
     }
 }
 
-type BoxResolveFut<'a> = BoxFuture<'a, Result<Option<FieldValue<'a>>>>;
+type BoxResolveFut<'a> = LocalBoxFuture<'a, Result<Option<FieldValue<'a>>>>;
 
 /// A context for resolver function
 pub struct ResolverContext<'a> {
@@ -267,15 +267,15 @@ impl<'a> FieldFuture<'a> {
     /// Create a `FieldFuture` from a `Future`
     pub fn new<Fut, R>(future: Fut) -> Self
     where
-        Fut: Future<Output = Result<Option<R>>> + Send + 'a,
-        R: Into<FieldValue<'a>> + Send,
+        Fut: Future<Output = Result<Option<R>>> + 'a,
+        R: Into<FieldValue<'a>>,
     {
         FieldFuture::Future(
             async move {
                 let res = future.await?;
                 Ok(res.map(Into::into))
             }
-            .boxed(),
+            .boxed_local(),
         )
     }
 

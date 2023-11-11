@@ -17,7 +17,7 @@ impl RoleGuard {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Role>() == Some(&self.role) {
@@ -40,7 +40,7 @@ impl<'a> UserGuard<'a> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<'a> Guard for UserGuard<'a> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Username>().map(|name| name.0.as_str()) == Some(self.username) {
@@ -296,7 +296,7 @@ pub async fn test_guard_use_params() {
         }
     }
 
-    #[async_trait::async_trait]
+    #[async_trait::async_trait(?Send)]
     impl Guard for EqGuard {
         async fn check(&self, _ctx: &Context<'_>) -> Result<()> {
             if self.expect != self.actual {

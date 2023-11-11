@@ -60,13 +60,12 @@ pub mod rejection {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<S, B, R> FromRequest<S, B> for GraphQLRequest<R>
 where
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
-    S: Send + Sync,
     R: IntoResponse + From<ParseRequestError>,
 {
     type Rejection = R;
@@ -96,13 +95,12 @@ impl<R> GraphQLBatchRequest<R> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<S, B, R> FromRequest<S, B> for GraphQLBatchRequest<R>
 where
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
-    S: Send + Sync,
     R: IntoResponse + From<ParseRequestError>,
 {
     type Rejection = R;

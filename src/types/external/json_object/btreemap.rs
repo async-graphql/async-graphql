@@ -70,7 +70,7 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<K, V> OutputType for BTreeMap<K, V>
 where
     K: ToString + Ord + Send + Sync,

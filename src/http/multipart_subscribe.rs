@@ -1,5 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
-use futures_util::{stream::BoxStream, Stream, StreamExt};
+use futures_util::{stream::LocalBoxStream, Stream, StreamExt};
 use mime::Mime;
 
 use crate::Response;
@@ -14,9 +14,9 @@ static HEARTBEAT: Bytes = Bytes::from_static(b"{}\r\n");
 ///
 /// Reference: <https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/>
 pub fn create_multipart_mixed_stream<'a>(
-    input: impl Stream<Item = Response> + Send + Unpin + 'a,
-    heartbeat_timer: impl Stream<Item = ()> + Send + Unpin + 'a,
-) -> BoxStream<'a, Bytes> {
+    input: impl Stream<Item = Response> + Unpin + 'a,
+    heartbeat_timer: impl Stream<Item = ()> + Unpin + 'a,
+) -> LocalBoxStream<'a, Bytes> {
     let mut input = input.fuse();
     let mut heartbeat_timer = heartbeat_timer.fuse();
 
@@ -48,7 +48,7 @@ pub fn create_multipart_mixed_stream<'a>(
 
         yield EOF.clone();
     }
-    .boxed()
+    .boxed_local()
 }
 
 fn parse_accept(accept: &str) -> Vec<Mime> {

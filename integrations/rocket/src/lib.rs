@@ -47,7 +47,7 @@ impl GraphQLBatchRequest {
     }
 }
 
-#[rocket::async_trait]
+#[rocket::async_trait(?Send)]
 impl<'r> FromData<'r> for GraphQLBatchRequest {
     type Error = ParseRequestError;
 
@@ -156,7 +156,7 @@ impl GraphQLQuery {
     }
 }
 
-#[rocket::async_trait]
+#[rocket::async_trait(?Send)]
 impl<'r> FromData<'r> for GraphQLRequest {
     type Error = ParseRequestError;
 

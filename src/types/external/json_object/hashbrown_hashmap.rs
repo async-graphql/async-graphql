@@ -64,7 +64,7 @@ where
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<K, V> OutputType for HashMap<K, V>
 where
     K: ToString + Eq + Hash + Send + Sync,

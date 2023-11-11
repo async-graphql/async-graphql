@@ -51,8 +51,8 @@ impl<E> GraphQLSubscription<E, DefaultOnConnInitType> {
 impl<E, OnInit, OnInitFut> GraphQLSubscription<E, OnInit>
 where
     E: Executor,
-    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
-    OnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + 'static,
+    OnInitFut: Future<Output = async_graphql::Result<Data>> + 'static,
 {
     /// Specify the initial subscription context data, usually you can get
     /// something from the incoming request to create it.
@@ -72,8 +72,8 @@ where
         callback: OnConnInit2,
     ) -> GraphQLSubscription<E, OnConnInit2>
     where
-        OnConnInit2: FnOnce(serde_json::Value) -> Fut + Unpin + Send + 'static,
-        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+        OnConnInit2: FnOnce(serde_json::Value) -> Fut + Unpin + 'static,
+        Fut: Future<Output = async_graphql::Result<Data>> + 'static,
     {
         GraphQLSubscription {
             executor: self.executor,
@@ -127,8 +127,8 @@ struct GraphQLSubscriptionActor<E, OnInit> {
 impl<E, OnInit, OnInitFut> GraphQLSubscriptionActor<E, OnInit>
 where
     E: Executor,
-    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
-    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + 'static,
+    OnInitFut: Future<Output = Result<Data>> + 'static,
 {
     fn send_heartbeats(&self, ctx: &mut WebsocketContext<Self>) {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
@@ -143,8 +143,8 @@ where
 impl<E, OnInit, OnInitFut> Actor for GraphQLSubscriptionActor<E, OnInit>
 where
     E: Executor,
-    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
-    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + 'static,
+    OnInitFut: Future<Output = Result<Data>> + 'static,
 {
     type Context = WebsocketContext<Self>;
 
@@ -175,8 +175,8 @@ impl<E, OnInit, OnInitFut> StreamHandler<Result<Message, ProtocolError>>
     for GraphQLSubscriptionActor<E, OnInit>
 where
     E: Executor,
-    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + Send + 'static,
-    OnInitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnInit: FnOnce(serde_json::Value) -> OnInitFut + Unpin + 'static,
+    OnInitFut: Future<Output = Result<Data>> + 'static,
 {
     fn handle(&mut self, msg: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match msg {

@@ -188,7 +188,7 @@ macro_rules! scalar_internal {
             }
         }
 
-        #[$crate::async_trait::async_trait]
+        #[$crate::async_trait::async_trait(?Send)]
         impl $crate::OutputType for $ty {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)

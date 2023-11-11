@@ -5,7 +5,7 @@ use tokio::sync::RwLock;
 
 use crate::{registry, ContextSelectionSet, OutputType, Positioned, ServerResult, Value};
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType> OutputType for RwLock<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()

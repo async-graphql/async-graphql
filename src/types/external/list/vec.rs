@@ -43,7 +43,7 @@ impl<T: InputType> InputType for Vec<T> {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl<T: OutputType> OutputType for Vec<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))
