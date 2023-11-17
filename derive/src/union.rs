@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{visit_mut::VisitMut, Error, Type};
+use syn::{visit_mut::VisitMut, Error, Type, LifetimeParam, visit::Visit};
 
 use crate::{
     args::{self, RenameTarget},
@@ -13,6 +13,7 @@ use crate::{
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(union_args.internal);
     let ident = &union_args.ident;
+    let type_params = union_args.generics.type_params().collect::<Vec<_>>();
     let (impl_generics, ty_generics, where_clause) = union_args.generics.split_for_impl();
     let s = match &union_args.data {
         Data::Enum(s) => s,
@@ -91,7 +92,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
             if !variant.flatten {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::ObjectType);
+                    #crate_name::static_assertions::assert_impl!(for(#(#type_params),*) #assert_ty: #crate_name::ObjectType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
@@ -102,7 +103,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 });
             } else {
                 type_into_impls.push(quote! {
-                    #crate_name::static_assertions::assert_impl_one!(#assert_ty: #crate_name::UnionType);
+                    #crate_name::static_assertions::assert_impl!(for(#(#type_params),*) #assert_ty: #crate_name::UnionType);
 
                     #[allow(clippy::all, clippy::pedantic)]
                     impl #impl_generics ::std::convert::From<#ty> for #ident #ty_generics #where_clause {
@@ -156,63 +157,171 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     }
 
     let visible = visible_fn(&union_args.visible);
-    let expanded = quote! {
-        #(#type_into_impls)*
+    let expanded = if union_args.concretes.is_empty() {
+        quote! {
+            #(#type_into_impls)*
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
+            #[allow(clippy::all, clippy::pedantic)]
+            #[#crate_name::async_trait::async_trait]
 
-        impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
-            async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                ::std::result::Result::Ok(::std::option::Option::None)
-            }
-
-            fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
-                match self {
-                    #(#collect_all_fields),*
+            impl #impl_generics #crate_name::resolver_utils::ContainerType for #ident #ty_generics #where_clause {
+                async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                    ::std::result::Result::Ok(::std::option::Option::None)
                 }
-            }
-        }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-               #gql_typename
-            }
-
-            fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                match self {
-                    #(#get_introspection_typename),*
-                }
-            }
-
-            fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Union, |registry| {
-                    #(#registry_types)*
-
-                    #crate_name::registry::MetaType::Union {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
-                        description: #desc,
-                        possible_types: {
-                            let mut possible_types = #crate_name::indexmap::IndexSet::new();
-                            #(#possible_types)*
-                            possible_types
-                        },
-                        visible: #visible,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {
+                    match self {
+                        #(#collect_all_fields),*
                     }
-                })
+                }
             }
 
-            async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                #crate_name::resolver_utils::resolve_container(ctx, self).await
+            #[allow(clippy::all, clippy::pedantic)]
+            #[#crate_name::async_trait::async_trait]
+            impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    #gql_typename
+                }
+
+                fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    match self {
+                        #(#get_introspection_typename),*
+                    }
+                }
+
+                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Union, |registry| {
+                        #(#registry_types)*
+
+                        #crate_name::registry::MetaType::Union {
+                            name: ::std::borrow::Cow::into_owned(#gql_typename),
+                            description: #desc,
+                            possible_types: {
+                                let mut possible_types = #crate_name::indexmap::IndexSet::new();
+                                #(#possible_types)*
+                                possible_types
+                            },
+                            visible: #visible,
+                            inaccessible: #inaccessible,
+                            tags: ::std::vec![ #(#tags),* ],
+                            rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        }
+                    })
+                }
+
+                async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                    #crate_name::resolver_utils::resolve_container(ctx, self).await
+                }
+            }
+
+            impl #impl_generics #crate_name::UnionType for #ident #ty_generics #where_clause {}
+        }
+    } else {
+        let mut code = Vec::new();
+
+        #[derive(Default)]
+        struct GetLifetimes<'a> {
+            lifetimes: Vec<&'a LifetimeParam>,
+        }
+
+        impl<'a> Visit<'a> for GetLifetimes<'a> {
+            fn visit_lifetime_param(&mut self, i: &'a LifetimeParam) {
+                self.lifetimes.push(i);
             }
         }
 
-        impl #impl_generics #crate_name::UnionType for #ident #ty_generics #where_clause {}
+        let mut visitor = GetLifetimes::default();
+        visitor.visit_generics(&union_args.generics);
+        let lifetimes = visitor.lifetimes;
+
+        let def_lifetimes = if !lifetimes.is_empty() {
+            Some(quote!(<#(#lifetimes),*>))
+        } else {
+            None
+        };
+
+        let type_lifetimes = if !lifetimes.is_empty() {
+            Some(quote!(#(#lifetimes,)*))
+        } else {
+            None
+        };
+
+        for concrete in &union_args.concretes {
+            let gql_typename = &concrete.name;
+            let params = &concrete.params.0;
+            let concrete_type = quote! { #ident<#type_lifetimes #(#params),*> };
+
+            // Hacky way to convert from a generic to a concrete type.
+            // ideally we would change the syn::Type to be a concrete type instead of a generic, but that is a lot of work.
+            let type_aliases = union_args.generics.type_params().zip(&concrete.params.0).map(|(ty, path)| {
+                let ty = &ty.ident;
+                quote! { type #ty = #path; }
+            }).collect::<Vec<_>>();
+
+            let expanded = quote! {
+                #[allow(clippy::all, clippy::pedantic)]
+                #[#crate_name::async_trait::async_trait]
+
+                impl #def_lifetimes #crate_name::resolver_utils::ContainerType for #concrete_type {
+                    async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        ::std::result::Result::Ok(::std::option::Option::None)
+                    }
+
+                    fn collect_all_fields<'__life>(&'__life self, ctx: &#crate_name::ContextSelectionSet<'__life>, fields: &mut #crate_name::resolver_utils::Fields<'__life>) -> #crate_name::ServerResult<()> {                        
+                        match self {
+                            #(#collect_all_fields),*
+                        }
+                    }
+                }
+
+                #[allow(clippy::all, clippy::pedantic)]
+                #[#crate_name::async_trait::async_trait]
+                impl #def_lifetimes #crate_name::OutputType for #concrete_type {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        ::std::borrow::Cow::Borrowed(#gql_typename)
+                    }
+
+                    fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        #(#type_aliases)*
+
+                        match self {
+                            #(#get_introspection_typename),*
+                        }
+                    }
+
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        #(#type_aliases)*
+
+                        registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Union, |registry| {
+                            #(#registry_types)*
+
+                            #crate_name::registry::MetaType::Union {
+                                name: ::std::borrow::ToOwned::to_owned(#gql_typename),
+                                description: #desc,
+                                possible_types: {
+                                    let mut possible_types = #crate_name::indexmap::IndexSet::new();
+                                    #(#possible_types)*
+                                    possible_types
+                                },
+                                visible: #visible,
+                                inaccessible: #inaccessible,
+                                tags: ::std::vec![ #(#tags),* ],
+                                rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                            }
+                        })
+                    }
+
+                    async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                        #crate_name::resolver_utils::resolve_container(ctx, self).await
+                    }
+                }
+
+                impl #def_lifetimes #crate_name::ObjectType for #concrete_type {}
+            };
+            code.push(expanded);
+        }
+
+        quote!(#(#code)*)
     };
 
     Ok(expanded.into())

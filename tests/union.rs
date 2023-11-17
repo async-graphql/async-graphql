@@ -483,3 +483,79 @@ pub async fn test_union_with_oneof_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_union_with_generic() {
+    struct MyObj<T> {
+        value: T,
+    }
+
+    #[Object(
+        concrete(name = "MyObjString", params(String)),
+        concrete(name = "MyObjInt", params(i64))
+    )]
+    impl<T: Send + Sync + async_graphql::OutputType> MyObj<T> {
+        async fn id(&self) -> i32 {
+            10
+        }
+
+        async fn title(&self) -> String {
+            "abc".to_string()
+        }
+
+        async fn value(&self) -> &T {
+            &self.value
+        }
+    }
+
+    #[derive(Union)]
+    #[graphql(concrete(name = "NodeInt", params(i64)))]
+    #[graphql(concrete(name = "NodeString", params(String)))]
+    enum Node<T: Send + Sync + async_graphql::OutputType> {
+        MyObj(MyObj<T>),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node_int(&self) -> Node<i64> {
+            Node::MyObj(MyObj {
+                value: 10,
+            })
+        }
+
+        async fn node_str(&self) -> Node<String> {
+            Node::MyObj(MyObj {
+                value: "abc".to_string(),
+            })
+        }
+    }
+
+    let query = r#"{
+            nodeInt {
+                ... on MyObjInt {
+                    value
+                }
+            }
+            nodeStr {
+                ... on MyObjString {
+                    value
+                }
+            }
+        }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "nodeInt": {
+                "value": 10,
+            },
+            "nodeStr": {
+                "value": "abc",
+            }
+        })
+    );
+
+    println!("{}", schema.sdl());
+}

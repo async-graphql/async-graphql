@@ -402,6 +402,10 @@ pub struct Union {
     pub inaccessible: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+
+    #[darling(default, multiple, rename = "concrete")]
+    pub concretes: Vec<ConcreteType>,
+
     // for OneofObject
     #[darling(default)]
     pub input_name: Option<String>,

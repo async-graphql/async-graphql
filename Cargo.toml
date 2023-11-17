@@ -60,7 +60,7 @@ pin-project-lite = "0.2.6"
 regex = "1.5.5"
 serde.workspace = true
 serde_json.workspace = true
-static_assertions = "1.1.0"
+static_assertions = { git = "https://github.com/nvzqz/static-assertions-rs", rev = "a867e97a1b3c2e0c76b7a154abdf4e422b78e5f2" }
 thiserror.workspace = true
 base64 = "0.13.0"
 serde_urlencoded = "0.7.0"
