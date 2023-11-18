@@ -89,10 +89,8 @@ impl Extension for TracingExtension {
         async move {
             let res = next.run(ctx, query, variables).await;
             if let Ok(doc) = &res {
-                tracinglib::Span::current().record(
-                    "source",
-                    &ctx.stringify_execute_doc(doc, variables).as_str(),
-                );
+                tracinglib::Span::current()
+                    .record("source", ctx.stringify_execute_doc(doc, variables).as_str());
             }
             res
         }

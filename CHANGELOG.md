@@ -4,9 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [6.0.11] 2023-11-18
+
+- Clean up example docs [#1411](https://github.com/async-graphql/async-graphql/pull/1411)
+- Run batch requests concurrently [#1420](https://github.com/async-graphql/async-graphql/pull/1420)
+- Update opentelemetry to `v0.21.x` [#1422](https://github.com/async-graphql/async-graphql/pull/1422)
+
 # [6.0.10] 2023-11-04
 
-- bump opentelemetry 0.20.0 [#1406](https://github.com/async-graphql/async-graphql/pull/1406)
+- bump opentelemetry `0.20.0` [#1406](https://github.com/async-graphql/async-graphql/pull/1406)
 - fix check for serial [#1405](https://github.com/async-graphql/async-graphql/pull/1405)
 - fixes complexity visitor
 - bump Rocket from `0.5.0-rc.2` to `0.5.0-rc.4`
