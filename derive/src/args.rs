@@ -5,7 +5,10 @@ use darling::{
 };
 use inflector::Inflector;
 use quote::format_ident;
-use syn::{Attribute, Expr, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type, Visibility};
+use syn::{
+    Attribute, Expr, GenericParam, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type,
+    Visibility,
+};
 
 use crate::validators::Validators;
 
@@ -75,13 +78,37 @@ impl FromMeta for PathList {
     fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
         let mut res = Vec::new();
         for item in items {
-            if let NestedMeta::Meta(Meta::Path(p)) = item {
-                res.push(p.clone());
-            } else {
-                return Err(darling::Error::custom("Invalid path list"));
+            match item {
+                NestedMeta::Meta(Meta::Path(p)) => res.push(p.clone()),
+                NestedMeta::Lit(Lit::Str(s)) => {
+                    res.push(syn::parse_str::<Path>(&s.value()).map_err(|_| {
+                        darling::Error::custom(format!("Invalid path: {}", s.value()))
+                    })?)
+                }
+                _ => return Err(darling::Error::custom("Invalid path list")),
             }
         }
         Ok(PathList(res))
+    }
+}
+
+#[derive(Default)]
+pub struct GenericParamList(pub Vec<GenericParam>);
+
+impl FromMeta for GenericParamList {
+    fn from_list(items: &[NestedMeta]) -> darling::Result<Self> {
+        let mut res = Vec::new();
+        for item in items {
+            match item {
+                NestedMeta::Lit(Lit::Str(s)) => {
+                    res.push(syn::parse_str::<GenericParam>(&s.value()).map_err(|_| {
+                        darling::Error::custom(format!("Invalid GenericParam: {}", s.value()))
+                    })?)
+                }
+                _ => return Err(darling::Error::custom("Invalid GenericParamList")),
+            }
+        }
+        Ok(GenericParamList(res))
     }
 }
 
@@ -89,6 +116,8 @@ impl FromMeta for PathList {
 pub struct ConcreteType {
     pub name: String,
     pub params: PathList,
+    #[darling(default)]
+    pub bounds: GenericParamList,
 }
 
 #[derive(Debug, Clone, Default)]

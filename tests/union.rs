@@ -520,9 +520,7 @@ pub async fn test_union_with_generic() {
     #[Object]
     impl Query {
         async fn node_int(&self) -> Node<i64> {
-            Node::MyObj(MyObj {
-                value: 10,
-            })
+            Node::MyObj(MyObj { value: 10 })
         }
 
         async fn node_str(&self) -> Node<String> {
@@ -554,6 +552,77 @@ pub async fn test_union_with_generic() {
             "nodeStr": {
                 "value": "abc",
             }
+        })
+    );
+
+    println!("{}", schema.sdl());
+}
+
+#[tokio::test]
+pub async fn test_union_with_sub_generic() {
+    struct MyObj<G> {
+        _marker: std::marker::PhantomData<G>,
+    }
+
+    #[Object]
+    impl<G: Send + Sync> MyObj<G> {
+        async fn id(&self) -> i32 {
+            10
+        }
+    }
+
+    struct MyObj2<G> {
+        _marker: std::marker::PhantomData<G>,
+    }
+
+    #[Object]
+    impl<G: Send + Sync> MyObj2<G> {
+        async fn id(&self) -> i32 {
+            10
+        }
+    }
+
+    #[derive(Union)]
+    #[graphql(concrete(name = "NodeMyObj", params("MyObj<G>"), bounds("G: Send + Sync")))]
+    enum Node<T: Send + Sync + async_graphql::OutputType> {
+        Nested(MyObj2<T>),
+        NotNested(T),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn nested(&self) -> Node<MyObj<()>> {
+            Node::Nested(MyObj2 {
+                _marker: std::marker::PhantomData,
+            })
+        }
+
+        async fn not_nested(&self) -> Node<MyObj<()>> {
+            Node::NotNested(MyObj {
+                _marker: std::marker::PhantomData,
+            })
+        }
+    }
+
+    let query = r#"{
+            nested {
+                ... on MyObj {
+                    id
+                }
+                ... on MyObj2 {
+                    id
+                }
+            }
+        }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "nested": {
+                "id": 10,
+            },
         })
     );
 
