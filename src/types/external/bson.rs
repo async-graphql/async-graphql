@@ -10,7 +10,7 @@ use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 impl ScalarType for ObjectId {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(ObjectId::parse_str(&s)?),
+            Value::String(s) => Ok(ObjectId::parse_str(s)?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }
@@ -24,7 +24,7 @@ impl ScalarType for ObjectId {
 impl ScalarType for Uuid {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
-            Value::String(s) => Ok(Uuid::parse_str(&s)?),
+            Value::String(s) => Ok(Uuid::parse_str(s)?),
             _ => Err(InputValueError::expected_type(value)),
         }
     }

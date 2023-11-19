@@ -59,5 +59,11 @@ let json = serde_json::to_string(&res);
 ```
 
 ## Web server integration
+All examples are in the [sub-repository](https://github.com/async-graphql/examples), located in the examples directory.
 
-Please refer to <https://github.com/async-graphql/examples>.
+```shell
+git submodule update # update the examples repo
+cd examples && cargo run --bin [name]
+```
+
+For more information, see the [sub-repository](https://github.com/async-graphql/examples) README.md.

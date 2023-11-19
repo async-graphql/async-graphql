@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use futures_util::{stream::BoxStream, StreamExt};
+use futures_util::stream::{BoxStream, FuturesOrdered, StreamExt};
 
 use crate::{BatchRequest, BatchResponse, Data, Request, Response};
 
@@ -15,10 +15,11 @@ pub trait Executor: Unpin + Clone + Send + Sync + 'static {
         match batch_request {
             BatchRequest::Single(request) => BatchResponse::Single(self.execute(request).await),
             BatchRequest::Batch(requests) => BatchResponse::Batch(
-                futures_util::stream::iter(requests.into_iter())
-                    .then(|request| self.execute(request))
-                    .collect()
-                    .await,
+                FuturesOrdered::from_iter(
+                    requests.into_iter().map(|request| self.execute(request)),
+                )
+                .collect()
+                .await,
             ),
         }
     }
