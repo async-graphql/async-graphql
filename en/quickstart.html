@@ -218,7 +218,11 @@ let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
 <h2 id="output-the-query-results-as-json"><a class="header" href="#output-the-query-results-as-json">Output the query results as JSON</a></h2>
 <pre><code class="language-rust ignore">let json = serde_json::to_string(&amp;res);</code></pre>
 <h2 id="web-server-integration"><a class="header" href="#web-server-integration">Web server integration</a></h2>
-<p>Please refer to <a href="https://github.com/async-graphql/examples">https://github.com/async-graphql/examples</a>.</p>
+<p>All examples are in the <a href="https://github.com/async-graphql/examples">sub-repository</a>, located in the examples directory.</p>
+<pre><code class="language-shell">git submodule update # update the examples repo
+cd examples &amp;&amp; cargo run --bin [name]
+</code></pre>
+<p>For more information, see the <a href="https://github.com/async-graphql/examples">sub-repository</a> README.md.</p>
 
                     </main>
 
