@@ -235,7 +235,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             let params = &concrete.params.0;
             let concrete_type = quote! { #ident<#(#params),*> };
 
-            let def_lifetimes = if !concrete.bounds.0.is_empty() {
+            let def_bounds = if !concrete.bounds.0.is_empty() {
                 let bounds = concrete.bounds.0.iter().map(|b| quote!(#b));
                 Some(quote!(<#(#bounds),*>))
             } else {
@@ -244,7 +244,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
 
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
-                impl #def_lifetimes #crate_name::InputType for #concrete_type {
+                impl #def_bounds #crate_name::InputType for #concrete_type {
                     type RawValueType = Self;
 
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
@@ -272,8 +272,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     }
                 }
 
-                impl #def_lifetimes #crate_name::InputObjectType for #concrete_type {}
-                impl #def_lifetimes #crate_name::OneofObjectType for #concrete_type {}
+                impl #def_bounds #crate_name::InputObjectType for #concrete_type {}
+                impl #def_bounds #crate_name::OneofObjectType for #concrete_type {}
             };
             code.push(expanded);
         }

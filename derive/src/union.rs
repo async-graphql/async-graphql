@@ -284,7 +284,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             let params = &concrete.params.0;
             let concrete_type = quote! { #ident<#type_lifetimes #(#params),*> };
 
-            let def_lifetimes = if !lifetimes.is_empty() || !concrete.bounds.0.is_empty() {
+            let def_bounds = if !lifetimes.is_empty() || !concrete.bounds.0.is_empty() {
                 let bounds = lifetimes
                     .iter()
                     .map(|l| quote!(#l))
@@ -354,7 +354,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 #[allow(clippy::all, clippy::pedantic)]
                 #[#crate_name::async_trait::async_trait]
 
-                impl #def_lifetimes #crate_name::resolver_utils::ContainerType for #concrete_type {
+                impl #def_bounds #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         ::std::result::Result::Ok(::std::option::Option::None)
                     }
@@ -368,7 +368,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
                 #[allow(clippy::all, clippy::pedantic)]
                 #[#crate_name::async_trait::async_trait]
-                impl #def_lifetimes #crate_name::OutputType for #concrete_type {
+                impl #def_bounds #crate_name::OutputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -404,7 +404,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                     }
                 }
 
-                impl #def_lifetimes #crate_name::ObjectType for #concrete_type {}
+                impl #def_bounds #crate_name::ObjectType for #concrete_type {}
             };
             code.push(expanded);
         }
