@@ -80,7 +80,7 @@ impl TryFrom<ID> for ObjectId {
     type Error = oid::Error;
 
     fn try_from(id: ID) -> std::result::Result<Self, oid::Error> {
-        ObjectId::parse_str(&id.0)
+        ObjectId::parse_str(id.0)
     }
 }
 

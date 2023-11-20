@@ -116,7 +116,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 - Apollo Tracing extension
 - Apollo Federation(v2)
 
-> **Note**: Minimum supported Rust version: 1.68.0 or later
+> **Note**: Minimum supported Rust version: 1.70.0 or later
 
 ## Examples
 
@@ -126,6 +126,8 @@ All examples are in the [sub-repository](https://github.com/async-graphql/exampl
 git submodule update # update the examples repo
 cd examples && cargo run --bin [name]
 ```
+
+For more information, see the [sub-repository](https://github.com/async-graphql/examples) README.md.
 
 ## Integrations
 

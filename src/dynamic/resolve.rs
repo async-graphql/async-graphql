@@ -36,7 +36,7 @@ pub(crate) async fn resolve_container(
     let mut fields = Vec::new();
     collect_fields(&mut fields, schema, object, ctx, parent_value)?;
 
-    let res = if serial {
+    let res = if !serial {
         futures_util::future::try_join_all(fields).await?
     } else {
         let mut results = Vec::with_capacity(fields.len());

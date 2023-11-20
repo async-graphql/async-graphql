@@ -74,7 +74,10 @@ pub fn check_rules(
                 .with(rules::KnownDirectives::default())
                 .with(rules::DirectivesUnique)
                 .with(rules::OverlappingFieldsCanBeMerged)
-                .with(rules::UploadFile)
+                .with(rules::UploadFile);
+            visit(&mut visitor, &mut ctx, doc);
+
+            let mut visitor = VisitorNil
                 .with(visitors::CacheControlCalculate {
                     cache_control: &mut cache_control,
                 })

@@ -159,7 +159,7 @@ impl OutputType for serde_json::Value {
         _ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        Ok(to_value(&self).ok().unwrap_or_default())
+        Ok(to_value(self).ok().unwrap_or_default())
     }
 }
 
