@@ -321,7 +321,7 @@ where
         mutation: Mutation,
         subscription: Subscription,
     ) -> SchemaBuilder<Query, Mutation, Subscription> {
-        Self::build_with_ignore_name_conflicts(query, mutation, subscription, [] as [&str; 0])
+        Self::build_with_ignore_name_conflicts::<[_; 0], String>(query, mutation, subscription, [])
     }
 
     /// Create a schema builder and specifies a list to ignore type conflict
@@ -474,8 +474,8 @@ where
     }
 
     /// Execute a GraphQL query.
-    pub async fn execute(&self, request: impl Into<Request>) -> Response {
-        let request = request.into();
+    pub async fn execute(&self, request: Request) -> Response {
+        // let request = request.into();
         let extensions = self.create_extensions(Default::default());
         let request_fut = {
             let extensions = extensions.clone();

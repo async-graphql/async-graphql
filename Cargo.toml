@@ -50,7 +50,7 @@ futures-util = { workspace = true, features = [
   "async-await",
   "async-await-macro",
 ] }
-http = "0.2.3"
+http = "1.0.0"
 indexmap.workspace = true
 mime = "0.3.15"
 multer = "2.0.0"

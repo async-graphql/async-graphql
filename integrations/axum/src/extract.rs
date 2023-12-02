@@ -2,13 +2,11 @@ use std::{io::ErrorKind, marker::PhantomData};
 
 use async_graphql::{futures_util::TryStreamExt, http::MultipartOptions, ParseRequestError};
 use axum::{
-    body::HttpBody,
-    extract::{BodyStream, FromRequest},
-    http::{self, Method, Request},
+    extract::FromRequest,
+    http::{self, Method},
     response::IntoResponse,
-    BoxError,
 };
-use bytes::Bytes;
+use axum::extract::Request;
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
 /// Extractor for GraphQL request.
@@ -29,25 +27,25 @@ impl<R> GraphQLRequest<R> {
 pub mod rejection {
     use async_graphql::ParseRequestError;
     use axum::{
-        body::{boxed, Body, BoxBody},
+        body::Body,
         http,
         http::StatusCode,
-        response::IntoResponse,
+        response::{IntoResponse, Response},
     };
 
     /// Rejection used for [`GraphQLRequest`](GraphQLRequest).
     pub struct GraphQLRejection(pub ParseRequestError);
 
     impl IntoResponse for GraphQLRejection {
-        fn into_response(self) -> http::Response<BoxBody> {
+        fn into_response(self) -> Response {
             match self.0 {
                 ParseRequestError::PayloadTooLarge => http::Response::builder()
                     .status(StatusCode::PAYLOAD_TOO_LARGE)
-                    .body(boxed(Body::empty()))
+                    .body(Body::empty())
                     .unwrap(),
                 bad_request => http::Response::builder()
                     .status(StatusCode::BAD_REQUEST)
-                    .body(boxed(Body::from(format!("{:?}", bad_request))))
+                    .body(Body::from(format!("{:?}", bad_request)))
                     .unwrap(),
             }
         }
@@ -61,17 +59,14 @@ pub mod rejection {
 }
 
 #[async_trait::async_trait]
-impl<S, B, R> FromRequest<S, B> for GraphQLRequest<R>
+impl<S, R> FromRequest<S> for GraphQLRequest<R>
 where
-    B: HttpBody + Send + Sync + 'static,
-    B::Data: Into<Bytes>,
-    B::Error: Into<BoxError>,
     S: Send + Sync,
     R: IntoResponse + From<ParseRequestError>,
 {
     type Rejection = R;
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         Ok(GraphQLRequest(
             GraphQLBatchRequest::<R>::from_request(req, state)
                 .await?
@@ -97,17 +92,14 @@ impl<R> GraphQLBatchRequest<R> {
 }
 
 #[async_trait::async_trait]
-impl<S, B, R> FromRequest<S, B> for GraphQLBatchRequest<R>
+impl<S, R> FromRequest<S> for GraphQLBatchRequest<R>
 where
-    B: HttpBody + Send + Sync + 'static,
-    B::Data: Into<Bytes>,
-    B::Error: Into<BoxError>,
     S: Send + Sync,
     R: IntoResponse + From<ParseRequestError>,
 {
     type Rejection = R;
 
-    async fn from_request(req: Request<B>, state: &S) -> Result<Self, Self::Rejection> {
+    async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
         if let (&Method::GET, uri) = (req.method(), req.uri()) {
             let res = async_graphql::http::parse_query_string(uri.query().unwrap_or_default())
                 .map_err(|err| {
@@ -123,14 +115,9 @@ where
                 .get(http::header::CONTENT_TYPE)
                 .and_then(|value| value.to_str().ok())
                 .map(ToString::to_string);
-            let body_stream = BodyStream::from_request(req, state)
-                .await
-                .map_err(|_| {
-                    ParseRequestError::Io(std::io::Error::new(
-                        ErrorKind::Other,
-                        "body has been taken by another extractor".to_string(),
-                    ))
-                })?
+            let body_stream = req
+                .into_body()
+                .into_data_stream()
                 .map_err(|err| std::io::Error::new(ErrorKind::Other, err.to_string()));
             let body_reader = tokio_util::io::StreamReader::new(body_stream).compat();
             Ok(Self(

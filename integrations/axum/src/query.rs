@@ -4,12 +4,9 @@ use std::{
     time::Duration,
 };
 
-use async_graphql::{
-    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
-    Executor,
-};
+use async_graphql::{http::{create_multipart_mixed_stream, is_accept_multipart_mixed}, Executor};
 use axum::{
-    body::{BoxBody, HttpBody, StreamBody},
+    body::{HttpBody, Body},
     extract::FromRequest,
     http::{Request as HttpRequest, Response as HttpResponse},
     response::IntoResponse,
@@ -38,12 +35,12 @@ impl<E> GraphQL<E> {
 
 impl<B, E> Service<HttpRequest<B>> for GraphQL<E>
 where
-    B: HttpBody + Send + Sync + 'static,
+    B: HttpBody<Data = Bytes> + Send + Sync + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
     E: Executor,
 {
-    type Response = HttpResponse<BoxBody>;
+    type Response = HttpResponse<Body>;
     type Error = Infallible;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -53,6 +50,7 @@ where
 
     fn call(&mut self, req: HttpRequest<B>) -> Self::Future {
         let executor = self.executor.clone();
+        let req = req.map(Body::new);
         Box::pin(async move {
             let is_accept_multipart_mixed = req
                 .headers()
@@ -67,7 +65,7 @@ where
                     Err(err) => return Ok(err.into_response()),
                 };
                 let stream = executor.execute_stream(req.0, None);
-                let body = StreamBody::new(
+                let body = Body::from_stream(
                     create_multipart_mixed_stream(
                         stream,
                         tokio_stream::wrappers::IntervalStream::new(tokio::time::interval(
@@ -79,7 +77,7 @@ where
                 );
                 Ok(HttpResponse::builder()
                     .header("content-type", "multipart/mixed; boundary=graphql")
-                    .body(body.boxed_unsync())
+                    .body(body)
                     .expect("BUG: invalid response"))
             } else {
                 let req =
