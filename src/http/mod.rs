@@ -4,6 +4,8 @@
 mod graphiql_source;
 #[cfg(feature = "graphiql")]
 mod graphiql_v2_source;
+#[cfg(feature = "graphiql")]
+mod graphiql_plugin;
 mod multipart;
 mod multipart_subscribe;
 #[cfg(feature = "playground")]
@@ -17,6 +19,8 @@ use futures_util::io::{AsyncRead, AsyncReadExt};
 pub use graphiql_source::graphiql_source;
 #[cfg(feature = "graphiql")]
 pub use graphiql_v2_source::{Credentials, GraphiQLSource};
+#[cfg(feature = "graphiql")]
+pub use graphiql_plugin::{graphiql_plugin_explorer, GraphiQLPlugin};
 use mime;
 pub use multipart::MultipartOptions;
 pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart_mixed};
