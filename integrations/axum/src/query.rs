@@ -9,7 +9,7 @@ use async_graphql::{
     Executor,
 };
 use axum::{
-    body::{HttpBody, Body},
+    body::{Body, HttpBody},
     extract::FromRequest,
     http::{Request as HttpRequest, Response as HttpResponse},
     response::IntoResponse,

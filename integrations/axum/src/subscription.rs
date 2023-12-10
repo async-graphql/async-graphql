@@ -6,7 +6,7 @@ use async_graphql::{
     Data, Executor, Result,
 };
 use axum::{
-    body::{HttpBody, Body},
+    body::{Body, HttpBody},
     extract::{
         ws::{CloseFrame, Message},
         FromRequestParts, WebSocketUpgrade,
