@@ -1,5 +1,10 @@
 use std::str::FromStr;
 
+#[cfg(feature = "http02")]
+use http02 as http;
+#[cfg(not(feature = "http02"))]
+use http1 as http;
+
 use crate::{InputType, InputValueError};
 
 pub fn url<T: AsRef<str> + InputType>(value: &T) -> Result<(), InputValueError<T>> {
