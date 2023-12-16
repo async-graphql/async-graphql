@@ -130,7 +130,7 @@ pub struct ResolveInfo<'a> {
     /// If `true` means the current field is for introspection.
     pub is_for_introspection: bool,
 
-    #[doc(hidden)]
+    /// Current field
     pub field: &'a Field,
 }
 
