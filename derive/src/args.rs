@@ -485,6 +485,8 @@ pub struct InputObject {
     // for SimpleObject
     #[darling(default)]
     pub complex: bool,
+    #[darling(default)]
+    pub shareable: bool,
 }
 
 #[derive(FromVariant)]
