@@ -1,6 +1,6 @@
 //! A simplified html for GraphiQL v2 with explorer plugin
 //!
-//! ```
+//! ```html
 //! <!doctype html>
 //! <html lang="en">
 //!   <head>
@@ -59,7 +59,7 @@
 //!
 //! Example for explorer plugin
 //!
-//! ```rust
+//! ```rust, ignore
 //! GraphiQLPlugin {
 //!     name: "GraphiQLPluginExplorer",
 //!     constructor: "GraphiQLPluginExplorer.explorerPlugin",
@@ -72,7 +72,6 @@
 //!   crossorigin
 //! ></script>"#,
 //!     ),
-//!     constructor: "GraphiQLPluginExplorer.explorerPlugin",
 //!     ..Default::default()
 //! }
 //! ```
