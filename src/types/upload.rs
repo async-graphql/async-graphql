@@ -1,4 +1,4 @@
-use std::{borrow::Cow, io::Read, sync::Arc};
+use std::{borrow::Cow, io::Read, ops::Deref, sync::Arc};
 
 #[cfg(feature = "unblock")]
 use futures_util::io::AsyncRead;
@@ -131,12 +131,21 @@ impl UploadValue {
 /// --form 'map={ "0": ["variables.file"] }' \
 /// --form '0=@myFile.txt'
 /// ```
-pub struct Upload(usize);
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct Upload(pub usize);
 
 impl Upload {
     /// Get the upload value.
     pub fn value(&self, ctx: &Context<'_>) -> std::io::Result<UploadValue> {
         ctx.query_env.uploads[self.0].try_clone()
+    }
+}
+
+impl Deref for Upload {
+    type Target = usize;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
