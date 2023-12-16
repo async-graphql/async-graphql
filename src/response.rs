@@ -1,9 +1,5 @@
 use std::collections::BTreeMap;
 
-#[cfg(feature = "http02")]
-use http02 as http;
-#[cfg(not(feature = "http02"))]
-use http1 as http;
 use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};

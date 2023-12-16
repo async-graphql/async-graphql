@@ -12,7 +12,7 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "6.0.11"
 
 [dependencies]
-async-graphql = { workspace = true, features = ["playground", "http02"] }
+async-graphql.workspace = true
 
 actix = "0.13.0"
 actix-http = "3.1.0"

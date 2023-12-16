@@ -95,7 +95,6 @@
 //!   integration
 //! - `playground`: Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground)
 //!   integration
-//! - `http02`: Integrate with the [`http 0.2` crate](https://docs.rs/http/0.2.11/http/index.html).
 //!
 //! ## Integrations
 //!

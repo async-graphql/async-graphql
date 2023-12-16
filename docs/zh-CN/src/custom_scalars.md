@@ -50,9 +50,9 @@ struct MyValue {
 
 scalar!(MyValue);
 
-// 重命名为`MV`.
+// 重命名为 `MV`.
 // scalar!(MyValue, "MV");
 
-// 重命名为`MV`并且添加描述。
+// 重命名为 `MV` 并且添加描述。
 // scalar!(MyValue, "MV", "This is my value");
 ```

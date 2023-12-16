@@ -10,10 +10,6 @@ use std::{
 
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
-#[cfg(feature = "http02")]
-use http02 as http;
-#[cfg(not(feature = "http02"))]
-use http1 as http;
 use serde::{
     ser::{SerializeSeq, Serializer},
     Serialize,
