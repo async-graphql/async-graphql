@@ -38,7 +38,7 @@ impl<E> GraphQL<E> {
 
 impl<B, E> Service<HttpRequest<B>> for GraphQL<E>
 where
-    B: HttpBody<Data = Bytes> + Send + Sync + 'static,
+    B: HttpBody<Data = Bytes> + Send + 'static,
     B::Data: Into<Bytes>,
     B::Error: Into<BoxError>,
     E: Executor,
