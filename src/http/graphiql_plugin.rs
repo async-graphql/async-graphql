@@ -1,4 +1,3 @@
-//!
 //! A simplified html for GraphiQL v2 with explorer plugin
 //!
 //! ```
