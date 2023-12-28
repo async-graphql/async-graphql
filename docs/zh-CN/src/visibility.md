@@ -15,7 +15,7 @@ struct MyObj {
     #[graphql(visible = false)]
     b: i32, 
 
-    // 这个字段调用`is_admin`函数，如果函数的返回值为`true`则可见
+    // 这个字段调用 `is_admin` 函数，如果函数的返回值为 `true` 则可见
     #[graphql(visible = "is_admin")]
     c: i32, 
 }
@@ -29,7 +29,7 @@ enum MyEnum {
     #[graphql(visible = false)]
     B,
 
-    // 这个项目调用`is_admin`函数，如果函数的返回值为`true`则可见
+    // 这个项目调用 `is_admin` 函数，如果函数的返回值为 `true` 则可见
     #[graphql(visible = "is_admin")]
     C,
 }

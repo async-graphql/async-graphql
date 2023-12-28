@@ -10,10 +10,6 @@ use std::{
 
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
-use http::{
-    header::{AsHeaderName, HeaderMap, IntoHeaderName},
-    HeaderValue,
-};
 use serde::{
     ser::{SerializeSeq, Serializer},
     Serialize,
@@ -257,7 +253,7 @@ pub struct QueryEnvInner {
     pub session_data: Arc<Data>,
     pub ctx_data: Arc<Data>,
     pub extension_data: Arc<Data>,
-    pub http_headers: Mutex<HeaderMap>,
+    pub http_headers: Mutex<http::HeaderMap>,
     pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
 }
@@ -432,7 +428,7 @@ impl<'a, T> ContextBase<'a, T> {
     ///     }
     /// }
     /// ```
-    pub fn http_header_contains(&self, key: impl AsHeaderName) -> bool {
+    pub fn http_header_contains(&self, key: impl http::header::AsHeaderName) -> bool {
         self.query_env
             .http_headers
             .lock()
@@ -483,9 +479,9 @@ impl<'a, T> ContextBase<'a, T> {
     /// ```
     pub fn insert_http_header(
         &self,
-        name: impl IntoHeaderName,
-        value: impl TryInto<HeaderValue>,
-    ) -> Option<HeaderValue> {
+        name: impl http::header::IntoHeaderName,
+        value: impl TryInto<http::HeaderValue>,
+    ) -> Option<http::HeaderValue> {
         if let Ok(value) = value.try_into() {
             self.query_env
                 .http_headers
@@ -534,8 +530,8 @@ impl<'a, T> ContextBase<'a, T> {
     /// ```
     pub fn append_http_header(
         &self,
-        name: impl IntoHeaderName,
-        value: impl TryInto<HeaderValue>,
+        name: impl http::header::IntoHeaderName,
+        value: impl TryInto<http::HeaderValue>,
     ) -> bool {
         if let Ok(value) = value.try_into() {
             self.query_env

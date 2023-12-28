@@ -91,6 +91,10 @@
 //! - `fast_chemail`: Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).
 //! - `tempfile`: Save the uploaded content in the temporary file.
 //! - `dynamic-schema`: Support dynamic schema.
+//! - `graphiql`: Enables the [GraphiQL IDE](https://github.com/graphql/graphiql)
+//!   integration
+//! - `playground`: Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground)
+//!   integration
 //!
 //! ## Integrations
 //!

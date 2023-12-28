@@ -2,9 +2,14 @@ use std::{
     future::Future,
     io::{self, ErrorKind},
     pin::Pin,
+    str::FromStr,
 };
 
-use actix_http::{body::BoxBody, error::PayloadError};
+use actix_http::{
+    body::BoxBody,
+    error::PayloadError,
+    header::{HeaderName, HeaderValue},
+};
 use actix_web::{
     dev::Payload,
     error::JsonPayloadError,
@@ -220,7 +225,12 @@ impl Responder for GraphQLResponse {
         let mut resp = builder.content_type(ct).body(body);
 
         for (name, value) in self.0.http_headers_iter() {
-            resp.headers_mut().append(name, value);
+            if let (Ok(name), Ok(value)) = (
+                HeaderName::from_str(name.as_str()),
+                HeaderValue::from_bytes(value.as_bytes()),
+            ) {
+                resp.headers_mut().append(name, value);
+            }
         }
 
         resp

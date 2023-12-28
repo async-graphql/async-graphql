@@ -120,6 +120,10 @@ impl Registry {
             writeln!(sdl).ok();
         }
 
+        self.directives.values().for_each(|directive| {
+            writeln!(sdl, "{}", directive.sdl()).ok();
+        });
+
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
             writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.3\",").ok();
@@ -150,10 +154,6 @@ impl Registry {
                     writeln!(sdl).ok();
                 }
             }
-
-            self.directives.values().for_each(|directive| {
-                writeln!(sdl, "{}", directive.sdl()).ok();
-            });
         } else {
             writeln!(sdl, "schema {{").ok();
             writeln!(sdl, "\tquery: {}", self.query_type).ok();
@@ -240,6 +240,10 @@ impl Registry {
 
             write_deprecated(sdl, &field.deprecation);
 
+            for directive in &field.directive_invocations {
+                write!(sdl, " {}", directive.sdl()).ok();
+            }
+
             if options.federation {
                 if field.external {
                     write!(sdl, " @external").ok();
@@ -261,9 +265,6 @@ impl Registry {
                 }
                 if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
-                }
-                for directive in &field.directive_invocations {
-                    write!(sdl, " {}", directive.sdl()).ok();
                 }
             }
 
@@ -362,6 +363,10 @@ impl Registry {
                 write!(sdl, "type {}", name).ok();
                 self.write_implements(sdl, name);
 
+                for directive_invocation in raw_directives {
+                    write!(sdl, " {}", directive_invocation.sdl()).ok();
+                }
+
                 if options.federation {
                     if let Some(keys) = keys {
                         for key in keys {
@@ -386,10 +391,6 @@ impl Registry {
 
                     for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
-                    }
-
-                    for directive_invocation in raw_directives {
-                        write!(sdl, " {}", directive_invocation.sdl()).ok();
                     }
                 }
 
@@ -667,7 +668,8 @@ mod tests {
 
     #[test]
     fn test_compose_directive_dsl() {
-        let expected = r#"extend schema @link(
+        let expected = r#"directive @custom_type_directive on FIELD_DEFINITION
+extend schema @link(
 	url: "https://specs.apollo.dev/federation/v2.3",
 	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
 )
@@ -678,7 +680,6 @@ extend schema @link(
 )
 	@composeDirective(name: "@custom_type_directive")
 
-directive @custom_type_directive on FIELD_DEFINITION
 "#;
         let mut registry = Registry::default();
         registry.add_directive(MetaDirective {
@@ -692,5 +693,30 @@ directive @custom_type_directive on FIELD_DEFINITION
         });
         let dsl = registry.export_sdl(SDLExportOptions::new().federation().compose_directive());
         assert_eq!(dsl, expected)
+    }
+
+    #[test]
+    fn test_type_directive_sdl_without_federation() {
+        let expected = r#"directive @custom_type_directive on FIELD_DEFINITION | OBJECT
+schema {
+	query: Query
+}
+"#;
+        let mut registry = Registry::default();
+        registry.add_directive(MetaDirective {
+            name: "custom_type_directive".to_string(),
+            description: None,
+            locations: vec![
+                __DirectiveLocation::FIELD_DEFINITION,
+                __DirectiveLocation::OBJECT,
+            ],
+            args: Default::default(),
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+        registry.query_type = "Query".to_string();
+        let sdl = registry.export_sdl(SDLExportOptions::new());
+        assert_eq!(sdl, expected)
     }
 }

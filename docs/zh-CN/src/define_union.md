@@ -55,7 +55,7 @@ GraphQL 的有个限制是`Union`类型内不能包含其它联合类型。所�
 pub enum TopLevelUnion {
     A(A),
 
-    // 除非我们使用`flatten`属性，否则将无法编译
+    // 除非我们使用 `flatten` 属性，否则将无法编译
     #[graphql(flatten)]
     B(B),
 }
