@@ -30,8 +30,9 @@ pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::{
-    parser::types::ExecutableDocument, Data, DataContext, Error, QueryPathNode, Request, Response,
-    Result, SchemaEnv, ServerError, ServerResult, ValidationResult, Value, Variables,
+    parser::types::{ExecutableDocument, Field},
+    Data, DataContext, Error, QueryPathNode, Request, Response, Result, SchemaEnv, ServerError,
+    ServerResult, ValidationResult, Value, Variables,
 };
 
 /// Context for extension
@@ -128,6 +129,9 @@ pub struct ResolveInfo<'a> {
 
     /// If `true` means the current field is for introspection.
     pub is_for_introspection: bool,
+
+    /// Current field
+    pub field: &'a Field,
 }
 
 type RequestFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
