@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use http::{HeaderName, HeaderValue};
 use poem::{web::Json, IntoResponse, Response};
 
 /// Response for `async_graphql::Request`.
@@ -36,7 +39,12 @@ impl IntoResponse for GraphQLBatchResponse {
             }
         }
 
-        resp.headers_mut().extend(self.0.http_headers());
+        resp.headers_mut()
+            .extend(self.0.http_headers().iter().filter_map(|(name, value)| {
+                HeaderName::from_str(name.as_str())
+                    .ok()
+                    .zip(HeaderValue::from_bytes(value.as_bytes()).ok())
+            }));
         resp
     }
 }

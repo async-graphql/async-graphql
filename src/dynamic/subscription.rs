@@ -244,6 +244,7 @@ impl Subscription {
                                         name: field.node.name.node.as_str(),
                                         alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                         is_for_introspection: false,
+                                        field: &field.node,
                                     };
                                     let resolve_fut = resolve(&schema, &ctx_field, &field_type, Some(&value));
                                     futures_util::pin_mut!(resolve_fut);

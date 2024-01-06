@@ -27,6 +27,7 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
                         name: field.node.name.node.as_str(),
                         alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                         is_for_introspection: ctx_idx.is_for_introspection,
+                        field: &field.node,
                     };
                     let resolve_fut = async {
                         OutputType::resolve(&item, &ctx_idx, field)

@@ -1,7 +1,8 @@
-use std::{io, io::ErrorKind};
+use std::{io, io::ErrorKind, str::FromStr};
 
 use async_graphql::{http::MultipartOptions, BatchRequest, Executor};
 use futures_util::TryStreamExt;
+use http::{HeaderName, HeaderValue};
 use warp::{reply::Response as WarpResponse, Buf, Filter, Rejection, Reply};
 
 use crate::GraphQLBadRequest;
@@ -84,7 +85,12 @@ impl Reply for GraphQLBatchResponse {
             }
         }
 
-        resp.headers_mut().extend(self.0.http_headers());
+        resp.headers_mut()
+            .extend(self.0.http_headers().iter().filter_map(|(name, value)| {
+                HeaderName::from_str(name.as_str())
+                    .ok()
+                    .zip(HeaderValue::from_bytes(value.as_bytes()).ok())
+            }));
         resp
     }
 }

@@ -1,9 +1,5 @@
 use std::collections::BTreeMap;
 
-use http::{
-    header::{HeaderMap, HeaderName},
-    HeaderValue,
-};
 use serde::{Deserialize, Serialize};
 
 use crate::{CacheControl, Result, ServerError, Value};
@@ -30,7 +26,7 @@ pub struct Response {
 
     /// HTTP headers
     #[serde(skip)]
-    pub http_headers: HeaderMap,
+    pub http_headers: http::HeaderMap,
 }
 
 impl Response {
@@ -61,7 +57,7 @@ impl Response {
 
     /// Set the http headers of the response.
     #[must_use]
-    pub fn http_headers(self, http_headers: HeaderMap) -> Self {
+    pub fn http_headers(self, http_headers: http::HeaderMap) -> Self {
         Self {
             http_headers,
             ..self
@@ -133,18 +129,20 @@ impl BatchResponse {
     }
 
     /// Returns HTTP headers map.
-    pub fn http_headers(&self) -> HeaderMap {
+    pub fn http_headers(&self) -> http::HeaderMap {
         match self {
             BatchResponse::Single(resp) => resp.http_headers.clone(),
-            BatchResponse::Batch(resp) => resp.iter().fold(HeaderMap::new(), |mut acc, resp| {
-                acc.extend(resp.http_headers.clone());
-                acc
-            }),
+            BatchResponse::Batch(resp) => {
+                resp.iter().fold(http::HeaderMap::new(), |mut acc, resp| {
+                    acc.extend(resp.http_headers.clone());
+                    acc
+                })
+            }
         }
     }
 
     /// Returns HTTP headers iterator.
-    pub fn http_headers_iter(&self) -> impl Iterator<Item = (HeaderName, HeaderValue)> {
+    pub fn http_headers_iter(&self) -> impl Iterator<Item = (http::HeaderName, http::HeaderValue)> {
         let headers = self.http_headers();
 
         let mut current_name = None;

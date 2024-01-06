@@ -75,7 +75,6 @@
 //! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
 //! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
 //! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
-//! - `uuid08`: Integrate with the [`uuid 0.8` crate](https://crates.io/crates/uuid/0.8.2).
 //! - `string_number`: Enable the
 //!   [StringNumber](types/struct.StringNumber.html).
 //! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
@@ -91,6 +90,10 @@
 //! - `fast_chemail`: Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).
 //! - `tempfile`: Save the uploaded content in the temporary file.
 //! - `dynamic-schema`: Support dynamic schema.
+//! - `graphiql`: Enables the [GraphiQL IDE](https://github.com/graphql/graphiql)
+//!   integration
+//! - `playground`: Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground)
+//!   integration
 //!
 //! ## Integrations
 //!

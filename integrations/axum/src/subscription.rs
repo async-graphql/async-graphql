@@ -6,7 +6,7 @@ use async_graphql::{
     Data, Executor, Result,
 };
 use axum::{
-    body::{boxed, BoxBody, HttpBody},
+    body::{Body, HttpBody},
     extract::{
         ws::{CloseFrame, Message},
         FromRequestParts, WebSocketUpgrade,
@@ -82,7 +82,7 @@ where
     B: HttpBody + Send + 'static,
     E: Executor,
 {
-    type Response = Response<BoxBody>;
+    type Response = Response<Body>;
     type Error = Infallible;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -98,11 +98,11 @@ where
 
             let protocol = match GraphQLProtocol::from_request_parts(&mut parts, &()).await {
                 Ok(protocol) => protocol,
-                Err(err) => return Ok(err.into_response().map(boxed)),
+                Err(err) => return Ok(err.into_response()),
             };
             let upgrade = match WebSocketUpgrade::from_request_parts(&mut parts, &()).await {
                 Ok(protocol) => protocol,
-                Err(err) => return Ok(err.into_response().map(boxed)),
+                Err(err) => return Ok(err.into_response()),
             };
 
             let executor = executor.clone();
@@ -112,7 +112,7 @@ where
                 .on_upgrade(move |stream| {
                     GraphQLWebSocket::new(stream, executor, protocol).serve()
                 });
-            Ok(resp.into_response().map(boxed))
+            Ok(resp.into_response())
         })
     }
 }

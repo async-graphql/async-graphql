@@ -12,6 +12,10 @@ type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
 }
 
 
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @noArgsDirective on FIELD_DEFINITION
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
 extend schema @link(
 	url: "https://specs.apollo.dev/federation/v2.3",
 	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
@@ -24,7 +28,3 @@ extend schema @link(
 	@composeDirective(name: "@noArgsDirective")
 	@composeDirective(name: "@testDirective")
 
-directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-directive @noArgsDirective on FIELD_DEFINITION
-directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT

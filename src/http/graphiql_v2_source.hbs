@@ -34,6 +34,15 @@
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
+    {{! plugins head assests }}
+    {{#if plugins}}
+      {{#each plugins}}
+        {{#if head_assets}}
+    {{&head_assets}}
+        {{/if}}
+      {{/each}}
+    {{/if}}
+    {{! end plugins head assests }}
   </head>
 
   <body>
@@ -42,6 +51,15 @@
       src="https://unpkg.com/graphiql/graphiql.min.js"
       type="application/javascript"
     ></script>
+    {{! plugins body assests }}
+    {{#if plugins}}
+      {{#each plugins}}
+        {{#if body_assets}}
+    {{&body_assets}}
+        {{/if}}
+      {{/each}}
+    {{/if}}
+    {{! end plugins body assests }}
     <script>
       customFetch = (url, opts = {}) => {
         return fetch(url, {...opts, credentials: '{{ credentials }}'})
@@ -55,6 +73,20 @@
         return url.toString();
       }
 
+      {{! loading plugins }}
+      {{#if plugins}}
+      const plugins = [];
+        {{#each plugins}}
+            {{#if pre_configs}}
+        {{&pre_configs}}
+            {{/if}}
+            {{#if constructor}}
+      plugins.push({{constructor}}({{&props}}));
+
+            {{/if}}
+        {{/each}}
+      {{/if}}
+      {{! end loading plugins }}
       ReactDOM.render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
@@ -64,12 +96,15 @@
             subscriptionUrl: createUrl('{{ subscription_endpoint }}', true),
             {{/if}}
             {{#if headers}}
-            headers: { 
-              {{#each headers}}'{{@key}}': '{{this}}',{{/each}} 
+            headers: {
+              {{#each headers}}'{{@key}}': '{{this}}',{{/each}}
             },
             {{/if}}
           }),
           defaultEditorToolsVisibility: true,
+          {{#if plugins}}
+          plugins,
+          {{/if}}
         }),
         document.getElementById("graphiql")
       );

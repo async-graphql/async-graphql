@@ -254,6 +254,7 @@ fn collect_field<'a>(
                 name: &field.node.name.node,
                 alias: field.node.alias.as_ref().map(|alias| &*alias.node),
                 is_for_introspection: ctx_field.is_for_introspection,
+                field: &field.node,
             };
 
             let resolve_fut = async {
@@ -472,6 +473,7 @@ async fn resolve_list<'a>(
                     .as_ref()
                     .map(|alias| alias.node.as_str()),
                 is_for_introspection: ctx_item.is_for_introspection,
+                field: &ctx_item.item.node,
             };
 
             let resolve_fut = async { resolve(schema, &ctx_item, type_ref, Some(value)).await };
