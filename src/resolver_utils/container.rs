@@ -244,6 +244,7 @@ impl<'a> Fields<'a> {
                                         .as_ref()
                                         .map(|alias| alias.node.as_str()),
                                     is_for_introspection: ctx_field.is_for_introspection,
+                                    field: &field.node,
                                 };
 
                                 let resolve_fut = root.resolve_field(&ctx_field);

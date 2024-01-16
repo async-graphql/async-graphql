@@ -43,5 +43,3 @@ mod time_primitive_date_time;
 mod url;
 #[cfg(feature = "uuid")]
 mod uuid;
-#[cfg(feature = "uuid08")]
-mod uuid08;

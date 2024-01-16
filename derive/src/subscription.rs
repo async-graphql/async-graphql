@@ -330,6 +330,7 @@ pub fn generate(
                                     name: field.node.name.node.as_str(),
                                     alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                     is_for_introspection: false,
+                                    field: &field.node,
                                 };
                                 let resolve_fut = async {
                                     #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
