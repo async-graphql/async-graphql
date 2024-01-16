@@ -100,7 +100,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
+                #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 <#ty as  #crate_name::InputType>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
                     registry.create_fake_input_type::<#ty>() {

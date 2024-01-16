@@ -94,7 +94,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
             type_into_impls.push(quote! {
-                #crate_name::static_assertions::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
+                #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
 
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {

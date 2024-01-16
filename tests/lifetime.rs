@@ -1,5 +1,5 @@
 use async_graphql::*;
-use static_assertions::_core::marker::PhantomData;
+use static_assertions_next::_core::marker::PhantomData;
 
 #[derive(SimpleObject)]
 struct ObjA<'a> {
