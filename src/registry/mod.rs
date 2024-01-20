@@ -265,6 +265,7 @@ impl MetaTypeId {
                 name: "".to_string(),
                 description: None,
                 is_valid: None,
+                has_schema_default: false,
                 visible: None,
                 inaccessible: false,
                 tags: vec![],
@@ -312,6 +313,7 @@ impl MetaTypeId {
                 name: "".to_string(),
                 description: None,
                 enum_values: Default::default(),
+                has_schema_default: false,
                 visible: None,
                 inaccessible: false,
                 tags: vec![],
@@ -321,6 +323,7 @@ impl MetaTypeId {
                 name: "".to_string(),
                 description: None,
                 input_fields: Default::default(),
+                has_schema_default: false,
                 visible: None,
                 inaccessible: false,
                 tags: vec![],
@@ -360,6 +363,8 @@ pub enum MetaType {
         description: Option<String>,
         /// A function that uses to check if the scalar is valid
         is_valid: Option<ScalarValidatorFn>,
+        /// Whether or not the scalar is associated with any schema-defined defaults.
+        has_schema_default: bool,
         /// A function that uses to check if the scalar should be exported to
         /// schemas
         visible: Option<MetaVisibleFn>,
@@ -521,6 +526,8 @@ pub enum MetaType {
         description: Option<String>,
         /// The values of the enum
         enum_values: IndexMap<String, MetaEnumValue>,
+        /// Whether or not the Enum is associated with any schema-defined defaults.
+        has_schema_default: bool,
         /// A function that uses to check if the enum should be exported to
         /// schemas
         visible: Option<MetaVisibleFn>,
@@ -550,6 +557,8 @@ pub enum MetaType {
         /// A function that uses to check if the input object should be exported
         /// to schemas
         visible: Option<MetaVisibleFn>,
+        /// Whether or not the input object is associated with any schema-defined defaults.
+        has_schema_default: bool,
         /// Indicate that a input object is not accessible from a supergraph
         /// when using Apollo Federation
         ///
@@ -802,11 +811,11 @@ impl Registry {
         });
 
         // create system scalars
-        <bool as InputType>::create_type_info(self);
-        <i32 as InputType>::create_type_info(self);
-        <f32 as InputType>::create_type_info(self);
-        <String as InputType>::create_type_info(self);
-        <ID as InputType>::create_type_info(self);
+        <bool as InputType>::create_type_info(self, false);
+        <i32 as InputType>::create_type_info(self, false);
+        <f32 as InputType>::create_type_info(self, false);
+        <String as InputType>::create_type_info(self, false);
+        <ID as InputType>::create_type_info(self, false);
     }
 
     pub fn create_input_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
@@ -814,8 +823,26 @@ impl Registry {
         T: InputType + ?Sized,
         F: FnMut(&mut Registry) -> MetaType,
     {
+        let has_schema_default = match f(self) {
+            MetaType::InputObject {
+                has_schema_default, ..
+            } => has_schema_default,
+            MetaType::Scalar {
+                has_schema_default, ..
+            } => has_schema_default,
+            MetaType::Enum {
+                has_schema_default, ..
+            } => has_schema_default,
+            _ => false,
+        };
+
         self.create_type(&mut f, &T::type_name(), std::any::type_name::<T>(), type_id);
-        T::qualified_type_name()
+
+        if has_schema_default {
+            T::qualified_type_name_optional()
+        } else {
+            T::qualified_type_name()
+        }
     }
 
     pub fn create_output_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
@@ -893,7 +920,7 @@ impl Registry {
     }
 
     pub fn create_fake_input_type<T: InputType>(&mut self) -> MetaType {
-        T::create_type_info(self);
+        T::create_type_info(self, false);
         self.types
             .get(&*T::type_name())
             .cloned()
@@ -1140,7 +1167,7 @@ impl Registry {
     }
 
     pub(crate) fn create_federation_types(&mut self) {
-        <Any as InputType>::create_type_info(self);
+        <Any as InputType>::create_type_info(self, false);
 
         self.types.insert(
             "_Service".to_string(),

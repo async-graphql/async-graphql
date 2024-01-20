@@ -48,10 +48,11 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
         Cow::Borrowed("JSON")
     }
 
-    fn create_type_info(registry: &mut Registry) -> String {
+    fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
         registry.create_input_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON value.".to_string()),
+            has_schema_default,
             is_valid: None,
             visible: None,
             inaccessible: false,
@@ -84,6 +85,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             name: <Self as OutputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON value.".to_string()),
             is_valid: None,
+            has_schema_default: false,
             visible: None,
             inaccessible: false,
             tags: Default::default(),
@@ -107,12 +109,13 @@ impl InputType for serde_json::Value {
         Cow::Borrowed("JSON")
     }
 
-    fn create_type_info(registry: &mut Registry) -> String {
+    fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
         registry.create_input_type::<serde_json::Value, _>(MetaTypeId::Scalar, |_| {
             MetaType::Scalar {
                 name: <Self as InputType>::type_name().to_string(),
                 description: Some("A scalar that can represent any JSON value.".to_string()),
                 is_valid: None,
+                has_schema_default,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),
@@ -146,6 +149,7 @@ impl OutputType for serde_json::Value {
                 name: <Self as OutputType>::type_name().to_string(),
                 description: Some("A scalar that can represent any JSON value.".to_string()),
                 is_valid: None,
+                has_schema_default: false,
                 visible: None,
                 inaccessible: false,
                 tags: Default::default(),

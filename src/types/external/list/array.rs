@@ -16,8 +16,8 @@ impl<T: InputType, const N: usize> InputType for [T; N] {
         format!("[{}]!", T::qualified_type_name())
     }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
+    fn create_type_info(registry: &mut registry::Registry, has_schema_default: bool) -> String {
+        T::create_type_info(registry, has_schema_default);
         Self::qualified_type_name()
     }
 

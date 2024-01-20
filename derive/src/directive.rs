@@ -75,6 +75,7 @@ pub fn generate(
             .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let default = generate_default(&default, &default_with)?;
+        let has_schema_default = default.is_some();
         let schema_default = default
             .as_ref()
             .map(|value| {
@@ -91,7 +92,7 @@ pub fn generate(
             args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: ::std::string::ToString::to_string(#name),
                 description: #desc,
-                ty: <#arg_ty as #crate_name::InputType>::create_type_info(registry),
+                ty: <#arg_ty as #crate_name::InputType>::create_type_info(registry, #has_schema_default),
                 default_value: #schema_default,
                 visible: #visible,
                 inaccessible: false,

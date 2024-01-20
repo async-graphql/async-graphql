@@ -96,12 +96,28 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 Some(quote!(.map_err(#crate_name::InputValueError::propagate))),
             )?;
 
+        let desc = get_rustdoc(&field.attrs)?
+            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
+            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let default = generate_default(&field.default, &field.default_with)?;
+        let has_schema_default = default.is_some();
+        let schema_default = default
+            .as_ref()
+            .map(|value| {
+                quote! {
+                    ::std::option::Option::Some(::std::string::ToString::to_string(
+                        &<#ty as #crate_name::InputType>::to_value(&#value)
+                    ))
+                }
+            })
+            .unwrap_or_else(|| quote!(::std::option::Option::None));
+
         if field.flatten {
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
                 #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
-                <#ty as  #crate_name::InputType>::create_type_info(registry);
+                <#ty as  #crate_name::InputType>::create_type_info(registry, has_schema_default);
                 if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
                     registry.create_fake_input_type::<#ty>() {
                     fields.extend(input_fields);
@@ -127,22 +143,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             continue;
         }
 
-        let desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
-        let default = generate_default(&field.default, &field.default_with)?;
-        let schema_default = default
-            .as_ref()
-            .map(|value| {
-                quote! {
-                    ::std::option::Option::Some(::std::string::ToString::to_string(
-                        &<#ty as #crate_name::InputType>::to_value(&#value)
-                    ))
-                }
-            })
-            .unwrap_or_else(|| quote!(::std::option::Option::None));
         let secret = field.secret;
-
         if let Some(default) = default {
             get_fields.push(quote! {
                 #[allow(non_snake_case)]
@@ -180,11 +181,12 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         fields.push(ident);
         let visible = visible_fn(&field.visible);
+
         schema_fields.push(quote! {
             fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: ::std::string::ToString::to_string(#name),
                 description: #desc,
-                ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                ty: <#ty as #crate_name::InputType>::create_type_info(registry, #has_schema_default),
                 default_value: #schema_default,
                 visible: #visible,
                 inaccessible: #inaccessible,
@@ -236,7 +238,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     #gql_typename
                 }
 
-                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::Cow::into_owned(#gql_typename),
                         description: #desc,
@@ -245,6 +247,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             #(#schema_fields)*
                             fields
                         },
+                        has_schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
@@ -287,7 +290,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         code.push(quote! {
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
-                fn __internal_create_type_info_input_object(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
+                fn __internal_create_type_info_input_object(registry: &mut #crate_name::registry::Registry, name: &str, has_schema_default: bool) -> ::std::string::String where Self: #crate_name::InputType {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
                         name: ::std::borrow::ToOwned::to_owned(name),
                         description: #desc,
@@ -296,6 +299,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                             #(#schema_fields)*
                             fields
                         },
+                        has_schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
@@ -331,7 +335,6 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             let gql_typename = &concrete.name;
             let params = &concrete.params.0;
             let concrete_type = quote! { #ident<#(#params),*> };
-
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #crate_name::InputType for #concrete_type {
@@ -341,8 +344,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
 
-                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        Self::__internal_create_type_info_input_object(registry, #gql_typename)
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry, has_schema_default: bool) -> ::std::string::String {
+                        Self::__internal_create_type_info_input_object(registry, #gql_typename, has_schema_default)
                     }
 
                     fn parse(value: ::std::option::Option<#crate_name::Value>) -> #crate_name::InputValueResult<Self> {

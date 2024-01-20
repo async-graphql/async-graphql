@@ -23,10 +23,11 @@ where
         Cow::Borrowed("JSONObject")
     }
 
-    fn create_type_info(registry: &mut Registry) -> String {
+    fn create_type_info(registry: &mut Registry, has_schema_default: bool) -> String {
         registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as InputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value.".to_string()),
+            has_schema_default,
             is_valid: None,
             visible: None,
             inaccessible: false,
@@ -84,6 +85,7 @@ where
         registry.create_output_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
             name: <Self as OutputType>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value.".to_string()),
+            has_schema_default: false,
             is_valid: None,
             visible: None,
             inaccessible: false,

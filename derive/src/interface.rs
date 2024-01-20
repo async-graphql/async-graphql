@@ -215,6 +215,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             use_params.push(quote! { #ident });
 
             let default = generate_default(default, default_with)?;
+            let has_schema_default = default.is_some();
             let get_default = match &default {
                 Some(default) => quote! { ::std::option::Option::Some(|| -> #ty { #default }) },
                 None => quote! { ::std::option::Option::None },
@@ -247,7 +248,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                         name: ::std::string::ToString::to_string(#name),
                         description: #desc,
-                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                        ty: <#ty as #crate_name::InputType>::create_type_info(registry, #has_schema_default),
                         default_value: #schema_default,
                         visible: #visible,
                         inaccessible: #inaccessible,

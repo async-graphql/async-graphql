@@ -199,7 +199,7 @@ async fn test_oneof_object_rename_fields() {
     }
 
     let mut registry = Registry::default();
-    MyInput::create_type_info(&mut registry);
+    MyInput::create_type_info(&mut registry, false);
 
     let ty: &MetaType = registry.types.get("MyInput").unwrap();
     match ty {
@@ -223,7 +223,7 @@ async fn test_oneof_object_rename_field() {
     }
 
     let mut registry = Registry::default();
-    MyInput::create_type_info(&mut registry);
+    MyInput::create_type_info(&mut registry, false);
 
     let ty: &MetaType = registry.types.get("MyInput").unwrap();
     match ty {
