@@ -797,9 +797,16 @@ pub fn generate(
             };
             let concrete_type = quote! { #ty<#(#params),*> };
 
+            let def_bounds = if !concrete.bounds.0.is_empty() {
+                let bounds = concrete.bounds.0.iter().map(|b| quote!(#b));
+                Some(quote!(<#(#bounds),*>))
+            } else {
+                None
+            };
+
             codes.push(quote! {
                 #[#crate_name::async_trait::async_trait]
-                impl #crate_name::resolver_utils::ContainerType for #concrete_type {
+                impl #def_bounds #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         self.__internal_resolve_field(ctx).await
                     }
@@ -810,7 +817,7 @@ pub fn generate(
                 }
 
                 #[#crate_name::async_trait::async_trait]
-                impl #crate_name::OutputType for #concrete_type {
+                impl #def_bounds #crate_name::OutputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -828,7 +835,7 @@ pub fn generate(
                     }
                 }
 
-                impl #crate_name::ObjectType for #concrete_type {}
+                impl #def_bounds #crate_name::ObjectType for #concrete_type {}
             });
         }
 
