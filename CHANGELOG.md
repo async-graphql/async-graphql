@@ -4,7 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [7.0.0] 2023-01-06
+# [7.0.1] 2024-01-21
+
+- Add `Shareable` Attribute To InputObjectField [#1459](https://github.com/async-graphql/async-graphql/pull/1459)
+- Feature Generic Unions [#1424](https://github.com/async-graphql/async-graphql/pull/1424)
+- Address axum integration compilation error with non-Sync body [#1460](https://github.com/async-graphql/async-graphql/pull/1460)
+- fix: date cursor precision string format [#1462](https://github.com/async-graphql/async-graphql/pull/1462)
+
+# [7.0.0] 2024-01-06
 
 - upgrade to `http1`
 - Feature extend ResolveInfo with field attribute [#1428](https://github.com/async-graphql/async-graphql/pull/1428)

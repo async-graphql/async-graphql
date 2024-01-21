@@ -125,7 +125,7 @@ impl CursorType for chrono::DateTime<chrono::Utc> {
     }
 
     fn encode_cursor(&self) -> String {
-        self.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+        self.to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
     }
 }
 

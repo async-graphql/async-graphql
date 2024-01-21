@@ -100,7 +100,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             flatten_fields.push((ident, ty));
 
             schema_fields.push(quote! {
-                #crate_name::static_assertions::assert_impl_one!(#ty: #crate_name::InputObjectType);
+                #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::InputObjectType);
                 <#ty as  #crate_name::InputType>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::InputObject { input_fields, .. } =
                     registry.create_fake_input_type::<#ty>() {
@@ -332,9 +332,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             let params = &concrete.params.0;
             let concrete_type = quote! { #ident<#(#params),*> };
 
+            let def_bounds = if !concrete.bounds.0.is_empty() {
+                let bounds = concrete.bounds.0.iter().map(|b| quote!(#b));
+                Some(quote!(<#(#bounds),*>))
+            } else {
+                None
+            };
+
             let expanded = quote! {
                 #[allow(clippy::all, clippy::pedantic)]
-                impl #crate_name::InputType for #concrete_type {
+                impl #def_bounds #crate_name::InputType for #concrete_type {
                     type RawValueType = Self;
 
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
@@ -362,7 +369,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                     }
                 }
 
-                impl #crate_name::InputObjectType for #concrete_type {}
+                impl #def_bounds #crate_name::InputObjectType for #concrete_type {}
             };
             code.push(expanded);
         }

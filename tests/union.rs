@@ -483,3 +483,148 @@ pub async fn test_union_with_oneof_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_union_with_generic() {
+    struct MyObj<T> {
+        value: T,
+    }
+
+    #[Object(
+        concrete(name = "MyObjString", params(String)),
+        concrete(name = "MyObjInt", params(i64))
+    )]
+    impl<T: Send + Sync + async_graphql::OutputType> MyObj<T> {
+        async fn id(&self) -> i32 {
+            10
+        }
+
+        async fn title(&self) -> String {
+            "abc".to_string()
+        }
+
+        async fn value(&self) -> &T {
+            &self.value
+        }
+    }
+
+    #[derive(Union)]
+    #[graphql(concrete(name = "NodeInt", params(i64)))]
+    #[graphql(concrete(name = "NodeString", params(String)))]
+    enum Node<T: Send + Sync + async_graphql::OutputType> {
+        MyObj(MyObj<T>),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node_int(&self) -> Node<i64> {
+            Node::MyObj(MyObj { value: 10 })
+        }
+
+        async fn node_str(&self) -> Node<String> {
+            Node::MyObj(MyObj {
+                value: "abc".to_string(),
+            })
+        }
+    }
+
+    let query = r#"{
+            nodeInt {
+                ... on MyObjInt {
+                    value
+                }
+            }
+            nodeStr {
+                ... on MyObjString {
+                    value
+                }
+            }
+        }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "nodeInt": {
+                "value": 10,
+            },
+            "nodeStr": {
+                "value": "abc",
+            }
+        })
+    );
+
+    println!("{}", schema.sdl());
+}
+
+#[tokio::test]
+pub async fn test_union_with_sub_generic() {
+    struct MyObj<G> {
+        _marker: std::marker::PhantomData<G>,
+    }
+
+    #[Object]
+    impl<G: Send + Sync> MyObj<G> {
+        async fn id(&self) -> i32 {
+            10
+        }
+    }
+
+    struct MyObj2<G> {
+        _marker: std::marker::PhantomData<G>,
+    }
+
+    #[Object]
+    impl<G: Send + Sync> MyObj2<G> {
+        async fn id(&self) -> i32 {
+            10
+        }
+    }
+
+    #[derive(Union)]
+    #[graphql(concrete(name = "NodeMyObj", params("MyObj<G>"), bounds("G: Send + Sync")))]
+    enum Node<T: Send + Sync + async_graphql::OutputType> {
+        Nested(MyObj2<T>),
+        NotNested(T),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn nested(&self) -> Node<MyObj<()>> {
+            Node::Nested(MyObj2 {
+                _marker: std::marker::PhantomData,
+            })
+        }
+
+        async fn not_nested(&self) -> Node<MyObj<()>> {
+            Node::NotNested(MyObj {
+                _marker: std::marker::PhantomData,
+            })
+        }
+    }
+
+    let query = r#"{
+            nested {
+                ... on MyObj {
+                    id
+                }
+                ... on MyObj2 {
+                    id
+                }
+            }
+        }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "nested": {
+                "id": 10,
+            },
+        })
+    );
+
+    println!("{}", schema.sdl());
+}
