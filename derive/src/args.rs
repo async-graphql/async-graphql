@@ -452,6 +452,8 @@ pub struct InputObjectField {
     pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
+    #[darling(default)]
+    pub shareable: bool,
 }
 
 #[derive(FromDeriveInput)]
