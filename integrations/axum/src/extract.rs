@@ -99,7 +99,8 @@ where
     type Rejection = R;
 
     async fn from_request(req: Request, _state: &S) -> Result<Self, Self::Rejection> {
-        if let (&Method::GET, uri) = (req.method(), req.uri()) {
+        if req.method() == Method::GET {
+            let uri = req.uri();
             let res = async_graphql::http::parse_query_string(uri.query().unwrap_or_default())
                 .map_err(|err| {
                     ParseRequestError::Io(std::io::Error::new(
