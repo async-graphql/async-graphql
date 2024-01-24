@@ -4,8 +4,8 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
-    ext::IdentExt, punctuated::Punctuated, Block, Error, Expr, FnArg, ImplItem, ItemImpl, Pat,
-    PatIdent, ReturnType, Token, Type, TypeReference,
+    ext::IdentExt, punctuated::Punctuated, Attribute, Block, Error, Expr, FnArg, ImplItem,
+    ItemImpl, Pat, PatIdent, ReturnType, Token, Type, TypeReference,
 };
 
 use crate::{
@@ -553,20 +553,23 @@ pub fn generate(
                 }
 
                 resolver_idents.push((field_name.clone(), field_ident.clone(), cfg_attrs.clone()));
-                let resolver_block = generate_field_resolver_method(
+                let (resolver_fn_name, resolver_fn) = generate_field_resolver_method(
                     &crate_name,
                     object_args,
                     &method_args,
                     &FieldResolver {
                         resolver_fn_ident: field_ident,
+                        cfg_attrs: &cfg_attrs,
                         params: &params,
                     },
                 )?;
 
+                resolver_fns.push(resolver_fn);
+
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
                     ::std::option::Option::Some(__FieldIdent::#field_ident) => {
-                        #resolver_block
+                        return self.#resolver_fn_name(&ctx).await;
                     }
                 });
             }
@@ -633,6 +636,10 @@ pub fn generate(
             #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
             const _: () = {
                 #field_ident
+
+                impl #impl_generics #self_ty #where_clause {
+                    #(#resolver_fns)*
+                }
 
                 #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
                 #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
@@ -719,6 +726,8 @@ pub fn generate(
                 #field_ident
 
                 impl #impl_generics #self_ty #where_clause {
+                    #(#resolver_fns)*
+
                     fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
                         let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
                             name: ::std::borrow::ToOwned::to_owned(name),
@@ -886,10 +895,11 @@ fn generate_field_resolver_method(
     object_args: &args::Object,
     method_args: &args::ObjectField,
     field: &FieldResolver,
-) -> GeneratorResult<proc_macro2::TokenStream> {
+) -> GeneratorResult<(Ident, proc_macro2::TokenStream)> {
     let FieldResolver {
-        resolver_fn_ident,
+        resolver_fn_ident: resolver_ident,
         params,
+        cfg_attrs,
     } = field;
 
     let extract_params = params
@@ -911,19 +921,28 @@ fn generate_field_resolver_method(
         None => None,
     };
 
-    let block = quote! {
-        let f = async move {
-            #(#extract_params)*
-            #guard
-            let res = self.#resolver_fn_ident(ctx, #(#use_params),*).await;
-            res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
-        };
-        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+    let mut resolve_fn_name =
+        syn::parse_str::<Ident>(&format!("__{}_resolver", field.resolver_fn_ident.unraw()))?;
+    resolve_fn_name.set_span(Span::call_site());
+
+    let function = quote! {
+        #[doc(hidden)]
+        #(#cfg_attrs)*
+        #[allow(non_snake_case)]
+        async fn #resolve_fn_name(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+            let f = async {
+                #(#extract_params)*
+                #guard
+                let res = self.#resolver_ident(ctx, #(#use_params),*).await;
+                res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
+            };
+            let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+            return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+        }
     };
 
-    Ok(block)
+    Ok((resolve_fn_name, function))
 }
 
 fn generate_parameter_extraction(
@@ -973,6 +992,7 @@ fn generate_parameter_extraction(
 /// IR representation of a field resolver.
 struct FieldResolver<'a> {
     resolver_fn_ident: &'a Ident,
+    cfg_attrs: &'a [Attribute],
     /// Parsed Parameters for this resolver
     params: &'a [FieldResolverParameter<'a>],
 }
