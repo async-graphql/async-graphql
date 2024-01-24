@@ -1,7 +1,7 @@
 use std::{iter::FromIterator, str::FromStr};
 
 use proc_macro::TokenStream;
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
     ext::IdentExt, punctuated::Punctuated, Block, Error, Expr, FnArg, ImplItem, ItemImpl, Pat,
@@ -61,6 +61,8 @@ pub fn generate(
 
     let mut flattened_resolvers = Vec::new();
     let mut resolvers = Vec::new();
+    let mut resolver_idents = Vec::new();
+    let mut resolver_fns = Vec::new();
     let mut schema_fields = Vec::new();
     let mut find_entities = Vec::new();
     let mut add_keys = Vec::new();
@@ -549,6 +551,8 @@ pub fn generate(
                         syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                             .expect("invalid result type");
                 }
+
+                resolver_idents.push((field_name.clone(), field_ident.clone(), cfg_attrs.clone()));
                 let resolver_block = generate_field_resolver_method(
                     &crate_name,
                     object_args,
@@ -561,7 +565,7 @@ pub fn generate(
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
-                    if ctx.item.node.name.node == #field_name {
+                    ::std::option::Option::Some(__FieldIdent::#field_ident) => {
                         #resolver_block
                     }
                 });
@@ -618,6 +622,9 @@ pub fn generate(
         quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
     };
 
+    let resolve_field_resolver_match = generate_field_match(resolvers)?;
+    let field_ident = generate_fields_enum(&crate_name, resolver_idents)?;
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #item_impl
@@ -625,12 +632,14 @@ pub fn generate(
             #[doc(hidden)]
             #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
             const _: () = {
+                #field_ident
+
                 #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
                 #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
                 #[#crate_name::async_trait::async_trait]
                 impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                        #(#resolvers)*
+                        #resolve_field_resolver_match
                         #(#flattened_resolvers)*
                         ::std::result::Result::Ok(::std::option::Option::None)
                     }
@@ -707,6 +716,8 @@ pub fn generate(
             #[doc(hidden)]
             #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
             const _: () = {
+                #field_ident
+
                 impl #impl_generics #self_ty #where_clause {
                     fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
                         let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
@@ -736,7 +747,7 @@ pub fn generate(
                     }
 
                     async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
-                        #(#resolvers)*
+                        #resolve_field_resolver_match
                         #(#flattened_resolvers)*
                         ::std::result::Result::Ok(::std::option::Option::None)
                     }
@@ -811,6 +822,63 @@ pub fn generate(
     };
 
     Ok(expanded.into())
+}
+
+fn generate_field_match(
+    resolvers: Vec<proc_macro2::TokenStream>,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    if resolvers.is_empty() {
+        return Ok(quote!());
+    }
+
+    Ok(quote! {
+        let __field = __FieldIdent::from_name(&ctx.item.node.name.node);
+        match __field {
+            #(#resolvers)*
+            None => {}
+        }
+    })
+}
+
+fn generate_fields_enum(
+    crate_name: &proc_macro2::TokenStream,
+    fields: Vec<(String, Ident, Vec<Attribute>)>,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    // If there are no non-entity/flattened resolvers we can avoid the whole enum
+    if fields.is_empty() {
+        return Ok(quote!());
+    }
+
+    let enum_variants = fields.iter().map(|(_, field_ident, cfg_attrs)| {
+        quote! {
+            #(#cfg_attrs)*
+            #field_ident
+        }
+    });
+
+    let matches = fields.iter().map(|(field_name, field_ident, cfg_attrs)| {
+        quote! {
+            #(#cfg_attrs)*
+            #field_name => ::std::option::Option::Some(__FieldIdent::#field_ident),
+        }
+    });
+
+    Ok(quote! {
+        #[allow(non_camel_case_types)]
+        #[doc(hidden)]
+        enum __FieldIdent {
+            #(#enum_variants,)*
+        }
+
+        impl __FieldIdent {
+            fn from_name(name: &#crate_name::Name) -> ::std::option::Option<__FieldIdent> {
+                match name.as_str() {
+                    #(#matches)*
+                    _ => ::std::option::Option::None
+                }
+            }
+        }
+    })
 }
 
 fn generate_field_resolver_method(
