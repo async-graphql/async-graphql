@@ -61,7 +61,7 @@ serde.workspace = true
 serde_json.workspace = true
 static_assertions_next = "1.1.1"
 thiserror.workspace = true
-base64 = "0.13.0"
+base64 = "0.21.0"
 serde_urlencoded = "0.7.0"
 http.workspace = true
 

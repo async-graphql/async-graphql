@@ -168,12 +168,16 @@ where
     type Error = Box<dyn std::error::Error + Send + Sync>;
 
     fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
-        let data = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+        use base64::Engine;
+
+        let data = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(s)?;
         Ok(Self(serde_json::from_slice(&data)?))
     }
 
     fn encode_cursor(&self) -> String {
+        use base64::Engine;
+
         let value = serde_json::to_vec(&self.0).unwrap_or_default();
-        base64::encode_config(value, base64::URL_SAFE_NO_PAD)
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(value)
     }
 }
