@@ -73,7 +73,6 @@ struct UserNameLoader {
     pool: sqlx::Pool<Postgres>,
 }
 
-#[async_trait::async_trait]
 impl Loader<u64> for UserNameLoader {
     type Value = String;
     type Error = Arc<sqlx::Error>;
@@ -129,7 +128,6 @@ struct PostgresLoader {
     pool: sqlx::Pool<Postgres>,
 }
 
-#[async_trait::async_trait]
 impl Loader<UserId> for PostgresLoader {
     type Value = User;
     type Error = Arc<sqlx::Error>;
@@ -139,7 +137,6 @@ impl Loader<UserId> for PostgresLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader<TodoId> for PostgresLoader {
     type Value = Todo;
     type Error = sqlx::Error;

@@ -85,7 +85,6 @@ pub fn generate(
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #[#crate_name::async_trait::async_trait]
         impl #generic #crate_name::OutputType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #gql_typename

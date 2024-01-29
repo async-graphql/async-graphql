@@ -189,7 +189,6 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             }
         }
 
-        #[#crate_name::async_trait::async_trait]
         impl #crate_name::OutputType for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 Self::__type_name()

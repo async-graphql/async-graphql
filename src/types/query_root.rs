@@ -21,7 +21,6 @@ pub(crate) struct QueryRoot<T> {
     pub(crate) inner: T,
 }
 
-#[async_trait::async_trait]
 impl<T: ObjectType> ContainerType for QueryRoot<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         if matches!(
@@ -103,7 +102,6 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: ObjectType> OutputType for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
