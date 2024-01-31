@@ -4,8 +4,8 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::{
-    ext::IdentExt, punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat,
-    ReturnType, Token, Type, TypeReference,
+    ext::IdentExt, punctuated::Punctuated, Attribute, Block, Error, Expr, FnArg, ImplItem,
+    ItemImpl, Pat, PatIdent, ReturnType, Token, Type, TypeReference,
 };
 
 use crate::{
@@ -17,6 +17,7 @@ use crate::{
         parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
         GeneratorResult,
     },
+    validators::Validators,
 };
 
 pub fn generate(
@@ -379,8 +380,7 @@ pub fn generate(
 
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
                 let mut schema_args = Vec::new();
-                let mut use_params = Vec::new();
-                let mut get_params = Vec::new();
+                let mut params = Vec::new();
 
                 for (
                     ident,
@@ -440,36 +440,13 @@ pub fn generate(
                             });
                         });
 
-                    let param_ident = &ident.ident;
-                    use_params.push(quote! { #param_ident });
-
-                    let default = match default {
-                        Some(default) => {
-                            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
-                        }
-                        None => quote! { ::std::option::Option::None },
-                    };
-
-                    let process_with = match process_with.as_ref() {
-                        Some(fn_path) => quote! { #fn_path(&mut #param_ident); },
-                        None => Default::default(),
-                    };
-
-                    let validators = validator.clone().unwrap_or_default().create_validators(
-                        &crate_name,
-                        quote!(&#ident),
-                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-                    )?;
-
-                    let mut non_mut_ident = ident.clone();
-                    non_mut_ident.mutability = None;
-                    get_params.push(quote! {
-                        #[allow(non_snake_case, unused_variables, unused_mut)]
-                        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
-                        #process_with
-                        #validators
-                        #[allow(non_snake_case, unused_variables)]
-                        let #ident = #non_mut_ident;
+                    params.push(FieldResolverParameter {
+                        ty,
+                        name,
+                        default,
+                        process_with,
+                        validator,
+                        ident: ident.clone(),
                     });
                 }
 
@@ -571,33 +548,20 @@ pub fn generate(
                         syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
                             .expect("invalid result type");
                 }
-
-                let resolve_obj = quote! {
-                    {
-                        let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
-                    }
-                };
-
-                let guard_map_err = quote! {
-                    .map_err(|err| err.into_server_error(ctx.item.pos))
-                };
-                let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-                    Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
-                    None => None,
-                };
+                let resolver_block = generate_field_resolver_method(
+                    &crate_name,
+                    object_args,
+                    &method_args,
+                    &FieldResolver {
+                        resolver_fn_ident: field_ident,
+                        params: &params,
+                    },
+                )?;
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
                     if ctx.item.node.name.node == #field_name {
-                        let f = async move {
-                            #(#get_params)*
-                            #guard
-                            #resolve_obj
-                        };
-                        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                        #resolver_block
                     }
                 });
             }
@@ -836,4 +800,109 @@ pub fn generate(
     };
 
     Ok(expanded.into())
+}
+
+fn generate_field_resolver_method(
+    crate_name: &proc_macro2::TokenStream,
+    object_args: &args::Object,
+    method_args: &args::ObjectField,
+    field: &FieldResolver,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    let FieldResolver {
+        resolver_fn_ident,
+        params,
+    } = field;
+
+    let extract_params = params
+        .iter()
+        .map(|param| generate_parameter_extraction(crate_name, param))
+        .collect::<Result<Vec<_>, _>>()?;
+    let use_params = params.iter().map(
+        |FieldResolverParameter {
+             ident: PatIdent { ident, .. },
+             ..
+         }| ident,
+    );
+
+    let guard_map_err = quote! {
+        .map_err(|err| err.into_server_error(ctx.item.pos))
+    };
+    let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
+        Some(code) => Some(generate_guards(crate_name, code, guard_map_err)?),
+        None => None,
+    };
+
+    let block = quote! {
+        let f = async move {
+            #(#extract_params)*
+            #guard
+            let res = self.#resolver_fn_ident(ctx, #(#use_params),*).await;
+            res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
+        };
+        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+    };
+
+    Ok(block)
+}
+
+fn generate_parameter_extraction(
+    crate_name: &proc_macro2::TokenStream,
+    parameter: &FieldResolverParameter,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    let FieldResolverParameter {
+        ty,
+        name,
+        default,
+        process_with,
+        validator,
+        ident,
+    } = parameter;
+
+    let default = match default {
+        Some(default) => {
+            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+        }
+        None => quote! { ::std::option::Option::None },
+    };
+
+    let process_with = match process_with.as_ref() {
+        Some(fn_path) => quote! { #fn_path(&mut #ident); },
+        None => Default::default(),
+    };
+
+    let validators = (*validator).clone().unwrap_or_default().create_validators(
+        crate_name,
+        quote!(&#ident),
+        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+    )?;
+
+    let mut non_mut_ident = ident.clone();
+    non_mut_ident.mutability = None;
+    Ok(quote! {
+        #[allow(non_snake_case, unused_variables, unused_mut)]
+        // Todo: if there are no processors we can drop the mut.
+        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+        #process_with
+        #validators
+        #[allow(non_snake_case, unused_variables)]
+        let #ident = #non_mut_ident;
+    })
+}
+
+/// IR representation of a field resolver.
+struct FieldResolver<'a> {
+    resolver_fn_ident: &'a Ident,
+    /// Parsed Parameters for this resolver
+    params: &'a [FieldResolverParameter<'a>],
+}
+
+struct FieldResolverParameter<'a> {
+    ty: &'a Type,
+    process_with: &'a Option<Expr>,
+    validator: &'a Option<Validators>,
+    ident: PatIdent,
+    name: String,
+    default: Option<proc_macro2::TokenStream>,
 }
