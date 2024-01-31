@@ -497,9 +497,9 @@ pub fn generate(
                         }
                     }
                     quote! {
-                        Some(|__ctx, __variables_definition, __field, child_complexity| {
+                        ::std::option::Option::Some(|__ctx, __variables_definition, __field, child_complexity| {
                             #(#parse_args)*
-                            Ok(#expr)
+                            ::std::result::Result::Ok(#expr)
                         })
                     }
                 } else {
