@@ -59,6 +59,7 @@ pub fn generate(
             .unwrap_or_else(|| quote!(::std::option::Option::None))
     };
 
+    let mut flattened_resolvers = Vec::new();
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
     let mut find_entities = Vec::new();
@@ -308,7 +309,7 @@ pub fn generate(
                         }
                     });
 
-                    resolvers.push(quote! {
+                    flattened_resolvers.push(quote! {
                         #(#cfg_attrs)*
                         if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
                             return ::std::result::Result::Ok(std::option::Option::Some(value));
@@ -627,6 +628,7 @@ pub fn generate(
             impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
                 async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                     #(#resolvers)*
+                    #(#flattened_resolvers)*
                     ::std::result::Result::Ok(::std::option::Option::None)
                 }
 
@@ -728,6 +730,7 @@ pub fn generate(
 
                 async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
                     #(#resolvers)*
+                    #(#flattened_resolvers)*
                     ::std::result::Result::Ok(::std::option::Option::None)
                 }
 
