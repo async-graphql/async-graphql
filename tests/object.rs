@@ -193,3 +193,58 @@ async fn ignore_name_conflicts() {
         })
     );
 }
+
+#[tokio::test]
+async fn test_impl_dyn_trait() {
+    use async_graphql::*;
+
+    trait MyTrait: Send + Sync {
+        fn name(&self) -> &str;
+    }
+
+    #[Object]
+    impl dyn MyTrait {
+        #[graphql(name = "name")]
+        async fn gql_name(&self) -> &str {
+            self.name()
+        }
+    }
+
+    struct MyObj(String);
+
+    impl MyTrait for MyObj {
+        fn name(&self) -> &str {
+            &self.0
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn objs(&self) -> Vec<Box<dyn MyTrait>> {
+            vec![
+                Box::new(MyObj("a".to_string())),
+                Box::new(MyObj("b".to_string())),
+            ]
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let res = schema
+        .execute("{ objs { name } }")
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        res,
+        value!({
+            "objs": [
+                { "name": "a" },
+                { "name": "b" },
+            ]
+        })
+    );
+}
