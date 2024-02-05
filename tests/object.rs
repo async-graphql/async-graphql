@@ -248,3 +248,53 @@ async fn test_impl_dyn_trait() {
         })
     );
 }
+
+#[tokio::test]
+async fn test_optional_output_with_try() {
+    struct B {
+        some: Option<bool>,
+    };
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, ctx: &Context<'_>) -> Option<u32> {
+            let x = ctx.data_unchecked::<B>();
+
+            if x.some? {
+                Some(300)
+            } else {
+                None
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    let res = schema
+        .execute(Request::from("{ obj }").data(B { some: Some(true) }))
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        res,
+        value!({
+            "obj": 300 ,
+        })
+    );
+
+    let res = schema
+        .execute(Request::from("{ obj }").data(B { some: None }))
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        res,
+        value!({
+            "obj": null,
+        })
+    );
+}
