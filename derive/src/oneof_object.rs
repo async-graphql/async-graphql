@@ -85,6 +85,13 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             }
         };
 
+        // Type may be wrapped in `Type::Group` if the type comes from a macro
+        // substitution, so unwrap it.
+        let ty = match ty {
+            Type::Group(tg) => &*tg.elem,
+            ty => ty,
+        };
+
         if let Type::Path(_) = ty {
             enum_names.push(enum_name);
 
