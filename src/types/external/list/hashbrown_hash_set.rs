@@ -46,7 +46,6 @@ impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + Hash + Eq> OutputType for HashSet<T> {
     fn type_name() -> Cow<'static, str> {
         <StdHashSet<T> as OutputType>::type_name()

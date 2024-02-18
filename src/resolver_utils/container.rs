@@ -12,7 +12,6 @@ use crate::{
 ///
 /// This helper trait allows the type to call `resolve_container` on itself in
 /// its `OutputType::resolve` implementation.
-#[async_trait::async_trait]
 pub trait ContainerType: OutputType {
     /// This function returns true of type `EmptyMutation` only.
     #[doc(hidden)]
@@ -24,7 +23,10 @@ pub trait ContainerType: OutputType {
     /// `async_graphql::Value`.
     ///
     /// If the field was not found returns None.
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>>;
+    fn resolve_field(
+        &self,
+        ctx: &Context<'_>,
+    ) -> impl Future<Output = ServerResult<Option<Value>>> + Send;
 
     /// Collect all the fields of the container that are queried in the
     /// selection set.
@@ -45,12 +47,15 @@ pub trait ContainerType: OutputType {
     /// Find the GraphQL entity with the given name from the parameter.
     ///
     /// Objects should override this in case they are the query root.
-    async fn find_entity(&self, _: &Context<'_>, _params: &Value) -> ServerResult<Option<Value>> {
-        Ok(None)
+    fn find_entity(
+        &self,
+        _: &Context<'_>,
+        _params: &Value,
+    ) -> impl Future<Output = ServerResult<Option<Value>>> + Send {
+        async { Ok(None) }
     }
 }
 
-#[async_trait::async_trait]
 impl<T: ContainerType + ?Sized> ContainerType for &T {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(*self, ctx).await
@@ -61,7 +66,6 @@ impl<T: ContainerType + ?Sized> ContainerType for &T {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: ContainerType + ?Sized> ContainerType for Arc<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(self, ctx).await
@@ -72,7 +76,6 @@ impl<T: ContainerType + ?Sized> ContainerType for Arc<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: ContainerType + ?Sized> ContainerType for Box<T> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         T::resolve_field(self, ctx).await
@@ -83,7 +86,6 @@ impl<T: ContainerType + ?Sized> ContainerType for Box<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: ContainerType, E: Into<Error> + Send + Sync + Clone> ContainerType for Result<T, E> {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         match self {

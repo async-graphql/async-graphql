@@ -1,5 +1,6 @@
 use std::{
     borrow::Cow,
+    future::Future,
     sync::{Arc, Weak},
 };
 
@@ -63,7 +64,6 @@ pub trait InputType: Send + Sync + Sized {
 }
 
 /// Represents a GraphQL output type.
-#[async_trait::async_trait]
 pub trait OutputType: Send + Sync {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
@@ -85,14 +85,13 @@ pub trait OutputType: Send + Sync {
     fn create_type_info(registry: &mut registry::Registry) -> String;
 
     /// Resolve an output value to `async_graphql::Value`.
-    async fn resolve(
+    fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<Value>;
+    ) -> impl Future<Output = ServerResult<Value>> + Send;
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for &T {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -112,7 +111,6 @@ impl<T: OutputType + ?Sized> OutputType for &T {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for Result<T, E> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -129,9 +127,7 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
     ) -> ServerResult<Value> {
         match self {
             Ok(value) => value.resolve(ctx, field).await,
-            Err(err) => {
-                return Err(ctx.set_error_path(err.clone().into().into_server_error(field.pos)))
-            }
+            Err(err) => Err(ctx.set_error_path(err.clone().into().into_server_error(field.pos))),
         }
     }
 }
@@ -139,13 +135,10 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
 /// A GraphQL object.
 pub trait ObjectType: ContainerType {}
 
-#[async_trait::async_trait]
 impl<T: ObjectType + ?Sized> ObjectType for &T {}
 
-#[async_trait::async_trait]
 impl<T: ObjectType + ?Sized> ObjectType for Box<T> {}
 
-#[async_trait::async_trait]
 impl<T: ObjectType + ?Sized> ObjectType for Arc<T> {}
 
 /// A GraphQL interface.
@@ -160,7 +153,6 @@ pub trait InputObjectType: InputType {}
 /// A GraphQL oneof input object.
 pub trait OneofObjectType: InputObjectType {}
 
-#[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for Box<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -171,16 +163,15 @@ impl<T: OutputType + ?Sized> OutputType for Box<T> {
     }
 
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
+    fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        T::resolve(&**self, ctx, field).await
+    ) -> impl Future<Output = ServerResult<Value>> + Send {
+        T::resolve(self.as_ref(), ctx, field)
     }
 }
 
-#[async_trait::async_trait]
 impl<T: InputType> InputType for Box<T> {
     type RawValueType = T::RawValueType;
 
@@ -207,7 +198,6 @@ impl<T: InputType> InputType for Box<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for Arc<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
@@ -253,7 +243,6 @@ impl<T: InputType> InputType for Arc<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + ?Sized> OutputType for Weak<T> {
     fn type_name() -> Cow<'static, str> {
         <Option<Arc<T>> as OutputType>::type_name()
@@ -273,9 +262,11 @@ impl<T: OutputType + ?Sized> OutputType for Weak<T> {
 }
 
 #[doc(hidden)]
-#[async_trait::async_trait]
 pub trait ComplexObject {
     fn fields(registry: &mut registry::Registry) -> Vec<(String, registry::MetaField)>;
 
-    async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>>;
+    fn resolve_field(
+        &self,
+        ctx: &Context<'_>,
+    ) -> impl Future<Output = ServerResult<Option<Value>>> + Send;
 }

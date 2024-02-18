@@ -45,7 +45,6 @@ impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
     }
 }
 
-#[async_trait::async_trait]
 impl<T: OutputType + Hash + Eq> OutputType for HashSet<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))
