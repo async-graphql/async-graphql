@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.2] 2024-02-18
+
+- Fix `#[derive(OneofObject)]` rejecting enums where the type comes from a macro subsitution [#1473](https://github.com/async-graphql/async-graphql/pull/1473)
+- Optimize object proc-macro codegen [#1470](https://github.com/async-graphql/async-graphql/pull/1470)
+- Use `impl Future` instead of `async-trait` in most traits. [#1468](https://github.com/async-graphql/async-graphql/pull/1468)
+- Upgrade `base64` to `0.21` [#1466](https://github.com/async-graphql/async-graphql/pull/1466)
+- Standardize space between Args, Lists and Binary items [#1392](https://github.com/async-graphql/async-graphql/pull/1392)
+- feat: support bigdecimal 0.4.x  [#1358](https://github.com/async-graphql/async-graphql/pull/1358)
+
 # [7.0.1] 2024-01-21
 
 - Add `Shareable` Attribute To InputObjectField [#1459](https://github.com/async-graphql/async-graphql/pull/1459)
