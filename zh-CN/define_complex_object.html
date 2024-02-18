@@ -184,7 +184,7 @@
 </span><span class="boring">struct Data { pub name: String }
 </span><span class="boring">struct DbConn {}
 </span><span class="boring">impl DbConn {
-</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:&quot;&quot;.into()})}
+</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:"".into()})}
 </span><span class="boring">}
 </span><span class="boring">struct DbPool {}
 </span><span class="boring">impl DbPool {
@@ -205,7 +205,7 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
-        #[graphql(desc = &quot;Id of object&quot;)] id: i64
+        #[graphql(desc = "Id of object")] id: i64
     ) -&gt; Result&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)

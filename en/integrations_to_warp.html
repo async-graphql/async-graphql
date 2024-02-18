@@ -189,7 +189,7 @@ You can combine other filters later, or directly call <code>Schema::execute</cod
 </span><span class="boring">use warp::Filter;
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
 
@@ -223,7 +223,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">}
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);

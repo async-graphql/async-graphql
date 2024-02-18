@@ -235,8 +235,8 @@ impl Query {
 </span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
 </span><span class="boring">let schema_filter = async_graphql_warp::graphql(schema);
 </span>let graphql_post = warp::post()
-  .and(warp::path(&quot;graphql&quot;))
-  .and(warp::header::optional(&quot;Authorization&quot;))
+  .and(warp::path("graphql"))
+  .and(warp::header::optional("Authorization"))
   .and(schema_filter)
   .and_then( |auth: Option&lt;String&gt;, (schema, mut request): (Schema&lt;Query, EmptyMutation, EmptySubscription&gt;, async_graphql::Request)| async move {
     // Do something to get auth data from the header
@@ -263,17 +263,17 @@ impl Query {
 impl Query {
     async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
         // Headers can be inserted using the `http` constants
-        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, &quot;*&quot;);
+        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
         // They can also be inserted using &amp;str
-        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;1234&quot;);
+        let was_in_headers = ctx.insert_http_header("Custom-Header", "1234");
 
         // If multiple headers with the same key are `inserted` then the most recent
         // one overwrites the previous. If you want multiple headers for the same key, use
         // `append_http_header` for subsequent headers
-        let was_in_headers = ctx.append_http_header(&quot;Custom-Header&quot;, &quot;Hello World&quot;);
+        let was_in_headers = ctx.append_http_header("Custom-Header", "Hello World");
 
-        String::from(&quot;Hello world&quot;)
+        String::from("Hello world")
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -303,9 +303,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn obj(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; MyObj {
-        if ctx.look_ahead().field(&quot;a&quot;).exists() {
+        if ctx.look_ahead().field("a").exists() {
             // This is a query like `obj { a }`
-        } else if ctx.look_ahead().field(&quot;detail&quot;).field(&quot;c&quot;).exists() {
+        } else if ctx.look_ahead().field("detail").field("c").exists() {
             // This is a query like `obj { detail { c } }`
         } else {
             // This query doesn't have `a`

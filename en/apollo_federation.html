@@ -176,7 +176,7 @@
                         <h1 id="apollo-federation"><a class="header" href="#apollo-federation">Apollo Federation</a></h1>
 <p>Apollo Federation is a GraphQL architecture for combining multiple GraphQL services, or subgraphs, into a single supergraph. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/">official documentation</a>.</p>
 <blockquote>
-<p>To see a complete example of federation, check out the <a href="https://github.com/async-graphql/examples/tree/master/federation">federation example</a>. </p>
+<p>To see a complete example of federation, check out the <a href="https://github.com/async-graphql/examples/tree/master/federation">federation example</a>.</p>
 </blockquote>
 <h2 id="enabling-federation-support"><a class="header" href="#enabling-federation-support">Enabling federation support</a></h2>
 <p><code>async-graphql</code> supports all the functionality of Apollo Federation v2. Support will be enabled automatically if any <code>#[graphql(entity)]</code> resolvers are found in the schema. To enable it manually, use the <code>enable_federation</code> method on the <code>SchemaBuilder</code>.</p>
@@ -185,7 +185,7 @@
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
-</span><span class="boring">   async fn hello(&amp;self) -&gt; String { &quot;Hello&quot;.to_string() }
+</span><span class="boring">   async fn hello(&amp;self) -&gt; String { "Hello".to_string() }
 </span><span class="boring">}
 </span>fn main() {
   let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
@@ -245,7 +245,7 @@ impl Query {
   _service: _Service!
 }
 
-type User @key(fields: &quot;id&quot;) @key(fields: &quot;id username&quot;) {
+type User @key(fields: "id") @key(fields: "id username") {
   id: ID!
 }
 </code></pre>
@@ -284,7 +284,7 @@ impl Query {
   _service: _Service!
 }
 
-type User @key(fields: &quot;key { a b }&quot;) {
+type User @key(fields: "key { a b }") {
   key: Key!
 }
 
@@ -312,14 +312,14 @@ struct Product {
     id: u64,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>This will add the <code>@key(fields: &quot;id&quot;, resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
+<p>This will add the <code>@key(fields: "id", resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
 <p>For more complex entity keys, such as ones with nested fields in compound keys, you can override the fields in the directive as so:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
-#[graphql(unresolvable = &quot;id organization { id }&quot;)]
+#[graphql(unresolvable = "id organization { id }")]
 struct User {
     id: u64,
     organization: Organization,
@@ -401,7 +401,7 @@ struct Position {
 </code></pre>
 <h2 id="override"><a class="header" href="#override"><code>@override</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#override"><code>@override</code> directive</a> is used to take ownership of a field from another subgraph. This is useful for migrating a field from one subgraph to another.</p>
-<p>For example, if you add a new &quot;Inventory&quot; subgraph which should take over responsibility for the <code>inStock</code> field currently provided by the &quot;Products&quot; subgraph, you might have something like this:</p>
+<p>For example, if you add a new "Inventory" subgraph which should take over responsibility for the <code>inStock</code> field currently provided by the "Products" subgraph, you might have something like this:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
@@ -409,14 +409,14 @@ struct Position {
 </span>#[derive(SimpleObject)]
 struct Product {
   id: ID,
-  #[graphql(override_from = &quot;Products&quot;)]
+  #[graphql(override_from = "Products")]
   in_stock: bool,
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Which results in:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
   id: ID!
-  inStock: Boolean! @override(from: &quot;Products&quot;)
+  inStock: Boolean! @override(from: "Products")
 }
 </code></pre>
 <h2 id="external"><a class="header" href="#external"><code>@external</code></a></h2>
@@ -459,17 +459,17 @@ struct Query;
 #[Object]
 impl Query {
     /// This operation will provide the `humanName` field on `Product
-    #[graphql(provides = &quot;humanName&quot;)]
+    #[graphql(provides = "humanName")]
     async fn out_of_stock_products(&amp;self) -&gt; Vec&lt;Product&gt; {
       vec![Product {
-        id: &quot;1&quot;.into(),
-        human_name: &quot;My Product&quot;.to_string(),
+        id: "1".into(),
+        human_name: "My Product".to_string(),
         in_stock: false,
       }]
     }
     async fn discontinued_products(&amp;self) -&gt; Vec&lt;Product&gt; {
         vec![Product {
-            id: &quot;2&quot;.into(),
+            id: "2".into(),
             human_name: String::new(),  // This is ignored by the router
             in_stock: false,
         }]
@@ -486,24 +486,24 @@ impl Query {
 <span class="boring">}</span></code></pre></pre>
 <p>Note that the <code>#[graphql(provides)]</code> attribute takes the field name as it appears in the schema, not the Rust field name.</p>
 <p>The resulting schema will look like this:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
     id: ID!
     humanName: String! @external
     inStock: Boolean!
 }
 
 type Query {
-    outOfStockProducts: [Product!]! @provides(fields: &quot;humanName&quot;)
+    outOfStockProducts: [Product!]! @provides(fields: "humanName")
     discontinuedProducts: [Product!]!
 }
 </code></pre>
 <h2 id="requires"><a class="header" href="#requires"><code>@requires</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#requires"><code>@requires</code> directive</a> is used to indicate that an <code>@external</code> field is required for this subgraph to resolve some other field(s). If our <code>shippingEstimate</code> field requires the <code>size</code> and <code>weightInPounts</code> fields, then we might want a subgraph entity which looks like this:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
   id: ID!
   size: Int! @external
   weightInPounds: Int! @external
-  shippingEstimate: String! @requires(fields: &quot;size weightInPounds&quot;)
+  shippingEstimate: String! @requires(fields: "size weightInPounds")
 }
 </code></pre>
 <p>In order to implement this in Rust, we can use the <code>#[graphql(requires)]</code> attribute:</p>
@@ -523,10 +523,10 @@ struct Product {
 
 #[ComplexObject]
 impl Product {
-  #[graphql(requires = &quot;size weightInPounds&quot;)]
+  #[graphql(requires = "size weightInPounds")]
   async fn shipping_estimate(&amp;self) -&gt; String {
     let price = self.size * self.weight_in_pounds;
-    format!(&quot;${}&quot;, price)
+    format!("${}", price)
   }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -583,7 +583,7 @@ impl Query {
 <p>There are no inputs on this entity resolver, so how do we populate the <code>size</code> and <code>weight_in_pounds</code> fields on <code>Product</code> if a user has a query like <code>order { product { shippingEstimate } }</code>? The supergraph implementation will solve this for us by calling the <code>find_product_by_id</code> separately for any fields which have a <code>@requires</code> directive, so the subgraph code does not need to worry about how entities relate.</p>
 <h2 id="tag"><a class="header" href="#tag"><code>@tag</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#tag"><code>@tag</code> directive</a> is used to add metadata to a schema location for features like <a href="https://www.apollographql.com/docs/studio/contracts/">contracts</a>. To add a tag like this:</p>
-<pre><code class="language-graphql">type User @tag(name: &quot;team-accounts&quot;) {
+<pre><code class="language-graphql">type User @tag(name: "team-accounts") {
   id: String!
   name: String!
 }
@@ -594,7 +594,7 @@ impl Query {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
-#[graphql(tag = &quot;team-accounts&quot;)]
+#[graphql(tag = "team-accounts")]
 struct User {
   id: ID,
   name: String,
@@ -607,17 +607,17 @@ struct User {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[TypeDirective(
-    location = &quot;Object&quot;,
-    composable = &quot;https://custom.spec.dev/extension/v1.0&quot;,
+    location = "Object",
+    composable = "https://custom.spec.dev/extension/v1.0",
 )]
 fn custom() {}
 <span class="boring">}</span></code></pre></pre>
 <p>In addition to the <a href="./custom_directive#type-system-directives">normal type system directive behavior</a>, this will add the following bits to the output schema:</p>
 <pre><code class="language-graphql">extend schema @link(
-	url: &quot;https://custom.spec.dev/extension/v1.0&quot;
-	import: [&quot;@custom&quot;]
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@custom"]
 )
-	@composeDirective(name: &quot;@custom&quot;)
+	@composeDirective(name: "@custom")
 </code></pre>
 
                     </main>

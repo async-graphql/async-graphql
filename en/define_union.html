@@ -221,7 +221,7 @@ enum Shape {
 <h2 id="flattening-nested-unions"><a class="header" href="#flattening-nested-unions">Flattening nested unions</a></h2>
 <p>A restriction in GraphQL is the inability to create a union type out of
 other union types. All members must be <code>Object</code>. To support nested
-unions, we can &quot;flatten&quot; members that are unions, bringing their members up
+unions, we can "flatten" members that are unions, bringing their members up
 into the parent union. This is done by applying <code>#[graphql(flatten)]</code> on each
 member we want to flatten.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]

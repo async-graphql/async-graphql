@@ -191,7 +191,7 @@ struct MyObj {
 
     // This field calls the `is_admin` function, which 
     // is visible if the return value is `true`.
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     c: i32,
 }
 
@@ -206,7 +206,7 @@ enum MyEnum {
 
     // This item calls the `is_admin` function, which 
     // is visible if the return value is `true`.
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     C,
 }
 

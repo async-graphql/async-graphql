@@ -190,7 +190,7 @@ impl Query {
 }</code></pre>
 <p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
 <p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
-<p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
+<p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;

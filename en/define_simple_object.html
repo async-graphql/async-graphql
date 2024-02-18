@@ -231,8 +231,8 @@ and specify how its concrete types should be implemented.</p>
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(SimpleObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericObject&lt;T: OutputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -260,8 +260,8 @@ type SomeOtherName {
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String,
@@ -279,7 +279,7 @@ pub struct YetAnotherObject {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject, InputObject)]
-#[graphql(input_name = &quot;MyObjInput&quot;)] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
+#[graphql(input_name = "MyObjInput")] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
 struct MyObj {
     a: i32,
     b: i32,

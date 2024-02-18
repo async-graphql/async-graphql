@@ -218,7 +218,7 @@ enum Shape {
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="展平嵌套联合"><a class="header" href="#展平嵌套联合">展平嵌套联合</a></h2>
-<p>GraphQL 的有个限制是<code>Union</code>类型内不能包含其它联合类型。所有成员必须为<code>Object</code>。 
+<p>GraphQL 的有个限制是<code>Union</code>类型内不能包含其它联合类型。所有成员必须为<code>Object</code>。
 位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {

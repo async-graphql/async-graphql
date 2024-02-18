@@ -213,7 +213,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
+    #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
     async fn date_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
@@ -261,7 +261,7 @@ fn option_to_option&lt;T, U: From&lt;T&gt;&gt;(value: Option&lt;T&gt;) -&gt; Opt
 
 #[derive(SimpleObject)]
 struct TestObj {
-    #[graphql(derived(owned, name = &quot;value2&quot;, into = &quot;Option&lt;ValueDerived2&gt;&quot;, with = &quot;option_to_option&quot;))]
+    #[graphql(derived(owned, name = "value2", into = "Option&lt;ValueDerived2&gt;", with = "option_to_option"))]
     pub value1: Option&lt;ValueDerived&gt;,
 }
 <span class="boring">}</span></code></pre></pre>

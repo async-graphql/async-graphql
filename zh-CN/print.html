@@ -182,10 +182,10 @@
 <div style="break-before: page; page-break-before: always;"></div><h1 id="快速开始"><a class="header" href="#快速开始">快速开始</a></h1>
 <h2 id="添加依赖"><a class="header" href="#添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
-async-graphql = &quot;4.0&quot;
-async-graphql-actix-web = &quot;4.0&quot; # 如果你需要集成到 Actix-web
-async-graphql-warp = &quot;4.0&quot; # 如果你需要集成到 Warp
-async-graphql-tide = &quot;4.0&quot; # 如果你需要集成到 Tide
+async-graphql = "4.0"
+async-graphql-actix-web = "4.0" # 如果你需要集成到 Actix-web
+async-graphql-warp = "4.0" # 如果你需要集成到 Warp
+async-graphql-tide = "4.0" # 如果你需要集成到 Tide
 </code></pre>
 <h2 id="写一个-schema"><a class="header" href="#写一个-schema">写一个 Schema</a></h2>
 <p>一个 GraphQL 的 Schema 包含一个必须的查询 (Query) 根对象，可选的变更 (Mutation) 根对象和可选的订阅 (Subscription) 根对象，这些对象类型都是用 Rust 语言的结构来描述它们，结构的字段对应 GraphQL 对象的字段。</p>
@@ -217,11 +217,11 @@ impl Query {
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
-</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; }    
+</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { "1.0" }    
 </span><span class="boring">}
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
+let res = schema.execute("{ add(a: 10, b: 20) }").await;
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h2 id="把查询结果输出为-json"><a class="header" href="#把查询结果输出为-json">把查询结果输出为 JSON</a></h2>
@@ -262,8 +262,8 @@ struct MyObject {
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(SimpleObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericObject&lt;T: OutputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -291,8 +291,8 @@ type SomeOtherName {
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String,
@@ -332,7 +332,7 @@ impl MyObj {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject, InputObject)]
-#[graphql(input_name = &quot;MyObjInput&quot;)] // 注意：你必须用 input_name 属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
+#[graphql(input_name = "MyObjInput")] // 注意：你必须用 input_name 属性为输入类型定义一个新的名称，否则将产生一个运行时错误。
 struct MyObj {
     a: i32,
     b: i32,
@@ -349,7 +349,7 @@ struct MyObj {
 </span><span class="boring">struct Data { pub name: String }
 </span><span class="boring">struct DbConn {}
 </span><span class="boring">impl DbConn {
-</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:&quot;&quot;.into()})}
+</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:"".into()})}
 </span><span class="boring">}
 </span><span class="boring">struct DbPool {}
 </span><span class="boring">impl DbPool {
@@ -370,7 +370,7 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
-        #[graphql(desc = &quot;Id of object&quot;)] id: i64
+        #[graphql(desc = "Id of object")] id: i64
     ) -&gt; Result&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
@@ -439,8 +439,8 @@ impl Query {
 </span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
 </span><span class="boring">let schema_filter = async_graphql_warp::graphql(schema);
 </span>let graphql_post = warp::post()
-  .and(warp::path(&quot;graphql&quot;))
-  .and(warp::header::optional(&quot;Authorization&quot;))
+  .and(warp::path("graphql"))
+  .and(warp::header::optional("Authorization"))
   .and(schema_filter)
   .and_then( |auth: Option&lt;String&gt;, (schema, mut request): (Schema&lt;Query, EmptyMutation, EmptySubscription&gt;, async_graphql::Request)| async move {
     // Do something to get auth data from the header
@@ -467,17 +467,17 @@ impl Query {
 impl Query {
     async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
         // Headers can be inserted using the `http` constants
-        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, &quot;*&quot;);
+        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
         // They can also be inserted using &amp;str
-        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;1234&quot;);
+        let was_in_headers = ctx.insert_http_header("Custom-Header", "1234");
 
         // If multiple headers with the same key are `inserted` then the most recent
         // one overwrites the previous. If you want multiple headers for the same key, use
         // `append_http_header` for subsequent headers
-        let was_in_headers = ctx.append_http_header(&quot;Custom-Header&quot;, &quot;Hello World&quot;);
+        let was_in_headers = ctx.append_http_header("Custom-Header", "Hello World");
 
-        String::from(&quot;Hello world&quot;)
+        String::from("Hello world")
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -507,9 +507,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn obj(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; MyObj {
-        if ctx.look_ahead().field(&quot;a&quot;).exists() {
+        if ctx.look_ahead().field("a").exists() {
             // This is a query like `obj { a }`
-        } else if ctx.look_ahead().field(&quot;detail&quot;).field(&quot;c&quot;).exists() {
+        } else if ctx.look_ahead().field("detail").field("c").exists() {
             // This is a query like `obj { detail { c } }`
         } else {
             // This query doesn't have `a`
@@ -534,9 +534,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
-        Ok(&quot;234a&quot;
+        Ok("234a"
             .parse()
-            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set(&quot;code&quot;, 400)))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set("code", 400)))?)
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -677,7 +677,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
+    #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
     async fn duration_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
@@ -694,7 +694,7 @@ impl Query {
 <pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
 }</code></pre>
-<p>因此，你将无法为现有的包装类型结构（如<code>Vec</code>或<code>Option</code>）生成派生字段。 
+<p>因此，你将无法为现有的包装类型结构（如<code>Vec</code>或<code>Option</code>）生成派生字段。
 但是当你为 <code>T</code> 实现了 <code>From&lt;U&gt;</code> 后，你可以为 <code>Vec&lt;T&gt;</code> 实现 <code>From&lt;Vec&lt;U&gt;&gt;</code>，为 <code>Option&lt;T&gt;</code> 实现 <code>From&lt;Option&lt;U&gt;&gt;</code>.
 使用 <code>with</code> 参数来定义一个转换函数，而不是用 <code>Into::into</code>。</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
@@ -725,7 +725,7 @@ fn option_to_option&lt;T, U: From&lt;T&gt;&gt;(value: Option&lt;T&gt;) -&gt; Opt
 
 #[derive(SimpleObject)]
 struct TestObj {
-    #[graphql(derived(owned, name = &quot;value2&quot;, into = &quot;Option&lt;ValueDerived2&gt;&quot;, with = &quot;option_to_option&quot;))]
+    #[graphql(derived(owned, name = "value2", into = "Option&lt;ValueDerived2&gt;", with = "option_to_option"))]
     pub value1: Option&lt;ValueDerived&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -747,7 +747,7 @@ pub enum Episode {
     Empire,
 
     /// Released in 1983.
-    #[graphql(name=&quot;AAA&quot;)]
+    #[graphql(name="AAA")]
     Jedi,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -785,7 +785,7 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
 </span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
-#[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
+#[graphql(remote = "remote_crate::RemoteEnum")]
 enum LocalEnum {
     A,
     B,
@@ -820,9 +820,9 @@ impl Circle {
         Circle { radius: self.radius * s }.into()
     }
 
-    #[graphql(name = &quot;short_description&quot;)]
+    #[graphql(name = "short_description")]
     async fn short_description(&amp;self) -&gt; String {
-        &quot;Circle&quot;.to_string()
+        "Circle".to_string()
     }
 }
 
@@ -840,17 +840,17 @@ impl Square {
         Square { width: self.width * s }.into()
     }
 
-    #[graphql(name = &quot;short_description&quot;)]
+    #[graphql(name = "short_description")]
     async fn short_description(&amp;self) -&gt; String {
-        &quot;Square&quot;.to_string()
+        "Square".to_string()
     }
 }
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;area&quot;, ty = &quot;f32&quot;),
-    field(name = &quot;scale&quot;, ty = &quot;Shape&quot;, arg(name = &quot;s&quot;, ty = &quot;f32&quot;)),
-    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, ty = &quot;String&quot;)
+    field(name = "area", ty = "f32"),
+    field(name = "scale", ty = "Shape", arg(name = "s", ty = "f32")),
+    field(name = "short_description", method = "short_description", ty = "String")
 )]
 enum Shape {
     Circle(Circle),
@@ -866,7 +866,7 @@ enum Shape {
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Interface)]
 #[graphql(
-    field(name = &quot;name&quot;, ty = &quot;String&quot;),
+    field(name = "name", ty = "String"),
 )]
 enum MyInterface {
     MyObject(MyObject),
@@ -894,13 +894,13 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Interface)]
-</span><span class="boring">#[graphql(field(name = &quot;name&quot;, ty = &quot;String&quot;))]
+</span><span class="boring">#[graphql(field(name = "name", ty = "String"))]
 </span><span class="boring">enum MyInterface { MyObject(MyObject) }
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct MyObject { name: String, }
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>
 Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_output_type::&lt;MyInterface&gt;()
@@ -951,7 +951,7 @@ enum Shape {
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="展平嵌套联合"><a class="header" href="#展平嵌套联合">展平嵌套联合</a></h2>
-<p>GraphQL 的有个限制是<code>Union</code>类型内不能包含其它联合类型。所有成员必须为<code>Object</code>。 
+<p>GraphQL 的有个限制是<code>Union</code>类型内不能包含其它联合类型。所有成员必须为<code>Object</code>。
 位置支持嵌套<code>Union</code>，我们可以用<code>#graphql(flatten)</code>，是它们合并到上级<code>Union</code>类型。</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1045,8 +1045,8 @@ impl Mutation {
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(InputObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericInput&lt;T: InputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -1074,8 +1074,8 @@ input SomeOtherName {
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(InputObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericInput&lt;T: InputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String
@@ -1110,7 +1110,7 @@ impl Query {
     async fn test2(&amp;self, #[graphql(default = 10)] value: i32) -&gt; i32 { todo!() }
 
     // value 参数的默认值使用 my_default 函数的返回结果，值为 30
-    async fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) -&gt; i32 { todo!() }
+    async fn test3(&amp;self, #[graphql(default_with = "my_default()")] value: i32) -&gt; i32 { todo!() }
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="接口字段参数"><a class="header" href="#接口字段参数">接口字段参数</a></h2>
@@ -1129,9 +1129,9 @@ impl Query {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;test1&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default)),
-    field(name = &quot;test2&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default = 10)),
-    field(name = &quot;test3&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default_with = &quot;my_default()&quot;)),
+    field(name = "test1", ty = "i32", arg(name = "value", ty = "i32", default)),
+    field(name = "test2", ty = "i32", arg(name = "value", ty = "i32", default = 10)),
+    field(name = "test3", ty = "i32", arg(name = "value", ty = "i32", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -1152,7 +1152,7 @@ struct MyInputObject {
     #[graphql(default = 10)]
     value2: i32,
 
-    #[graphql(default_with = &quot;my_default()&quot;)]
+    #[graphql(default_with = "my_default()")]
     value3: i32,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1253,13 +1253,12 @@ impl RoleGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for RoleGuard {
     async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if ctx.data_opt::&lt;Role&gt;() == Some(&amp;self.role) {
             Ok(())
         } else {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         }
     }
 }
@@ -1273,15 +1272,14 @@ impl Guard for RoleGuard {
 </span><span class="boring">enum Role { Admin, Guest, }
 </span><span class="boring">struct RoleGuard { role: Role, }
 </span><span class="boring">impl RoleGuard { fn new(role: Role) -&gt; Self { Self { role } } }
-</span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl Guard for RoleGuard { async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; { todo!() } }
 </span>#[derive(SimpleObject)]
 struct Query {
     /// 只允许 Admin 访问
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin)&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
     value1: i32,
     /// 允许 Admin 或者 Guest 访问
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))")]
     value2: i32,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1302,11 +1300,10 @@ impl EqGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for EqGuard {
     async fn check(&amp;self, _ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if self.expect != self.actual {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         } else {
             Ok(())
         }
@@ -1317,7 +1314,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(guard = &quot;EqGuard::new(100, value)&quot;)]
+    #[graphql(guard = "EqGuard::new(100, value)")]
     async fn get(&amp;self, value: i32) -&gt; i32 {
         value
     }
@@ -1391,7 +1388,7 @@ impl CustomValidator&lt;i32&gt; for MyValidator {
         if *value == self.expect {
             Ok(())
         } else {
-            Err(InputValueError::custom(format!(&quot;expect 100, actual {}&quot;, value)))
+            Err(InputValueError::custom(format!("expect 100, actual {}", value)))
         }
     }
 }
@@ -1403,7 +1400,7 @@ impl Query {
     /// n 的值必须等于 100
     async fn value(
         &amp;self,
-        #[graphql(validator(custom = &quot;MyValidator::new(100)&quot;))] n: i32,
+        #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
     ) -&gt; i32 {
         n
     }
@@ -1513,19 +1510,19 @@ impl Query {
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
-    Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
+    Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>然后可以返回如下响应：</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;details&quot;: &quot;CAN_NOT_FETCH&quot;,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "details": "CAN_NOT_FETCH",
       }
     }
   ]
@@ -1545,9 +1542,9 @@ impl Query {
 <span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
+         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
@@ -1560,23 +1557,23 @@ impl Query {
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Debug, thiserror::Error)]
 pub enum MyError {
-    #[error(&quot;Could not find resource&quot;)]
+    #[error("Could not find resource")]
     NotFound,
 
-    #[error(&quot;ServerError&quot;)]
+    #[error("ServerError")]
     ServerError(String),
 
-    #[error(&quot;No Extensions&quot;)]
+    #[error("No Extensions")]
     ErrorWithoutExtensions,
 }
 
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&amp;self) -&gt; Error {
-        Error::new(format!(&quot;{}&quot;, self)).extend_with(|err, e| 
+        Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
-              MyError::NotFound =&gt; e.set(&quot;code&quot;, &quot;NOT_FOUND&quot;),
-              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason.clone()),
+              MyError::NotFound =&gt; e.set("code", "NOT_FOUND"),
+              MyError::ServerError(reason) =&gt; e.set("reason", reason.clone()),
               MyError::ErrorWithoutExtensions =&gt; {}
           })
     }
@@ -1590,13 +1587,13 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Debug, thiserror::Error)]
 </span><span class="boring">pub enum MyError {
-</span><span class="boring">    #[error(&quot;Could not find resource&quot;)]
+</span><span class="boring">    #[error("Could not find resource")]
 </span><span class="boring">    NotFound,
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;ServerError&quot;)]
+</span><span class="boring">    #[error("ServerError")]
 </span><span class="boring">    ServerError(String),
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;No Extensions&quot;)]
+</span><span class="boring">    #[error("No Extensions")]
 </span><span class="boring">    ErrorWithoutExtensions,
 </span><span class="boring">}
 </span><span class="boring">struct Query;
@@ -1605,19 +1602,19 @@ impl ErrorExtensions for MyError {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
-    Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
+    Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;NotFound&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;code&quot;: &quot;NOT_FOUND&quot;,
-        &quot;on_the_fly&quot;: &quot;some_more_info&quot;
+      "message": "NotFound",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "code": "NOT_FOUND",
+        "on_the_fly": "some_more_info"
       }
     }
   ]
@@ -1632,9 +1629,9 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
+         .extend_err(|_, e| e.set("code", 404))?)
 }
 <span class="boring">}</span></code></pre>
 <h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
@@ -1647,27 +1644,27 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-    match &quot;234a&quot;.parse() {
+    match "234a".parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
-            .extend_with(|_, e| e.set(&quot;code&quot;, 404))
-            .extend_with(|_, e| e.set(&quot;details&quot;, &quot;some more info..&quot;))
+            .extend_with(|_, e| e.set("code", 404))
+            .extend_with(|_, e| e.set("details", "some more info.."))
             // keys may also overwrite previous keys...
-            .extend_with(|_, e| e.set(&quot;code&quot;, 500))),
+            .extend_with(|_, e| e.set("code", 500))),
     }
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>响应：</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-      	&quot;details&quot;: &quot;some more info...&quot;,
-        &quot;code&quot;: 500,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+      	"details": "some more info...",
+        "code": 500,
       }
     }
   ]
@@ -1680,14 +1677,14 @@ impl ErrorExtensions for MyError {
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
-    &quot;234a&quot;.parse().extend_err(|_, e| e.set(&quot;code&quot;, 404))
+    "234a".parse().extend_err(|_, e| e.set("code", 404))
 }</code></pre>
 <p>但这可以通过编译：</p>
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
-    &quot;234a&quot;
+    "234a"
       .parse()
-      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
+      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-tracing-支持"><a class="header" href="#apollo-tracing-支持">Apollo Tracing 支持</a></h1>
 <p><code>Apollo Tracing</code>提供了查询每个步骤的性能分析结果，它是一个<code>Schema</code>扩展，性能分析结果保存在<code>QueryResponse</code>中。</p>
@@ -1700,7 +1697,7 @@ use async_graphql::extensions::ApolloTracing;
 
 <span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .extension(ApolloTracing) // 启用 ApolloTracing 扩展
@@ -1752,7 +1749,7 @@ type Post {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_depth(5) // 限制最大深度为 5
     .finish();
@@ -1774,7 +1771,7 @@ type Post {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_complexity(5) // 限制最大深度为 5
     .finish();
@@ -1796,7 +1793,7 @@ impl Query {
         todo!()
     }
 
-    #[graphql(complexity = &quot;count * child_complexity&quot;)]
+    #[graphql(complexity = "count * child_complexity")]
     async fn values(&amp;self, count: usize) -&gt; i32 {
         todo!()
     }
@@ -1820,7 +1817,7 @@ struct MyObj {
     b: i32, 
 
     // 这个字段调用 `is_admin` 函数，如果函数的返回值为 `true` 则可见
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     c: i32, 
 }
 
@@ -1834,7 +1831,7 @@ enum MyEnum {
     B,
 
     // 这个项目调用 `is_admin` 函数，如果函数的返回值为 `true` 则可见
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     C,
 }
 
@@ -2060,14 +2057,14 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 <p>References: <a href="https://www.apollographql.com/docs/react/api/link/persisted-queries/">Apollo doc - Persisted Queries</a></p>
 <h2 id="apollo-tracing"><a class="header" href="#apollo-tracing">Apollo Tracing</a></h2>
 <p><em>Available in the repository</em></p>
-<p><code>Apollo Tracing</code> 扩展用于在响应中包含此查询分析数据。此扩展程序遵循旧的且现已弃用的 <a href="https://github.com/apollographql/apollo-tracing">Apollo Tracing Spec</a> 。 
+<p><code>Apollo Tracing</code> 扩展用于在响应中包含此查询分析数据。此扩展程序遵循旧的且现已弃用的 <a href="https://github.com/apollographql/apollo-tracing">Apollo Tracing Spec</a> 。
 如果你想支持更新的 Apollo Reporting Protocol，推荐使用 <a href="https://github.com/async-graphql/async_graphql_apollo_studio_extension">async-graphql Apollo studio extension</a> 。</p>
 <h2 id="apollo-studio"><a class="header" href="#apollo-studio">Apollo Studio</a></h2>
 <p><em>Available at <a href="https://github.com/async-graphql/async_graphql_apollo_studio_extension">async-graphql/async_graphql_apollo_studio_extension</a></em></p>
 <p><code>async-graphql</code> 提供了实现官方 <a href="https://www.apollographql.com/docs/studio/setup-analytics/#third-party-support">Apollo Specification</a> 的扩展，位于 <a href="https://github.com/async-graphql/async_graphql_apollo_studio_extension">async-graphql-extension- apollo-tracing</a> 和 <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">crates.io</a> 。</p>
 <h2 id="logger"><a class="header" href="#logger">Logger</a></h2>
 <p><em>Available in the repository</em></p>
-<p><code>Logger</code> 是一个简单的扩展，允许你向 <code>async-graphql</code> 添加一些日志记录功能。这也是学习如何创建自己的扩展的一个很好的例子。 </p>
+<p><code>Logger</code> 是一个简单的扩展，允许你向 <code>async-graphql</code> 添加一些日志记录功能。这也是学习如何创建自己的扩展的一个很好的例子。</p>
 <h2 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h2>
 <p><em>Available in the repository</em></p>
 <p><code>OpenTelemetry</code> 扩展提供 <a href="https://crates.io/crates/opentelemetry">opentelemetry crate</a> 的集成，以允许你的应用程序从 <code>async-graphql</code> 捕获分布式跟踪和指标。</p>
@@ -2099,7 +2096,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 use async_graphql_poem::GraphQL;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, GraphQL::new(schema));
+    .at("/ws", GraphQL::new(schema));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="订阅例子"><a class="header" href="#订阅例子">订阅例子</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2115,7 +2112,7 @@ let app = Route::new()
 use async_graphql_poem::GraphQLSubscription;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, get(GraphQLSubscription::new(schema)));
+    .at("/ws", get(GraphQLSubscription::new(schema)));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="更多例子"><a class="header" href="#更多例子">更多例子</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/poem">https://github.com/async-graphql/examples/tree/master/poem</a></p>
@@ -2134,7 +2131,7 @@ let app = Route::new()
 </span><span class="boring">use warp::Filter;
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
 
@@ -2168,7 +2165,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">}
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);
@@ -2271,10 +2268,10 @@ struct MyValue {
 scalar!(MyValue);
 
 // 重命名为 `MV`.
-// scalar!(MyValue, &quot;MV&quot;);
+// scalar!(MyValue, "MV");
 
 // 重命名为 `MV` 并且添加描述。
-// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+// scalar!(MyValue, "MV", "This is my value");
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="优化查询解决-n1-问题"><a class="header" href="#优化查询解决-n1-问题">优化查询（解决 N+1 问题）</a></h1>
 <p>您是否注意到某些 GraphQL 查询需要执行数百个数据库查询，这些查询通常包含重复的数据，让我们来看看为什么以及如何修复它。</p>
@@ -2291,7 +2288,7 @@ scalar!(MyValue);
 impl User {
     async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
         let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
-        let (name,): (String,) = sqlx::query_as(&quot;SELECT name FROM user WHERE id = $1&quot;)
+        let (name,): (String,) = sqlx::query_as("SELECT name FROM user WHERE id = $1")
             .bind(self.id)
             .fetch_one(pool)
             .await?;
@@ -2332,13 +2329,12 @@ struct UserNameLoader {
     pool: sqlx::Pool&lt;Postgres&gt;,
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;u64&gt; for UserNameLoader {
     type Value = String;
     type Error = Arc&lt;sqlx::Error&gt;;
 
     async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
-        let query = format!(&quot;SELECT name FROM user WHERE id IN ({})&quot;, keys.iter().join(&quot;,&quot;));
+        let query = format!("SELECT name FROM user WHERE id IN ({})", keys.iter().join(","));
         Ok(sqlx::query_as(query)
             .fetch(&amp;self.pool)
             .map_ok(|name: String| name)
@@ -2356,7 +2352,7 @@ impl User {
     async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
         let loader = ctx.data_unchecked::&lt;DataLoader&lt;UserNameLoader&gt;&gt;();
         let name: Option&lt;String&gt; = loader.load_one(self.id).await?;
-        name.ok_or_else(|| &quot;Not found&quot;.into())
+        name.ok_or_else(|| "Not found".into())
     }
 }</code></pre>
 <p>要在 <code>ctx</code> 中获取 <code>UserNameLoader</code>，您必须将其和任务生成器（例如 <code>async_std::task::spawn</code>）注册到 <code>Schema</code> 中：</p>
@@ -2376,7 +2372,6 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
     pool: sqlx::Pool&lt;Postgres&gt;,
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;UserId&gt; for PostgresLoader {
     type Value = User;
     type Error = Arc&lt;sqlx::Error&gt;;
@@ -2386,7 +2381,6 @@ impl Loader&lt;UserId&gt; for PostgresLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;TodoId&gt; for PostgresLoader {
     type Value = Todo;
     type Error = sqlx::Error;
@@ -2419,7 +2413,7 @@ impl CustomDirective for ConcatDirective {
     }
 }
 
-#[Directive(location = &quot;Field&quot;)]
+#[Directive(location = "Field")]
 fn concat(value: String) -&gt; impl CustomDirective {
     ConcatDirective { value }
 }
@@ -2431,13 +2425,13 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">struct ConcatDirective { value: String, }
 </span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl CustomDirective for ConcatDirective {
 </span><span class="boring">  async fn resolve_field(&amp;self, _ctx: &amp;Context&lt;'_&gt;, resolve: ResolveFut&lt;'_&gt;) -&gt; ServerResult&lt;Option&lt;Value&gt;&gt; { todo!() }
 </span><span class="boring">}
-</span><span class="boring">#[Directive(location = &quot;Field&quot;)]
+</span><span class="boring">#[Directive(location = "Field")]
 </span><span class="boring">fn concat(value: String) -&gt; impl CustomDirective { ConcatDirective { value } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)

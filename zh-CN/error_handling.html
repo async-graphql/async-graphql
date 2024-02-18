@@ -189,9 +189,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
-        Ok(&quot;234a&quot;
+        Ok("234a"
             .parse()
-            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set(&quot;code&quot;, 400)))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set("code", 400)))?)
     }
 }
 <span class="boring">}</span></code></pre></pre>

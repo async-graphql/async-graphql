@@ -184,7 +184,7 @@ use async_graphql::extensions::ApolloTracing;
 
 <span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .extension(ApolloTracing) // 启用 ApolloTracing 扩展

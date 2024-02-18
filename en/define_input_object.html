@@ -215,8 +215,8 @@ and specify how its concrete types should be implemented.</p>
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(InputObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericInput&lt;T: InputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -244,8 +244,8 @@ input SomeOtherName {
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(InputObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericInput&lt;T: InputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String

@@ -213,7 +213,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
+    #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
     async fn duration_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
@@ -230,7 +230,7 @@ impl Query {
 <pre><code class="language-rust ignore">impl From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt; {
   ...
 }</code></pre>
-<p>因此，你将无法为现有的包装类型结构（如<code>Vec</code>或<code>Option</code>）生成派生字段。 
+<p>因此，你将无法为现有的包装类型结构（如<code>Vec</code>或<code>Option</code>）生成派生字段。
 但是当你为 <code>T</code> 实现了 <code>From&lt;U&gt;</code> 后，你可以为 <code>Vec&lt;T&gt;</code> 实现 <code>From&lt;Vec&lt;U&gt;&gt;</code>，为 <code>Option&lt;T&gt;</code> 实现 <code>From&lt;Option&lt;U&gt;&gt;</code>.
 使用 <code>with</code> 参数来定义一个转换函数，而不是用 <code>Into::into</code>。</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
@@ -261,7 +261,7 @@ fn option_to_option&lt;T, U: From&lt;T&gt;&gt;(value: Option&lt;T&gt;) -&gt; Opt
 
 #[derive(SimpleObject)]
 struct TestObj {
-    #[graphql(derived(owned, name = &quot;value2&quot;, into = &quot;Option&lt;ValueDerived2&gt;&quot;, with = &quot;option_to_option&quot;))]
+    #[graphql(derived(owned, name = "value2", into = "Option&lt;ValueDerived2&gt;", with = "option_to_option"))]
     pub value1: Option&lt;ValueDerived&gt;,
 }
 <span class="boring">}</span></code></pre></pre>

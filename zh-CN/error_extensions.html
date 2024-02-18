@@ -193,19 +193,19 @@
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
-    Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
+    Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>然后可以返回如下响应：</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;details&quot;: &quot;CAN_NOT_FETCH&quot;,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "details": "CAN_NOT_FETCH",
       }
     }
   ]
@@ -225,9 +225,9 @@
 <span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
+         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
@@ -240,23 +240,23 @@
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Debug, thiserror::Error)]
 pub enum MyError {
-    #[error(&quot;Could not find resource&quot;)]
+    #[error("Could not find resource")]
     NotFound,
 
-    #[error(&quot;ServerError&quot;)]
+    #[error("ServerError")]
     ServerError(String),
 
-    #[error(&quot;No Extensions&quot;)]
+    #[error("No Extensions")]
     ErrorWithoutExtensions,
 }
 
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&amp;self) -&gt; Error {
-        Error::new(format!(&quot;{}&quot;, self)).extend_with(|err, e| 
+        Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
-              MyError::NotFound =&gt; e.set(&quot;code&quot;, &quot;NOT_FOUND&quot;),
-              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason.clone()),
+              MyError::NotFound =&gt; e.set("code", "NOT_FOUND"),
+              MyError::ServerError(reason) =&gt; e.set("reason", reason.clone()),
               MyError::ErrorWithoutExtensions =&gt; {}
           })
     }
@@ -270,13 +270,13 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Debug, thiserror::Error)]
 </span><span class="boring">pub enum MyError {
-</span><span class="boring">    #[error(&quot;Could not find resource&quot;)]
+</span><span class="boring">    #[error("Could not find resource")]
 </span><span class="boring">    NotFound,
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;ServerError&quot;)]
+</span><span class="boring">    #[error("ServerError")]
 </span><span class="boring">    ServerError(String),
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;No Extensions&quot;)]
+</span><span class="boring">    #[error("No Extensions")]
 </span><span class="boring">    ErrorWithoutExtensions,
 </span><span class="boring">}
 </span><span class="boring">struct Query;
@@ -285,19 +285,19 @@ impl ErrorExtensions for MyError {
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
-    Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
+    Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;NotFound&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;code&quot;: &quot;NOT_FOUND&quot;,
-        &quot;on_the_fly&quot;: &quot;some_more_info&quot;
+      "message": "NotFound",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "code": "NOT_FOUND",
+        "on_the_fly": "some_more_info"
       }
     }
   ]
@@ -312,9 +312,9 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
+         .extend_err(|_, e| e.set("code", 404))?)
 }
 <span class="boring">}</span></code></pre>
 <h3 id="链式调用"><a class="header" href="#链式调用">链式调用</a></h3>
@@ -327,27 +327,27 @@ impl ErrorExtensions for MyError {
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-    match &quot;234a&quot;.parse() {
+    match "234a".parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
-            .extend_with(|_, e| e.set(&quot;code&quot;, 404))
-            .extend_with(|_, e| e.set(&quot;details&quot;, &quot;some more info..&quot;))
+            .extend_with(|_, e| e.set("code", 404))
+            .extend_with(|_, e| e.set("details", "some more info.."))
             // keys may also overwrite previous keys...
-            .extend_with(|_, e| e.set(&quot;code&quot;, 500))),
+            .extend_with(|_, e| e.set("code", 500))),
     }
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>响应：</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-      	&quot;details&quot;: &quot;some more info...&quot;,
-        &quot;code&quot;: 500,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+      	"details": "some more info...",
+        "code": 500,
       }
     }
   ]
@@ -360,14 +360,14 @@ impl ErrorExtensions for MyError {
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
-    &quot;234a&quot;.parse().extend_err(|_, e| e.set(&quot;code&quot;, 404))
+    "234a".parse().extend_err(|_, e| e.set("code", 404))
 }</code></pre>
 <p>但这可以通过编译：</p>
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
-    &quot;234a&quot;
+    "234a"
       .parse()
-      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
+      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }</code></pre>
 
                     </main>

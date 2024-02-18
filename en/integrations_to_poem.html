@@ -188,7 +188,7 @@
 use async_graphql_poem::GraphQL;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, GraphQL::new(schema));
+    .at("/ws", GraphQL::new(schema));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -204,7 +204,7 @@ let app = Route::new()
 use async_graphql_poem::GraphQLSubscription;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, get(GraphQLSubscription::new(schema)));
+    .at("/ws", get(GraphQLSubscription::new(schema)));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/poem">https://github.com/async-graphql/examples/tree/master/poem</a></p>

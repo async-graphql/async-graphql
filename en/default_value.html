@@ -197,7 +197,7 @@ impl Query {
     async fn test2(&amp;self, #[graphql(default = 10)] value: i32) -&gt; i32 { todo!() }
     
     // The default value of the value parameter uses the return result of the my_default function, the value is 30.
-    async fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) -&gt; i32 { todo!() }
+    async fn test3(&amp;self, #[graphql(default_with = "my_default()")] value: i32) -&gt; i32 { todo!() }
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="interface-field"><a class="header" href="#interface-field">Interface field</a></h2>
@@ -216,9 +216,9 @@ impl Query {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;test1&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default)),
-    field(name = &quot;test2&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default = 10)),
-    field(name = &quot;test3&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default_with = &quot;my_default()&quot;)),
+    field(name = "test1", ty = "i32", arg(name = "value", ty = "i32", default)),
+    field(name = "test2", ty = "i32", arg(name = "value", ty = "i32", default = 10)),
+    field(name = "test3", ty = "i32", arg(name = "value", ty = "i32", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -239,7 +239,7 @@ struct MyInputObject {
     #[graphql(default = 10)]
     value2: i32,
 
-    #[graphql(default_with = &quot;my_default()&quot;)]
+    #[graphql(default_with = "my_default()")]
     value3: i32,
 }
 <span class="boring">}</span></code></pre></pre>

@@ -241,7 +241,7 @@ impl CustomValidator&lt;i32&gt; for MyValidator {
         if *value == self.expect {
             Ok(())
         } else {
-            Err(InputValueError::custom(format!(&quot;expect 100, actual {}&quot;, value)))
+            Err(InputValueError::custom(format!("expect 100, actual {}", value)))
         }
     }
 }
@@ -253,7 +253,7 @@ impl Query {
     /// n must be equal to 100
     async fn value(
         &amp;self,
-        #[graphql(validator(custom = &quot;MyValidator::new(100)&quot;))] n: i32,
+        #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
     ) -&gt; i32 {
         n
     }

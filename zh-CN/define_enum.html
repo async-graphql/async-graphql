@@ -191,7 +191,7 @@ pub enum Episode {
     Empire,
 
     /// Released in 1983.
-    #[graphql(name=&quot;AAA&quot;)]
+    #[graphql(name="AAA")]
     Jedi,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -229,7 +229,7 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
 </span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
-#[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
+#[graphql(remote = "remote_crate::RemoteEnum")]
 enum LocalEnum {
     A,
     B,

@@ -176,10 +176,10 @@
                         <h1 id="快速开始"><a class="header" href="#快速开始">快速开始</a></h1>
 <h2 id="添加依赖"><a class="header" href="#添加依赖">添加依赖</a></h2>
 <pre><code class="language-toml">[dependencies]
-async-graphql = &quot;4.0&quot;
-async-graphql-actix-web = &quot;4.0&quot; # 如果你需要集成到 Actix-web
-async-graphql-warp = &quot;4.0&quot; # 如果你需要集成到 Warp
-async-graphql-tide = &quot;4.0&quot; # 如果你需要集成到 Tide
+async-graphql = "4.0"
+async-graphql-actix-web = "4.0" # 如果你需要集成到 Actix-web
+async-graphql-warp = "4.0" # 如果你需要集成到 Warp
+async-graphql-tide = "4.0" # 如果你需要集成到 Tide
 </code></pre>
 <h2 id="写一个-schema"><a class="header" href="#写一个-schema">写一个 Schema</a></h2>
 <p>一个 GraphQL 的 Schema 包含一个必须的查询 (Query) 根对象，可选的变更 (Mutation) 根对象和可选的订阅 (Subscription) 根对象，这些对象类型都是用 Rust 语言的结构来描述它们，结构的字段对应 GraphQL 对象的字段。</p>
@@ -211,11 +211,11 @@ impl Query {
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
-</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; }    
+</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { "1.0" }    
 </span><span class="boring">}
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
+let res = schema.execute("{ add(a: 10, b: 20) }").await;
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h2 id="把查询结果输出为-json"><a class="header" href="#把查询结果输出为-json">把查询结果输出为 JSON</a></h2>

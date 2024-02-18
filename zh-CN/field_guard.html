@@ -195,13 +195,12 @@ impl RoleGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for RoleGuard {
     async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if ctx.data_opt::&lt;Role&gt;() == Some(&amp;self.role) {
             Ok(())
         } else {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         }
     }
 }
@@ -215,15 +214,14 @@ impl Guard for RoleGuard {
 </span><span class="boring">enum Role { Admin, Guest, }
 </span><span class="boring">struct RoleGuard { role: Role, }
 </span><span class="boring">impl RoleGuard { fn new(role: Role) -&gt; Self { Self { role } } }
-</span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl Guard for RoleGuard { async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; { todo!() } }
 </span>#[derive(SimpleObject)]
 struct Query {
     /// 只允许 Admin 访问
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin)&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
     value1: i32,
     /// 允许 Admin 或者 Guest 访问
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))")]
     value2: i32,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -244,11 +242,10 @@ impl EqGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for EqGuard {
     async fn check(&amp;self, _ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if self.expect != self.actual {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         } else {
             Ok(())
         }
@@ -259,7 +256,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(guard = &quot;EqGuard::new(100, value)&quot;)]
+    #[graphql(guard = "EqGuard::new(100, value)")]
     async fn get(&amp;self, value: i32) -&gt; i32 {
         value
     }

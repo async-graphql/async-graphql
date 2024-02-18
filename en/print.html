@@ -188,10 +188,10 @@ cargo bench
 <div style="break-before: page; page-break-before: always;"></div><h1 id="quickstart"><a class="header" href="#quickstart">Quickstart</a></h1>
 <h2 id="add-dependency-libraries"><a class="header" href="#add-dependency-libraries">Add dependency libraries</a></h2>
 <pre><code class="language-toml">[dependencies]
-async-graphql = &quot;4.0&quot;
-async-graphql-actix-web = &quot;4.0&quot; # If you need to integrate into actix-web
-async-graphql-warp = &quot;4.0&quot; # If you need to integrate into warp
-async-graphql-tide = &quot;4.0&quot; # If you need to integrate into tide
+async-graphql = "4.0"
+async-graphql-actix-web = "4.0" # If you need to integrate into actix-web
+async-graphql-warp = "4.0" # If you need to integrate into warp
+async-graphql-tide = "4.0" # If you need to integrate into tide
 </code></pre>
 <h2 id="write-a-schema"><a class="header" href="#write-a-schema">Write a Schema</a></h2>
 <p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object.</p>
@@ -222,11 +222,11 @@ impl Query {
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
-</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; }    
+</span><span class="boring">  async fn version(&amp;self) -&gt; &amp;str { "1.0" }    
 </span><span class="boring">}
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
-let res = schema.execute(&quot;{ add(a: 10, b: 20) }&quot;).await;
+let res = schema.execute("{ add(a: 10, b: 20) }").await;
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h2 id="output-the-query-results-as-json"><a class="header" href="#output-the-query-results-as-json">Output the query results as JSON</a></h2>
@@ -297,8 +297,8 @@ and specify how its concrete types should be implemented.</p>
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(SimpleObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericObject&lt;T: OutputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -326,8 +326,8 @@ type SomeOtherName {
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String,
@@ -345,7 +345,7 @@ pub struct YetAnotherObject {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject, InputObject)]
-#[graphql(input_name = &quot;MyObjInput&quot;)] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
+#[graphql(input_name = "MyObjInput")] // Note: You must use the input_name attribute to define a new name for the input type, otherwise a runtime error will occur.
 struct MyObj {
     a: i32,
     b: i32,
@@ -392,7 +392,7 @@ The following <code>value_from_db</code> function shows how to retrieve a databa
 </span><span class="boring">struct Data { pub name: String }
 </span><span class="boring">struct DbConn {}
 </span><span class="boring">impl DbConn {
-</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:&quot;&quot;.into()})}
+</span><span class="boring">  fn query_something(&amp;self, id: i64) -&gt; std::result::Result&lt;Data, String&gt; { Ok(Data {name:"".into()})}
 </span><span class="boring">}
 </span><span class="boring">struct DbPool {}
 </span><span class="boring">impl DbPool {
@@ -413,7 +413,7 @@ impl MyObject {
     async fn value_from_db(
         &amp;self,
         ctx: &amp;Context&lt;'_&gt;,
-        #[graphql(desc = &quot;Id of object&quot;)] id: i64
+        #[graphql(desc = "Id of object")] id: i64
     ) -&gt; Result&lt;String&gt; {
         let conn = ctx.data::&lt;DbPool&gt;()?.take();
         Ok(conn.query_something(id)?.name)
@@ -483,8 +483,8 @@ impl Query {
 </span><span class="boring">let schema = Schema::build(Query::default(), EmptyMutation, EmptySubscription).finish();
 </span><span class="boring">let schema_filter = async_graphql_warp::graphql(schema);
 </span>let graphql_post = warp::post()
-  .and(warp::path(&quot;graphql&quot;))
-  .and(warp::header::optional(&quot;Authorization&quot;))
+  .and(warp::path("graphql"))
+  .and(warp::header::optional("Authorization"))
   .and(schema_filter)
   .and_then( |auth: Option&lt;String&gt;, (schema, mut request): (Schema&lt;Query, EmptyMutation, EmptySubscription&gt;, async_graphql::Request)| async move {
     // Do something to get auth data from the header
@@ -511,17 +511,17 @@ impl Query {
 impl Query {
     async fn greet(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; String {
         // Headers can be inserted using the `http` constants
-        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, &quot;*&quot;);
+        let was_in_headers = ctx.insert_http_header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
         // They can also be inserted using &amp;str
-        let was_in_headers = ctx.insert_http_header(&quot;Custom-Header&quot;, &quot;1234&quot;);
+        let was_in_headers = ctx.insert_http_header("Custom-Header", "1234");
 
         // If multiple headers with the same key are `inserted` then the most recent
         // one overwrites the previous. If you want multiple headers for the same key, use
         // `append_http_header` for subsequent headers
-        let was_in_headers = ctx.append_http_header(&quot;Custom-Header&quot;, &quot;Hello World&quot;);
+        let was_in_headers = ctx.append_http_header("Custom-Header", "Hello World");
 
-        String::from(&quot;Hello world&quot;)
+        String::from("Hello world")
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -551,9 +551,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn obj(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; MyObj {
-        if ctx.look_ahead().field(&quot;a&quot;).exists() {
+        if ctx.look_ahead().field("a").exists() {
             // This is a query like `obj { a }`
-        } else if ctx.look_ahead().field(&quot;detail&quot;).field(&quot;c&quot;).exists() {
+        } else if ctx.look_ahead().field("detail").field("c").exists() {
             // This is a query like `obj { detail { c } }`
         } else {
             // This query doesn't have `a`
@@ -579,9 +579,9 @@ struct Query;
 #[Object]
 impl Query {
     async fn parse_with_extensions(&amp;self, input: String) -&gt; Result&lt;i32&gt; {
-        Ok(&quot;234a&quot;
+        Ok("234a"
             .parse()
-            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set(&quot;code&quot;, 400)))?)
+            .map_err(|err: ParseIntError| err.extend_with(|_, e| e.set("code", 400)))?)
     }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -606,7 +606,7 @@ impl Query {
 }</code></pre>
 <p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
 <p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
-<p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see &quot;Merging Subscriptions&quot; below.</p>
+<p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
@@ -727,7 +727,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(derived(name = &quot;date_rfc3339&quot;, into = &quot;DateRFC3339&quot;))]
+    #[graphql(derived(name = "date_rfc3339", into = "DateRFC3339"))]
     async fn date_rfc2822(&amp;self, arg: String) -&gt; DateRFC2822 {
         todo!()
     }
@@ -775,7 +775,7 @@ fn option_to_option&lt;T, U: From&lt;T&gt;&gt;(value: Option&lt;T&gt;) -&gt; Opt
 
 #[derive(SimpleObject)]
 struct TestObj {
-    #[graphql(derived(owned, name = &quot;value2&quot;, into = &quot;Option&lt;ValueDerived2&gt;&quot;, with = &quot;option_to_option&quot;))]
+    #[graphql(derived(owned, name = "value2", into = "Option&lt;ValueDerived2&gt;", with = "option_to_option"))]
     pub value1: Option&lt;ValueDerived&gt;,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -797,14 +797,14 @@ pub enum Episode {
     Empire,
 
     /// Released in 1983.
-    #[graphql(name=&quot;AAA&quot;)]
+    #[graphql(name="AAA")]
     Jedi,
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="wrapping-a-remote-enum"><a class="header" href="#wrapping-a-remote-enum">Wrapping a remote enum</a></h2>
-<p>Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the 
-trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot 
-expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new 
+<p>Rust's <a href="https://doc.rust-lang.org/book/traits.html#rules-for-implementing-traits">orphan rule</a> requires that either the
+trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot
+expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new
 enum that has parity with the existing, remote enum type.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -838,7 +838,7 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
 </span>#[derive(Enum, Copy, Clone, Eq, PartialEq)]
-#[graphql(remote = &quot;remote_crate::RemoteEnum&quot;)]
+#[graphql(remote = "remote_crate::RemoteEnum")]
 enum LocalEnum {
     A,
     B,
@@ -876,9 +876,9 @@ impl Circle {
         Circle { radius: self.radius * s }.into()
     }
 
-    #[graphql(name = &quot;short_description&quot;)]
+    #[graphql(name = "short_description")]
     async fn short_description(&amp;self) -&gt; String {
-        &quot;Circle&quot;.to_string()
+        "Circle".to_string()
     }
 }
 
@@ -896,17 +896,17 @@ impl Square {
         Square { width: self.width * s }.into()
     }
 
-    #[graphql(name = &quot;short_description&quot;)]
+    #[graphql(name = "short_description")]
     async fn short_description(&amp;self) -&gt; String {
-        &quot;Square&quot;.to_string()
+        "Square".to_string()
     }
 }
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;area&quot;, ty = &quot;f32&quot;),
-    field(name = &quot;scale&quot;, ty = &quot;Shape&quot;, arg(name = &quot;s&quot;, ty = &quot;f32&quot;)),
-    field(name = &quot;short_description&quot;, method = &quot;short_description&quot;, ty = &quot;String&quot;)
+    field(name = "area", ty = "f32"),
+    field(name = "scale", ty = "Shape", arg(name = "s", ty = "f32")),
+    field(name = "short_description", method = "short_description", ty = "String")
 )]
 enum Shape {
     Circle(Circle),
@@ -923,7 +923,7 @@ because <code>MyInterface</code> is not referenced in <code>Schema</code>, the <
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Interface)]
 #[graphql(
-    field(name = &quot;name&quot;, ty = &quot;String&quot;),
+    field(name = "name", ty = "String"),
 )]
 enum MyInterface {
     MyObject(MyObject),
@@ -951,13 +951,13 @@ type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Interface)]
-</span><span class="boring">#[graphql(field(name = &quot;name&quot;, ty = &quot;String&quot;))]
+</span><span class="boring">#[graphql(field(name = "name", ty = "String"))]
 </span><span class="boring">enum MyInterface { MyObject(MyObject) }
 </span><span class="boring">#[derive(SimpleObject)]
 </span><span class="boring">struct MyObject { name: String, }
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>
 Schema::build(Query, EmptyMutation, EmptySubscription)
     .register_output_type::&lt;MyInterface&gt;()
@@ -1011,7 +1011,7 @@ enum Shape {
 <h2 id="flattening-nested-unions"><a class="header" href="#flattening-nested-unions">Flattening nested unions</a></h2>
 <p>A restriction in GraphQL is the inability to create a union type out of
 other union types. All members must be <code>Object</code>. To support nested
-unions, we can &quot;flatten&quot; members that are unions, bringing their members up
+unions, we can "flatten" members that are unions, bringing their members up
 into the parent union. This is done by applying <code>#[graphql(flatten)]</code> on each
 member we want to flatten.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1109,8 +1109,8 @@ and specify how its concrete types should be implemented.</p>
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span>#[derive(InputObject)]
-#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 pub struct SomeGenericInput&lt;T: InputType&gt; {
     field1: Option&lt;T&gt;,
     field2: String
@@ -1138,8 +1138,8 @@ input SomeOtherName {
 </span><span class="boring">#[derive(InputObject)]
 </span><span class="boring">struct SomeOtherType { a: i32 }
 </span><span class="boring">#[derive(InputObject)]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeName&quot;, params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = &quot;SomeOtherName&quot;, params(SomeOtherType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
 </span><span class="boring">pub struct SomeGenericInput&lt;T: InputType&gt; {
 </span><span class="boring">    field1: Option&lt;T&gt;,
 </span><span class="boring">    field2: String
@@ -1253,7 +1253,7 @@ impl Query {
     async fn test2(&amp;self, #[graphql(default = 10)] value: i32) -&gt; i32 { todo!() }
     
     // The default value of the value parameter uses the return result of the my_default function, the value is 30.
-    async fn test3(&amp;self, #[graphql(default_with = &quot;my_default()&quot;)] value: i32) -&gt; i32 { todo!() }
+    async fn test3(&amp;self, #[graphql(default_with = "my_default()")] value: i32) -&gt; i32 { todo!() }
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="interface-field"><a class="header" href="#interface-field">Interface field</a></h2>
@@ -1272,9 +1272,9 @@ impl Query {
 
 #[derive(Interface)]
 #[graphql(
-    field(name = &quot;test1&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default)),
-    field(name = &quot;test2&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default = 10)),
-    field(name = &quot;test3&quot;, ty = &quot;i32&quot;, arg(name = &quot;value&quot;, ty = &quot;i32&quot;, default_with = &quot;my_default()&quot;)),
+    field(name = "test1", ty = "i32", arg(name = "value", ty = "i32", default)),
+    field(name = "test2", ty = "i32", arg(name = "value", ty = "i32", default = 10)),
+    field(name = "test3", ty = "i32", arg(name = "value", ty = "i32", default_with = "my_default()")),
 )]
 enum MyInterface {
     MyObj(MyObj),
@@ -1295,7 +1295,7 @@ struct MyInputObject {
     #[graphql(default = 10)]
     value2: i32,
 
-    #[graphql(default_with = &quot;my_default()&quot;)]
+    #[graphql(default_with = "my_default()")]
     value3: i32,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1392,7 +1392,7 @@ impl Query {
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     
 // Print the schema in SDL format
-println!(&quot;{}&quot;, &amp;schema.sdl());
+println!("{}", &amp;schema.sdl());
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="utilities"><a class="header" href="#utilities">Utilities</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="field-guard"><a class="header" href="#field-guard">Field Guard</a></h1>
@@ -1417,13 +1417,12 @@ impl RoleGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for RoleGuard {
     async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if ctx.data_opt::&lt;Role&gt;() == Some(&amp;self.role) {
             Ok(())
         } else {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         }
     }
 }
@@ -1437,15 +1436,14 @@ impl Guard for RoleGuard {
 </span><span class="boring">enum Role { Admin, Guest, }
 </span><span class="boring">struct RoleGuard { role: Role, }
 </span><span class="boring">impl RoleGuard { fn new(role: Role) -&gt; Self { Self { role } } }
-</span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl Guard for RoleGuard { async fn check(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; { todo!() } }
 </span>#[derive(SimpleObject)]
 struct Query {
     /// Only allow Admin
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin)&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin)")]
     value1: i32,
     /// Allow Admin or Guest
-    #[graphql(guard = &quot;RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))&quot;)]
+    #[graphql(guard = "RoleGuard::new(Role::Admin).or(RoleGuard::new(Role::Guest))")]
     value2: i32,
 }
 <span class="boring">}</span></code></pre></pre>
@@ -1466,11 +1464,10 @@ impl EqGuard {
     }
 }
 
-#[async_trait::async_trait]
 impl Guard for EqGuard {
     async fn check(&amp;self, _ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;()&gt; {
         if self.expect != self.actual {
-            Err(&quot;Forbidden&quot;.into())
+            Err("Forbidden".into())
         } else {
             Ok(())
         }
@@ -1481,7 +1478,7 @@ struct Query;
 
 #[Object]
 impl Query {
-    #[graphql(guard = &quot;EqGuard::new(100, value)&quot;)]
+    #[graphql(guard = "EqGuard::new(100, value)")]
     async fn get(&amp;self, value: i32) -&gt; i32 {
         value
     }
@@ -1555,7 +1552,7 @@ impl CustomValidator&lt;i32&gt; for MyValidator {
         if *value == self.expect {
             Ok(())
         } else {
-            Err(InputValueError::custom(format!(&quot;expect 100, actual {}&quot;, value)))
+            Err(InputValueError::custom(format!("expect 100, actual {}", value)))
         }
     }
 }
@@ -1567,7 +1564,7 @@ impl Query {
     /// n must be equal to 100
     async fn value(
         &amp;self,
-        #[graphql(validator(custom = &quot;MyValidator::new(100)&quot;))] n: i32,
+        #[graphql(validator(custom = "MyValidator::new(100)"))] n: i32,
     ) -&gt; i32 {
         n
     }
@@ -1678,19 +1675,19 @@ the error message exposed by <code>std::fmt::Display</code>. However, <code>Erro
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32, Error&gt; {
-    Err(Error::new(&quot;MyMessage&quot;).extend_with(|_, e| e.set(&quot;details&quot;, &quot;CAN_NOT_FETCH&quot;)))
+    Err(Error::new("MyMessage").extend_with(|_, e| e.set("details", "CAN_NOT_FETCH")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>may then return a response like this:</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;details&quot;: &quot;CAN_NOT_FETCH&quot;,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "details": "CAN_NOT_FETCH",
       }
     }
   ]
@@ -1711,9 +1708,9 @@ This will on the fly convert any error into a <code>Error</code> with the given 
 <span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set(&quot;code&quot;, 404)))?)
+         .map_err(|err: ParseIntError| err.extend_with(|_err, e| e.set("code", 404)))?)
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
@@ -1727,23 +1724,23 @@ implementing the trait on your custom error type directly.</p>
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(Debug, thiserror::Error)]
 pub enum MyError {
-    #[error(&quot;Could not find resource&quot;)]
+    #[error("Could not find resource")]
     NotFound,
 
-    #[error(&quot;ServerError&quot;)]
+    #[error("ServerError")]
     ServerError(String),
 
-    #[error(&quot;No Extensions&quot;)]
+    #[error("No Extensions")]
     ErrorWithoutExtensions,
 }
 
 impl ErrorExtensions for MyError {
     // lets define our base extensions
     fn extend(&amp;self) -&gt; Error {
-        Error::new(format!(&quot;{}&quot;, self)).extend_with(|err, e| 
+        Error::new(format!("{}", self)).extend_with(|err, e| 
             match self {
-              MyError::NotFound =&gt; e.set(&quot;code&quot;, &quot;NOT_FOUND&quot;),
-              MyError::ServerError(reason) =&gt; e.set(&quot;reason&quot;, reason.clone()),
+              MyError::NotFound =&gt; e.set("code", "NOT_FOUND"),
+              MyError::ServerError(reason) =&gt; e.set("reason", reason.clone()),
               MyError::ErrorWithoutExtensions =&gt; {}
           })
     }
@@ -1758,13 +1755,13 @@ Or further extend your error through <code>extend_with</code>.</p>
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[derive(Debug, thiserror::Error)]
 </span><span class="boring">pub enum MyError {
-</span><span class="boring">    #[error(&quot;Could not find resource&quot;)]
+</span><span class="boring">    #[error("Could not find resource")]
 </span><span class="boring">    NotFound,
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;ServerError&quot;)]
+</span><span class="boring">    #[error("ServerError")]
 </span><span class="boring">    ServerError(String),
 </span><span class="boring">
-</span><span class="boring">    #[error(&quot;No Extensions&quot;)]
+</span><span class="boring">    #[error("No Extensions")]
 </span><span class="boring">    ErrorWithoutExtensions,
 </span><span class="boring">}
 </span><span class="boring">struct Query;
@@ -1773,19 +1770,19 @@ Or further extend your error through <code>extend_with</code>.</p>
 </span>async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // Err(MyError::NotFound.extend())
     // OR
-    Err(MyError::NotFound.extend_with(|_, e| e.set(&quot;on_the_fly&quot;, &quot;some_more_info&quot;)))
+    Err(MyError::NotFound.extend_with(|_, e| e.set("on_the_fly", "some_more_info")))
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;NotFound&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-        &quot;code&quot;: &quot;NOT_FOUND&quot;,
-        &quot;on_the_fly&quot;: &quot;some_more_info&quot;
+      "message": "NotFound",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+        "code": "NOT_FOUND",
+        "on_the_fly": "some_more_info"
       }
     }
   ]
@@ -1800,9 +1797,9 @@ Or further extend your error through <code>extend_with</code>.</p>
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-     Ok(&quot;234a&quot;
+     Ok("234a"
          .parse()
-         .extend_err(|_, e| e.set(&quot;code&quot;, 404))?)
+         .extend_err(|_, e| e.set("code", 404))?)
 }
 <span class="boring">}</span></code></pre>
 <h3 id="chained-extensions"><a class="header" href="#chained-extensions">Chained extensions</a></h3>
@@ -1816,27 +1813,27 @@ we can chain the extension together.</p>
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
 </span>async fn parse_with_extensions(&amp;self) -&gt; Result&lt;i32&gt; {
-    match &quot;234a&quot;.parse() {
+    match "234a".parse() {
         Ok(n) =&gt; Ok(n),
         Err(e) =&gt; Err(e
-            .extend_with(|_, e| e.set(&quot;code&quot;, 404))
-            .extend_with(|_, e| e.set(&quot;details&quot;, &quot;some more info..&quot;))
+            .extend_with(|_, e| e.set("code", 404))
+            .extend_with(|_, e| e.set("details", "some more info.."))
             // keys may also overwrite previous keys...
-            .extend_with(|_, e| e.set(&quot;code&quot;, 500))),
+            .extend_with(|_, e| e.set("code", 500))),
     }
 }
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>Expected response:</p>
 <pre><code class="language-json">{
-  &quot;errors&quot;: [
+  "errors": [
     {
-      &quot;message&quot;: &quot;MyMessage&quot;,
-      &quot;locations&quot;: [ ... ],
-      &quot;path&quot;: [ ... ],
-      &quot;extensions&quot;: {
-      	&quot;details&quot;: &quot;some more info...&quot;,
-        &quot;code&quot;: 500,
+      "message": "MyMessage",
+      "locations": [ ... ],
+      "path": [ ... ],
+      "extensions": {
+      	"details": "some more info...",
+        "code": 500,
       }
     }
   ]
@@ -1851,14 +1848,14 @@ The disadvantage is that the below code does <strong>NOT</strong> compile:</p>
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // the trait `error::ErrorExtensions` is not implemented
     // for `std::num::ParseIntError`
-    &quot;234a&quot;.parse().extend_err(|_, e| e.set(&quot;code&quot;, 404))
+    "234a".parse().extend_err(|_, e| e.set("code", 404))
 }</code></pre>
 <p>however this does:</p>
 <pre><code class="language-rust ignore does_not_compile">async fn parse_with_extensions_result(&amp;self) -&gt; Result&lt;i32&gt; {
     // does work because ErrorExtensions is implemented for &amp;ParseIntError
-    &quot;234a&quot;
+    "234a"
       .parse()
-      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set(&quot;code&quot;, 404)))
+      .map_err(|ref e: ParseIntError| e.extend_with(|_, e| e.set("code", 404)))
 }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-tracing"><a class="header" href="#apollo-tracing">Apollo Tracing</a></h1>
 <p>Apollo Tracing provides performance analysis results for each step of query. This is an extension to <code>Schema</code>, and the performance analysis results are stored in <code>QueryResponse</code>.</p>
@@ -1871,7 +1868,7 @@ use async_graphql::extensions::ApolloTracing;
 
 <span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .extension(ApolloTracing) // Enable ApolloTracing extension
@@ -1879,8 +1876,8 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="query-complexity-and-depth"><a class="header" href="#query-complexity-and-depth">Query complexity and depth</a></h1>
 <p>⚠️GraphQL provides a powerful way to query your data, but putting great
-power in the hands of your API clients also exposes you to a risk of denial 
-of service attacks. You can mitigate that risk with <code>Async-graphql</code> by limiting the 
+power in the hands of your API clients also exposes you to a risk of denial
+of service attacks. You can mitigate that risk with <code>Async-graphql</code> by limiting the
 complexity and depth of the queries you allow.</p>
 <h2 id="expensive-queries"><a class="header" href="#expensive-queries">Expensive Queries</a></h2>
 <p>Consider a schema that allows listing blog posts. Each blog post is also related to other posts.</p>
@@ -1907,7 +1904,7 @@ type Post {
     }
 }
 </code></pre>
-<p>The size of the response increases exponentially with every other level of the <code>related</code> field. Fortunately, <code>Async-graphql</code> provides 
+<p>The size of the response increases exponentially with every other level of the <code>related</code> field. Fortunately, <code>Async-graphql</code> provides
 a way to prevent such queries.</p>
 <h2 id="limiting-query-depth"><a class="header" href="#limiting-query-depth">Limiting Query depth</a></h2>
 <p>The depth is the number of nesting levels of the field, and the following is a query with a depth of <code>3</code>.</p>
@@ -1919,7 +1916,7 @@ a way to prevent such queries.</p>
     }
 }
 </code></pre>
-<p>You can limit the depth when creating <code>Schema</code>. If the query exceeds this limit, an error will occur and the 
+<p>You can limit the depth when creating <code>Schema</code>. If the query exceeds this limit, an error will occur and the
 message <code>Query is nested too deep</code> will be returned.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1927,13 +1924,13 @@ message <code>Query is nested too deep</code> will be returned.</p>
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_depth(5) // Limit the maximum depth to 5
     .finish();
 <span class="boring">}</span></code></pre></pre>
 <h2 id="limiting-query-complexity"><a class="header" href="#limiting-query-complexity">Limiting Query complexity</a></h2>
-<p>The complexity is the number of fields in the query. The default complexity of each field is <code>1</code>. Below is a 
+<p>The complexity is the number of fields in the query. The default complexity of each field is <code>1</code>. Below is a
 query with a complexity of <code>6</code>.</p>
 <pre><code class="language-graphql">{
     a b c {
@@ -1943,7 +1940,7 @@ query with a complexity of <code>6</code>.</p>
     }
 }
 </code></pre>
-<p>You can limit the complexity when creating the <code>Schema</code>. If the query exceeds this limit, an error will occur 
+<p>You can limit the complexity when creating the <code>Schema</code>. If the query exceeds this limit, an error will occur
 and <code>Query is too complex</code> will be returned.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -1951,14 +1948,14 @@ and <code>Query is too complex</code> will be returned.</p>
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .limit_complexity(5) // Limit the maximum complexity to 5
     .finish();
 <span class="boring">}</span></code></pre></pre>
 <h2 id="custom-complexity-calculation"><a class="header" href="#custom-complexity-calculation">Custom Complexity Calculation</a></h2>
 <p>There are two ways to customize the complexity for non-list type and list type fields.</p>
-<p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>, 
+<p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>,
 <code>child_complexity</code> is a special variable that represents the complexity of the subquery, and <code>count</code> is the parameter of the field,
 used to calculate the complexity of the <code>values</code> field, and the type of the return value must be <code>usize</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -1974,7 +1971,7 @@ impl Query {
         todo!()
     }
 
-    #[graphql(complexity = &quot;count * child_complexity&quot;)]
+    #[graphql(complexity = "count * child_complexity")]
     async fn values(&amp;self, count: usize) -&gt; i32 {
         todo!()
     }
@@ -2000,7 +1997,7 @@ struct MyObj {
 
     // This field calls the `is_admin` function, which 
     // is visible if the return value is `true`.
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     c: i32,
 }
 
@@ -2015,7 +2012,7 @@ enum MyEnum {
 
     // This item calls the `is_admin` function, which 
     // is visible if the return value is `true`.
-    #[graphql(visible = &quot;is_admin&quot;)]
+    #[graphql(visible = "is_admin")]
     C,
 }
 
@@ -2081,7 +2078,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="prepare_request"><a class="header" href="#prepare_request">prepare_request</a></h3>
-<p>Just after the <code>request</code>, we will have the <code>prepare_request</code> lifecycle, which will be hooked. </p>
+<p>Just after the <code>request</code>, we will have the <code>prepare_request</code> lifecycle, which will be hooked.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
@@ -2249,13 +2246,13 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 <p>Apollo Studio is a cloud platform that helps you build, validate, and secure your organization's graph (description from the official documentation). It's a service allowing you to monitor &amp; work with your team around your GraphQL Schema. <code>async-graphql</code> provides an extension implementing the official <a href="https://www.apollographql.com/docs/studio/setup-analytics/#third-party-support">Apollo Specification</a> available at <a href="https://github.com/async-graphql/async_graphql_apollo_studio_extension">async-graphql-extension-apollo-tracing</a> and <a href="https://crates.io/crates/async-graphql-extension-apollo-tracing">Crates.io</a>.</p>
 <h2 id="logger"><a class="header" href="#logger">Logger</a></h2>
 <p><em>Available in the repository</em></p>
-<p>Logger is a simple extension allowing you to add some logging feature to <code>async-graphql</code>. It's also a good example to learn how to create your own extension. </p>
+<p>Logger is a simple extension allowing you to add some logging feature to <code>async-graphql</code>. It's also a good example to learn how to create your own extension.</p>
 <h2 id="opentelemetry"><a class="header" href="#opentelemetry">OpenTelemetry</a></h2>
 <p><em>Available in the repository</em></p>
 <p>OpenTelemetry is an extension providing an integration with the <a href="https://crates.io/crates/opentelemetry">opentelemetry crate</a> to allow your application to capture distributed traces and metrics from <code>async-graphql</code>.</p>
 <h2 id="tracing"><a class="header" href="#tracing">Tracing</a></h2>
 <p><em>Available in the repository</em></p>
-<p>Tracing is a simple extension allowing you to add some tracing feature to <code>async-graphql</code>. A little like the <code>Logger</code> extension. </p>
+<p>Tracing is a simple extension allowing you to add some tracing feature to <code>async-graphql</code>. A little like the <code>Logger</code> extension.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="integrations"><a class="header" href="#integrations">Integrations</a></h1>
 <p><code>Async-graphql</code> supports several common Rust web servers.</p>
 <ul>
@@ -2281,7 +2278,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 use async_graphql_poem::GraphQL;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, GraphQL::new(schema));
+    .at("/ws", GraphQL::new(schema));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2297,7 +2294,7 @@ let app = Route::new()
 use async_graphql_poem::GraphQLSubscription;
 
 let app = Route::new()
-    .at(&quot;/ws&quot;, get(GraphQLSubscription::new(schema)));
+    .at("/ws", get(GraphQLSubscription::new(schema)));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="more-examples"><a class="header" href="#more-examples">More examples</a></h2>
 <p><a href="https://github.com/async-graphql/examples/tree/master/poem">https://github.com/async-graphql/examples/tree/master/poem</a></p>
@@ -2317,7 +2314,7 @@ You can combine other filters later, or directly call <code>Schema::execute</cod
 </span><span class="boring">use warp::Filter;
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>type MySchema = Schema&lt;QueryRoot, EmptyMutation, EmptySubscription&gt;;
 
@@ -2351,7 +2348,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 </span><span class="boring">}
 </span><span class="boring">struct QueryRoot;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl QueryRoot { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">async fn other() {
 </span>let schema = Schema::new(QueryRoot, EmptyMutation, SubscriptionRoot);
 let filter = async_graphql_warp::graphql_subscription(schema);
@@ -2362,7 +2359,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <p><a href="https://github.com/async-graphql/examples/tree/master/warp">https://github.com/async-graphql/examples/tree/master/warp</a></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
 <h2 id="request-example-2"><a class="header" href="#request-example-2">Request example</a></h2>
-<p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data. </p>
+<p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_actix_web;
@@ -2451,10 +2448,10 @@ struct MyValue {
 scalar!(MyValue);
 
 // Rename to `MV`.
-// scalar!(MyValue, &quot;MV&quot;);
+// scalar!(MyValue, "MV");
 
 // Rename to `MV` and add description.
-// scalar!(MyValue, &quot;MV&quot;, &quot;This is my value&quot;);
+// scalar!(MyValue, "MV", "This is my value");
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="optimizing-n1-queries"><a class="header" href="#optimizing-n1-queries">Optimizing N+1 queries</a></h1>
 <p>Have you noticed some GraphQL queries end can make hundreds of database queries, often with mostly repeated data? Lets take a look why and how to fix it.</p>
@@ -2477,7 +2474,7 @@ scalar!(MyValue);
 impl User {
     async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
         let pool = ctx.data_unchecked::&lt;Pool&lt;Postgres&gt;&gt;();
-        let (name,): (String,) = sqlx::query_as(&quot;SELECT name FROM user WHERE id = $1&quot;)
+        let (name,): (String,) = sqlx::query_as("SELECT name FROM user WHERE id = $1")
             .bind(self.id)
             .fetch_one(pool)
             .await?;
@@ -2519,13 +2516,12 @@ struct UserNameLoader {
     pool: sqlx::PgPool,
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;u64&gt; for UserNameLoader {
     type Value = String;
     type Error = Arc&lt;sqlx::Error&gt;;
 
     async fn load(&amp;self, keys: &amp;[u64]) -&gt; Result&lt;HashMap&lt;u64, Self::Value&gt;, Self::Error&gt; {
-        Ok(sqlx::query_as(&quot;SELECT name FROM user WHERE id = ANY($1)&quot;)
+        Ok(sqlx::query_as("SELECT name FROM user WHERE id = ANY($1)")
             .bind(keys)
             .fetch(&amp;self.pool)
             .map_ok(|name: String| name)
@@ -2545,7 +2541,7 @@ impl User {
     async fn name(&amp;self, ctx: &amp;Context&lt;'_&gt;) -&gt; Result&lt;String&gt; {
         let loader = ctx.data_unchecked::&lt;DataLoader&lt;UserNameLoader&gt;&gt;();
         let name: Option&lt;String&gt; = loader.load_one(self.id).await?;
-        name.ok_or_else(|| &quot;Not found&quot;.into())
+        name.ok_or_else(|| "Not found".into())
     }
 }</code></pre>
 <p>To expose <code>UserNameLoader</code> in the <code>ctx</code>, you have to register it with the schema, along with a task spawner, e.g. <code>async_std::task::spawn</code>:</p>
@@ -2567,7 +2563,6 @@ SELECT name FROM user WHERE id IN (1, 2, 3, 4)
     pool: sqlx::PgPool,
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;UserId&gt; for PostgresLoader {
     type Value = User;
     type Error = Arc&lt;sqlx::Error&gt;;
@@ -2577,7 +2572,6 @@ impl Loader&lt;UserId&gt; for PostgresLoader {
     }
 }
 
-#[async_trait::async_trait]
 impl Loader&lt;TodoId&gt; for PostgresLoader {
     type Value = Todo;
     type Error = sqlx::Error;
@@ -2587,9 +2581,9 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
     }
 }</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="custom-directive"><a class="header" href="#custom-directive">Custom directive</a></h1>
-<p>There are two types of directives in GraphQL: executable and type system. Executable directives are used by the client within an operation to modify the behavior (like the built-in <code>@include</code> and <code>@skip</code> directives). Type system directives provide additional information about the types, potentially modifying how the server behaves (like <code>@deprecated</code> and <code>@oneOf</code>). <code>async-graphql</code> allows you to declare both types of custom directives, with different limitations on each. </p>
+<p>There are two types of directives in GraphQL: executable and type system. Executable directives are used by the client within an operation to modify the behavior (like the built-in <code>@include</code> and <code>@skip</code> directives). Type system directives provide additional information about the types, potentially modifying how the server behaves (like <code>@deprecated</code> and <code>@oneOf</code>). <code>async-graphql</code> allows you to declare both types of custom directives, with different limitations on each.</p>
 <h2 id="executable-directives"><a class="header" href="#executable-directives">Executable directives</a></h2>
-<p>To create a custom executable directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to 
+<p>To create a custom executable directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to
 generate a factory function that receives the parameters of the directive and returns an instance of the directive.</p>
 <p>Currently <code>async-graphql</code> only supports custom executable directives located at <code>FIELD</code>.</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
@@ -2612,7 +2606,7 @@ impl CustomDirective for ConcatDirective {
     }
 }
 
-#[Directive(location = &quot;Field&quot;)]
+#[Directive(location = "Field")]
 fn concat(value: String) -&gt; impl CustomDirective {
     ConcatDirective { value }
 }
@@ -2624,13 +2618,13 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
-</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { &quot;1.0&quot; } }
+</span><span class="boring">impl Query { async fn version(&amp;self) -&gt; &amp;str { "1.0" } }
 </span><span class="boring">struct ConcatDirective { value: String, }
 </span><span class="boring">#[async_trait::async_trait]
 </span><span class="boring">impl CustomDirective for ConcatDirective {
 </span><span class="boring">  async fn resolve_field(&amp;self, _ctx: &amp;Context&lt;'_&gt;, resolve: ResolveFut&lt;'_&gt;) -&gt; ServerResult&lt;Option&lt;Value&gt;&gt; { todo!() }
 </span><span class="boring">}
-</span><span class="boring">#[Directive(location = &quot;Field&quot;)]
+</span><span class="boring">#[Directive(location = "Field")]
 </span><span class="boring">fn concat(value: String) -&gt; impl CustomDirective { ConcatDirective { value } }
 </span>let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     .directive(concat)
@@ -2643,8 +2637,8 @@ fn concat(value: String) -&gt; impl CustomDirective {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[TypeDirective(
-    location = &quot;FieldDefinition&quot;,
-    location = &quot;Object&quot;,
+    location = "FieldDefinition",
+    location = "Object",
 )]
 fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
 <span class="boring">}</span></code></pre></pre>
@@ -2654,24 +2648,24 @@ fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">#[TypeDirective(
-</span><span class="boring">location = &quot;FieldDefinition&quot;,
-</span><span class="boring">location = &quot;Object&quot;,
+</span><span class="boring">location = "FieldDefinition",
+</span><span class="boring">location = "Object",
 </span><span class="boring">)]
 </span><span class="boring">fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
 </span>#[derive(SimpleObject)]
 #[graphql(
-    directive = testDirective::apply(&quot;simple object type&quot;.to_string(), 1, Some(3))
+    directive = testDirective::apply("simple object type".to_string(), 1, Some(3))
 )]
 struct SimpleValue {
     #[graphql(
-        directive = testDirective::apply(&quot;field and param with \&quot; symbol&quot;.to_string(), 2, Some(3))
+        directive = testDirective::apply("field and param with \" symbol".to_string(), 2, Some(3))
     )]
     some_data: String,
 }
 <span class="boring">}</span></code></pre></pre>
 <p>This example produces a schema like this:</p>
-<pre><code class="language-graphql">type SimpleValue @testDirective(scope: &quot;simple object type&quot;, input: 1, opt: 3) {
-	someData: String! @testDirective(scope: &quot;field and param with \&quot; symbol&quot;, input: 2, opt: 3)
+<pre><code class="language-graphql">type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
+	someData: String! @testDirective(scope: "field and param with \" symbol", input: 2, opt: 3)
 }
 
 directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
@@ -2680,7 +2674,7 @@ directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINIT
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-federation"><a class="header" href="#apollo-federation">Apollo Federation</a></h1>
 <p>Apollo Federation is a GraphQL architecture for combining multiple GraphQL services, or subgraphs, into a single supergraph. You can read more in the <a href="https://www.apollographql.com/docs/apollo-server/federation/">official documentation</a>.</p>
 <blockquote>
-<p>To see a complete example of federation, check out the <a href="https://github.com/async-graphql/examples/tree/master/federation">federation example</a>. </p>
+<p>To see a complete example of federation, check out the <a href="https://github.com/async-graphql/examples/tree/master/federation">federation example</a>.</p>
 </blockquote>
 <h2 id="enabling-federation-support"><a class="header" href="#enabling-federation-support">Enabling federation support</a></h2>
 <p><code>async-graphql</code> supports all the functionality of Apollo Federation v2. Support will be enabled automatically if any <code>#[graphql(entity)]</code> resolvers are found in the schema. To enable it manually, use the <code>enable_federation</code> method on the <code>SchemaBuilder</code>.</p>
@@ -2689,7 +2683,7 @@ directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINIT
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
 </span><span class="boring">impl Query {
-</span><span class="boring">   async fn hello(&amp;self) -&gt; String { &quot;Hello&quot;.to_string() }
+</span><span class="boring">   async fn hello(&amp;self) -&gt; String { "Hello".to_string() }
 </span><span class="boring">}
 </span>fn main() {
   let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
@@ -2749,7 +2743,7 @@ impl Query {
   _service: _Service!
 }
 
-type User @key(fields: &quot;id&quot;) @key(fields: &quot;id username&quot;) {
+type User @key(fields: "id") @key(fields: "id username") {
   id: ID!
 }
 </code></pre>
@@ -2788,7 +2782,7 @@ impl Query {
   _service: _Service!
 }
 
-type User @key(fields: &quot;key { a b }&quot;) {
+type User @key(fields: "key { a b }") {
   key: Key!
 }
 
@@ -2816,14 +2810,14 @@ struct Product {
     id: u64,
 }
 <span class="boring">}</span></code></pre></pre>
-<p>This will add the <code>@key(fields: &quot;id&quot;, resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
+<p>This will add the <code>@key(fields: "id", resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
 <p>For more complex entity keys, such as ones with nested fields in compound keys, you can override the fields in the directive as so:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
-#[graphql(unresolvable = &quot;id organization { id }&quot;)]
+#[graphql(unresolvable = "id organization { id }")]
 struct User {
     id: u64,
     organization: Organization,
@@ -2905,7 +2899,7 @@ struct Position {
 </code></pre>
 <h2 id="override"><a class="header" href="#override"><code>@override</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#override"><code>@override</code> directive</a> is used to take ownership of a field from another subgraph. This is useful for migrating a field from one subgraph to another.</p>
-<p>For example, if you add a new &quot;Inventory&quot; subgraph which should take over responsibility for the <code>inStock</code> field currently provided by the &quot;Products&quot; subgraph, you might have something like this:</p>
+<p>For example, if you add a new "Inventory" subgraph which should take over responsibility for the <code>inStock</code> field currently provided by the "Products" subgraph, you might have something like this:</p>
 <pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
@@ -2913,14 +2907,14 @@ struct Position {
 </span>#[derive(SimpleObject)]
 struct Product {
   id: ID,
-  #[graphql(override_from = &quot;Products&quot;)]
+  #[graphql(override_from = "Products")]
   in_stock: bool,
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Which results in:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
   id: ID!
-  inStock: Boolean! @override(from: &quot;Products&quot;)
+  inStock: Boolean! @override(from: "Products")
 }
 </code></pre>
 <h2 id="external"><a class="header" href="#external"><code>@external</code></a></h2>
@@ -2963,17 +2957,17 @@ struct Query;
 #[Object]
 impl Query {
     /// This operation will provide the `humanName` field on `Product
-    #[graphql(provides = &quot;humanName&quot;)]
+    #[graphql(provides = "humanName")]
     async fn out_of_stock_products(&amp;self) -&gt; Vec&lt;Product&gt; {
       vec![Product {
-        id: &quot;1&quot;.into(),
-        human_name: &quot;My Product&quot;.to_string(),
+        id: "1".into(),
+        human_name: "My Product".to_string(),
         in_stock: false,
       }]
     }
     async fn discontinued_products(&amp;self) -&gt; Vec&lt;Product&gt; {
         vec![Product {
-            id: &quot;2&quot;.into(),
+            id: "2".into(),
             human_name: String::new(),  // This is ignored by the router
             in_stock: false,
         }]
@@ -2990,24 +2984,24 @@ impl Query {
 <span class="boring">}</span></code></pre></pre>
 <p>Note that the <code>#[graphql(provides)]</code> attribute takes the field name as it appears in the schema, not the Rust field name.</p>
 <p>The resulting schema will look like this:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
     id: ID!
     humanName: String! @external
     inStock: Boolean!
 }
 
 type Query {
-    outOfStockProducts: [Product!]! @provides(fields: &quot;humanName&quot;)
+    outOfStockProducts: [Product!]! @provides(fields: "humanName")
     discontinuedProducts: [Product!]!
 }
 </code></pre>
 <h2 id="requires"><a class="header" href="#requires"><code>@requires</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#requires"><code>@requires</code> directive</a> is used to indicate that an <code>@external</code> field is required for this subgraph to resolve some other field(s). If our <code>shippingEstimate</code> field requires the <code>size</code> and <code>weightInPounts</code> fields, then we might want a subgraph entity which looks like this:</p>
-<pre><code class="language-graphql">type Product @key(fields: &quot;id&quot;) {
+<pre><code class="language-graphql">type Product @key(fields: "id") {
   id: ID!
   size: Int! @external
   weightInPounds: Int! @external
-  shippingEstimate: String! @requires(fields: &quot;size weightInPounds&quot;)
+  shippingEstimate: String! @requires(fields: "size weightInPounds")
 }
 </code></pre>
 <p>In order to implement this in Rust, we can use the <code>#[graphql(requires)]</code> attribute:</p>
@@ -3027,10 +3021,10 @@ struct Product {
 
 #[ComplexObject]
 impl Product {
-  #[graphql(requires = &quot;size weightInPounds&quot;)]
+  #[graphql(requires = "size weightInPounds")]
   async fn shipping_estimate(&amp;self) -&gt; String {
     let price = self.size * self.weight_in_pounds;
-    format!(&quot;${}&quot;, price)
+    format!("${}", price)
   }
 }
 <span class="boring">}</span></code></pre></pre>
@@ -3087,7 +3081,7 @@ impl Query {
 <p>There are no inputs on this entity resolver, so how do we populate the <code>size</code> and <code>weight_in_pounds</code> fields on <code>Product</code> if a user has a query like <code>order { product { shippingEstimate } }</code>? The supergraph implementation will solve this for us by calling the <code>find_product_by_id</code> separately for any fields which have a <code>@requires</code> directive, so the subgraph code does not need to worry about how entities relate.</p>
 <h2 id="tag"><a class="header" href="#tag"><code>@tag</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#tag"><code>@tag</code> directive</a> is used to add metadata to a schema location for features like <a href="https://www.apollographql.com/docs/studio/contracts/">contracts</a>. To add a tag like this:</p>
-<pre><code class="language-graphql">type User @tag(name: &quot;team-accounts&quot;) {
+<pre><code class="language-graphql">type User @tag(name: "team-accounts") {
   id: String!
   name: String!
 }
@@ -3098,7 +3092,7 @@ impl Query {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[derive(SimpleObject)]
-#[graphql(tag = &quot;team-accounts&quot;)]
+#[graphql(tag = "team-accounts")]
 struct User {
   id: ID,
   name: String,
@@ -3111,17 +3105,17 @@ struct User {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span>#[TypeDirective(
-    location = &quot;Object&quot;,
-    composable = &quot;https://custom.spec.dev/extension/v1.0&quot;,
+    location = "Object",
+    composable = "https://custom.spec.dev/extension/v1.0",
 )]
 fn custom() {}
 <span class="boring">}</span></code></pre></pre>
 <p>In addition to the <a href="./custom_directive#type-system-directives">normal type system directive behavior</a>, this will add the following bits to the output schema:</p>
 <pre><code class="language-graphql">extend schema @link(
-	url: &quot;https://custom.spec.dev/extension/v1.0&quot;
-	import: [&quot;@custom&quot;]
+	url: "https://custom.spec.dev/extension/v1.0"
+	import: ["@custom"]
 )
-	@composeDirective(name: &quot;@custom&quot;)
+	@composeDirective(name: "@custom")
 </code></pre>
 
                     </main>
