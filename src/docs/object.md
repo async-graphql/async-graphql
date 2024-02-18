@@ -162,7 +162,7 @@ trait MyTrait: Send + Sync {
 }
 
 #[Object]
-impl dyn MyTrait {
+impl dyn MyTrait + '_ {
     #[graphql(name = "name")]
     async fn gql_name(&self) -> &str {
         self.name()

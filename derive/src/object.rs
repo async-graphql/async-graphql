@@ -1,11 +1,11 @@
 use std::{iter::FromIterator, str::FromStr};
 
 use proc_macro::TokenStream;
-use proc_macro2::Ident;
+use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
-    ext::IdentExt, punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat,
-    ReturnType, Token, Type, TypeReference,
+    ext::IdentExt, punctuated::Punctuated, Attribute, Block, Error, Expr, FnArg, ImplItem,
+    ItemImpl, Pat, PatIdent, ReturnType, Token, Type, TypeReference,
 };
 
 use crate::{
@@ -17,6 +17,7 @@ use crate::{
         parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
         GeneratorResult,
     },
+    validators::Validators,
 };
 
 pub fn generate(
@@ -58,7 +59,10 @@ pub fn generate(
             .unwrap_or_else(|| quote!(::std::option::Option::None))
     };
 
+    let mut flattened_resolvers = Vec::new();
     let mut resolvers = Vec::new();
+    let mut resolver_idents = Vec::new();
+    let mut resolver_fns = Vec::new();
     let mut schema_fields = Vec::new();
     let mut find_entities = Vec::new();
     let mut add_keys = Vec::new();
@@ -307,7 +311,7 @@ pub fn generate(
                         }
                     });
 
-                    resolvers.push(quote! {
+                    flattened_resolvers.push(quote! {
                         #(#cfg_attrs)*
                         if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
                             return ::std::result::Result::Ok(std::option::Option::Some(value));
@@ -379,8 +383,7 @@ pub fn generate(
 
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
                 let mut schema_args = Vec::new();
-                let mut use_params = Vec::new();
-                let mut get_params = Vec::new();
+                let mut params = Vec::new();
 
                 for (
                     ident,
@@ -440,36 +443,13 @@ pub fn generate(
                             });
                         });
 
-                    let param_ident = &ident.ident;
-                    use_params.push(quote! { #param_ident });
-
-                    let default = match default {
-                        Some(default) => {
-                            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
-                        }
-                        None => quote! { ::std::option::Option::None },
-                    };
-
-                    let process_with = match process_with.as_ref() {
-                        Some(fn_path) => quote! { #fn_path(&mut #param_ident); },
-                        None => Default::default(),
-                    };
-
-                    let validators = validator.clone().unwrap_or_default().create_validators(
-                        &crate_name,
-                        quote!(&#ident),
-                        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
-                    )?;
-
-                    let mut non_mut_ident = ident.clone();
-                    non_mut_ident.mutability = None;
-                    get_params.push(quote! {
-                        #[allow(non_snake_case, unused_variables, unused_mut)]
-                        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
-                        #process_with
-                        #validators
-                        #[allow(non_snake_case, unused_variables)]
-                        let #ident = #non_mut_ident;
+                    params.push(FieldResolverParameter {
+                        ty,
+                        name,
+                        default,
+                        process_with,
+                        validator,
+                        ident: ident.clone(),
                     });
                 }
 
@@ -520,9 +500,9 @@ pub fn generate(
                         }
                     }
                     quote! {
-                        Some(|__ctx, __variables_definition, __field, child_complexity| {
+                        ::std::option::Option::Some(|__ctx, __variables_definition, __field, child_complexity| {
                             #(#parse_args)*
-                            Ok(#expr)
+                            ::std::result::Result::Ok(#expr)
                         })
                     }
                 } else {
@@ -572,32 +552,24 @@ pub fn generate(
                             .expect("invalid result type");
                 }
 
-                let resolve_obj = quote! {
-                    {
-                        let res = self.#field_ident(ctx, #(#use_params),*).await;
-                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
-                    }
-                };
+                resolver_idents.push((field_name.clone(), field_ident.clone(), cfg_attrs.clone()));
+                let (resolver_fn_name, resolver_fn) = generate_field_resolver_method(
+                    &crate_name,
+                    object_args,
+                    &method_args,
+                    &FieldResolver {
+                        resolver_fn_ident: field_ident,
+                        cfg_attrs: &cfg_attrs,
+                        params: &params,
+                    },
+                )?;
 
-                let guard_map_err = quote! {
-                    .map_err(|err| err.into_server_error(ctx.item.pos))
-                };
-                let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-                    Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
-                    None => None,
-                };
+                resolver_fns.push(resolver_fn);
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
-                    if ctx.item.node.name.node == #field_name {
-                        let f = async move {
-                            #(#get_params)*
-                            #guard
-                            #resolve_obj
-                        };
-                        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                    ::std::option::Option::Some(__FieldIdent::#field_ident) => {
+                        return self.#resolver_fn_name(&ctx).await;
                     }
                 });
             }
@@ -653,80 +625,92 @@ pub fn generate(
         quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
     };
 
+    let resolve_field_resolver_match = generate_field_match(resolvers)?;
+    let field_ident = generate_fields_enum(&crate_name, resolver_idents)?;
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #item_impl
 
-            #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
-            #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
-            #[#crate_name::async_trait::async_trait]
-            impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
-                async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                    #(#resolvers)*
-                    ::std::result::Result::Ok(::std::option::Option::None)
+            #[doc(hidden)]
+            #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+            const _: () = {
+                #field_ident
+
+                impl #impl_generics #self_ty #where_clause {
+                    #(#resolver_fns)*
                 }
 
-                async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                    let params = match params {
-                        #crate_name::Value::Object(params) => params,
-                        _ => return ::std::result::Result::Ok(::std::option::Option::None),
-                    };
-                    let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
-                        typename
-                    } else {
-                        return ::std::result::Result::Err(
-                            #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
-                        );
-                    };
-                    #(#find_entities_iter)*
-                    ::std::result::Result::Ok(::std::option::Option::None)
-                }
-            }
+                #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
+                #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
+                impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
+                    async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        #resolve_field_resolver_match
+                        #(#flattened_resolvers)*
+                        ::std::result::Result::Ok(::std::option::Option::None)
+                    }
 
-            #[allow(clippy::all, clippy::pedantic)]
-            #[#crate_name::async_trait::async_trait]
-            impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
-                fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    #gql_typename
-                }
-
-                fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
-                        description: #desc,
-                        fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            fields
-                        },
-                        cache_control: #cache_control,
-                        extends: #extends,
-                        shareable: #shareable,
-                        resolvable: #resolvable,
-                        inaccessible: #inaccessible,
-                        interface_object: #interface_object,
-                        tags: ::std::vec![ #(#tags),* ],
-                        keys: #keys,
-                        visible: #visible,
-                        is_subscription: false,
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ]
-                    });
-                    #(#create_entity_types)*
-                    #(#add_keys)*
-                    ty
+                    async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        let params = match params {
+                            #crate_name::Value::Object(params) => params,
+                            _ => return ::std::result::Result::Ok(::std::option::Option::None),
+                        };
+                        let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                            typename
+                        } else {
+                            return ::std::result::Result::Err(
+                                #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
+                            );
+                        };
+                        #(#find_entities_iter)*
+                        ::std::result::Result::Ok(::std::option::Option::None)
+                    }
                 }
 
-                async fn resolve(
-                    &self,
-                    ctx: &#crate_name::ContextSelectionSet<'_>,
-                    _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
-                ) -> #crate_name::ServerResult<#crate_name::Value> {
-                    #resolve_container
-                }
-            }
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
+                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        #gql_typename
+                    }
 
-            impl #impl_generics #crate_name::ObjectType for #self_ty #where_clause {}
+                    fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
+                            name: ::std::borrow::Cow::into_owned(#gql_typename),
+                            description: #desc,
+                            fields: {
+                                let mut fields = #crate_name::indexmap::IndexMap::new();
+                                #(#schema_fields)*
+                                fields
+                            },
+                            cache_control: #cache_control,
+                            extends: #extends,
+                            shareable: #shareable,
+                            resolvable: #resolvable,
+                            inaccessible: #inaccessible,
+                            interface_object: #interface_object,
+                            tags: ::std::vec![ #(#tags),* ],
+                            keys: #keys,
+                            visible: #visible,
+                            is_subscription: false,
+                            rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                            directive_invocations: ::std::vec![ #(#directives),* ]
+                        });
+                        #(#create_entity_types)*
+                        #(#add_keys)*
+                        ty
+                    }
+
+                    async fn resolve(
+                        &self,
+                        ctx: &#crate_name::ContextSelectionSet<'_>,
+                        _field: &#crate_name::Positioned<#crate_name::parser::types::Field>
+                    ) -> #crate_name::ServerResult<#crate_name::Value> {
+                        #resolve_container
+                    }
+                }
+
+                impl #impl_generics #crate_name::ObjectType for #self_ty #where_clause {}
+            };
         }
     } else {
         let mut codes = Vec::new();
@@ -734,55 +718,64 @@ pub fn generate(
         codes.push(quote! {
             #item_impl
 
-            impl #impl_generics #self_ty #where_clause {
-                fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
-                    let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(name),
-                        description: #desc,
-                        fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            fields
-                        },
-                        cache_control: #cache_control,
-                        extends: #extends,
-                        shareable: #shareable,
-                        resolvable: #resolvable,
-                        inaccessible: #inaccessible,
-                        interface_object: #interface_object,
-                        tags: ::std::vec![ #(#tags),* ],
-                        keys: #keys,
-                        visible: #visible,
-                        is_subscription: false,
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ],
-                    });
-                    #(#create_entity_types)*
-                    #(#add_keys)*
-                    ty
-                }
+            #[doc(hidden)]
+            #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
+            const _: () = {
+                #field_ident
 
-                async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
-                    #(#resolvers)*
-                    ::std::result::Result::Ok(::std::option::Option::None)
-                }
+                impl #impl_generics #self_ty #where_clause {
+                    #(#resolver_fns)*
 
-                async fn __internal_find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                    let params = match params {
-                        #crate_name::Value::Object(params) => params,
-                        _ => return ::std::result::Result::Ok(::std::option::Option::None),
-                    };
-                    let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
-                        typename
-                    } else {
-                        return ::std::result::Result::Err(
-                            #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
-                        );
-                    };
-                    #(#find_entities_iter)*
-                    ::std::result::Result::Ok(::std::option::Option::None)
+                    fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
+                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
+                            name: ::std::borrow::ToOwned::to_owned(name),
+                            description: #desc,
+                            fields: {
+                                let mut fields = #crate_name::indexmap::IndexMap::new();
+                                #(#schema_fields)*
+                                fields
+                            },
+                            cache_control: #cache_control,
+                            extends: #extends,
+                            shareable: #shareable,
+                            resolvable: #resolvable,
+                            inaccessible: #inaccessible,
+                            interface_object: #interface_object,
+                            tags: ::std::vec![ #(#tags),* ],
+                            keys: #keys,
+                            visible: #visible,
+                            is_subscription: false,
+                            rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                            directive_invocations: ::std::vec![ #(#directives),* ],
+                        });
+                        #(#create_entity_types)*
+                        #(#add_keys)*
+                        ty
+                    }
+
+                    async fn __internal_resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> where Self: #crate_name::ContainerType {
+                        #resolve_field_resolver_match
+                        #(#flattened_resolvers)*
+                        ::std::result::Result::Ok(::std::option::Option::None)
+                    }
+
+                    async fn __internal_find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+                        let params = match params {
+                            #crate_name::Value::Object(params) => params,
+                            _ => return ::std::result::Result::Ok(::std::option::Option::None),
+                        };
+                        let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
+                            typename
+                        } else {
+                            return ::std::result::Result::Err(
+                                #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
+                            );
+                        };
+                        #(#find_entities_iter)*
+                        ::std::result::Result::Ok(::std::option::Option::None)
+                    }
                 }
-            }
+            };
         });
 
         for concrete in &object_args.concretes {
@@ -805,7 +798,6 @@ pub fn generate(
             };
 
             codes.push(quote! {
-                #[#crate_name::async_trait::async_trait]
                 impl #def_bounds #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         self.__internal_resolve_field(ctx).await
@@ -816,7 +808,6 @@ pub fn generate(
                     }
                 }
 
-                #[#crate_name::async_trait::async_trait]
                 impl #def_bounds #crate_name::OutputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
@@ -843,4 +834,177 @@ pub fn generate(
     };
 
     Ok(expanded.into())
+}
+
+fn generate_field_match(
+    resolvers: Vec<proc_macro2::TokenStream>,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    if resolvers.is_empty() {
+        return Ok(quote!());
+    }
+
+    Ok(quote! {
+        let __field = __FieldIdent::from_name(&ctx.item.node.name.node);
+        match __field {
+            #(#resolvers)*
+            None => {}
+        }
+    })
+}
+
+fn generate_fields_enum(
+    crate_name: &proc_macro2::TokenStream,
+    fields: Vec<(String, Ident, Vec<Attribute>)>,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    // If there are no non-entity/flattened resolvers we can avoid the whole enum
+    if fields.is_empty() {
+        return Ok(quote!());
+    }
+
+    let enum_variants = fields.iter().map(|(_, field_ident, cfg_attrs)| {
+        quote! {
+            #(#cfg_attrs)*
+            #field_ident
+        }
+    });
+
+    let matches = fields.iter().map(|(field_name, field_ident, cfg_attrs)| {
+        quote! {
+            #(#cfg_attrs)*
+            #field_name => ::std::option::Option::Some(__FieldIdent::#field_ident),
+        }
+    });
+
+    Ok(quote! {
+        #[allow(non_camel_case_types)]
+        #[doc(hidden)]
+        enum __FieldIdent {
+            #(#enum_variants,)*
+        }
+
+        impl __FieldIdent {
+            fn from_name(name: &#crate_name::Name) -> ::std::option::Option<__FieldIdent> {
+                match name.as_str() {
+                    #(#matches)*
+                    _ => ::std::option::Option::None
+                }
+            }
+        }
+    })
+}
+
+fn generate_field_resolver_method(
+    crate_name: &proc_macro2::TokenStream,
+    object_args: &args::Object,
+    method_args: &args::ObjectField,
+    field: &FieldResolver,
+) -> GeneratorResult<(Ident, proc_macro2::TokenStream)> {
+    let FieldResolver {
+        resolver_fn_ident: resolver_ident,
+        params,
+        cfg_attrs,
+    } = field;
+
+    let extract_params = params
+        .iter()
+        .map(|param| generate_parameter_extraction(crate_name, param))
+        .collect::<Result<Vec<_>, _>>()?;
+    let use_params = params.iter().map(
+        |FieldResolverParameter {
+             ident: PatIdent { ident, .. },
+             ..
+         }| ident,
+    );
+
+    let guard_map_err = quote! {
+        .map_err(|err| err.into_server_error(ctx.item.pos))
+    };
+    let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
+        Some(code) => Some(generate_guards(crate_name, code, guard_map_err)?),
+        None => None,
+    };
+
+    let mut resolve_fn_name =
+        syn::parse_str::<Ident>(&format!("__{}_resolver", field.resolver_fn_ident.unraw()))?;
+    resolve_fn_name.set_span(Span::call_site());
+
+    let function = quote! {
+        #[doc(hidden)]
+        #(#cfg_attrs)*
+        #[allow(non_snake_case)]
+        async fn #resolve_fn_name(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
+            let f = async {
+                #(#extract_params)*
+                #guard
+                let res = self.#resolver_ident(ctx, #(#use_params),*).await;
+                res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
+            };
+            let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+            return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+        }
+    };
+
+    Ok((resolve_fn_name, function))
+}
+
+fn generate_parameter_extraction(
+    crate_name: &proc_macro2::TokenStream,
+    parameter: &FieldResolverParameter,
+) -> GeneratorResult<proc_macro2::TokenStream> {
+    let FieldResolverParameter {
+        ty,
+        name,
+        default,
+        process_with,
+        validator,
+        ident,
+    } = parameter;
+
+    let default = match default {
+        Some(default) => {
+            quote! { ::std::option::Option::Some(|| -> #ty { #default }) }
+        }
+        None => quote! { ::std::option::Option::None },
+    };
+
+    let process_with = match process_with.as_ref() {
+        Some(fn_path) => quote! { #fn_path(&mut #ident); },
+        None => Default::default(),
+    };
+
+    let validators = (*validator).clone().unwrap_or_default().create_validators(
+        crate_name,
+        quote!(&#ident),
+        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+    )?;
+
+    let mut non_mut_ident = ident.clone();
+    non_mut_ident.mutability = None;
+    Ok(quote! {
+        #[allow(non_snake_case, unused_variables, unused_mut)]
+        // Todo: if there are no processors we can drop the mut.
+        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+        #process_with
+        #validators
+        #[allow(non_snake_case, unused_variables)]
+        let #ident = #non_mut_ident;
+    })
+}
+
+/// IR representation of a field resolver.
+struct FieldResolver<'a> {
+    resolver_fn_ident: &'a Ident,
+    cfg_attrs: &'a [Attribute],
+    /// Parsed Parameters for this resolver
+    params: &'a [FieldResolverParameter<'a>],
+}
+
+struct FieldResolverParameter<'a> {
+    ty: &'a Type,
+    process_with: &'a Option<Expr>,
+    validator: &'a Option<Validators>,
+    ident: PatIdent,
+    name: String,
+    default: Option<proc_macro2::TokenStream>,
 }

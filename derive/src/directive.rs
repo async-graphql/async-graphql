@@ -141,7 +141,6 @@ pub fn generate(
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
-        #[#crate_name::async_trait::async_trait]
         impl #crate_name::CustomDirectiveFactory for #ident {
             fn name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #directive_name

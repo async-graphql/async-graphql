@@ -4,7 +4,6 @@ use async_graphql_parser::types::Field;
 
 use crate::{registry, ContextSelectionSet, OutputType, Positioned, ServerResult, Value};
 
-#[async_trait::async_trait]
 impl<'a, T> OutputType for Cow<'a, T>
 where
     T: OutputType + ToOwned + ?Sized,

@@ -68,3 +68,28 @@ pub async fn test_scalar() {
 
     test_data!(A);
 }
+
+#[tokio::test]
+pub async fn test_oneof_object_type() {
+    macro_rules! test_data {
+        ($test_name:ident, $type1:ty, $type2:ty) => {
+            #[derive(async_graphql::OneofObject)]
+            enum $test_name {
+                Type1($type1),
+                Type2($type2),
+            }
+        };
+    }
+
+    #[derive(async_graphql::InputObject)]
+    struct A {
+        a: i32,
+    }
+
+    #[derive(async_graphql::InputObject)]
+    struct B {
+        b: i32,
+    }
+
+    test_data!(C, A, B);
+}

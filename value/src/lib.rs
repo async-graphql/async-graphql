@@ -522,7 +522,7 @@ fn write_binary(bytes: &[u8], f: &mut Formatter<'_>) -> fmt::Result {
         value.fmt(f)?;
     }
     for value in iter {
-        f.write_char(',')?;
+        f.write_str(", ")?;
         value.fmt(f)?;
     }
     f.write_char(']')
@@ -535,7 +535,7 @@ fn write_list<T: Display>(list: impl IntoIterator<Item = T>, f: &mut Formatter<'
         item.fmt(f)?;
     }
     for item in iter {
-        f.write_char(',')?;
+        f.write_str(", ")?;
         item.fmt(f)?;
     }
     f.write_char(']')
@@ -551,7 +551,7 @@ fn write_object<K: Display, V: Display>(
         write!(f, "{}: {}", name, value)?;
     }
     for (name, value) in iter {
-        f.write_char(',')?;
+        f.write_str(", ")?;
         write!(f, "{}: {}", name, value)?;
     }
     f.write_char('}')
