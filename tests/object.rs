@@ -203,7 +203,7 @@ async fn test_impl_dyn_trait() {
     }
 
     #[Object]
-    impl dyn MyTrait {
+    impl dyn MyTrait + '_ {
         #[graphql(name = "name")]
         async fn gql_name(&self) -> &str {
             self.name()
@@ -253,7 +253,7 @@ async fn test_impl_dyn_trait() {
 async fn test_optional_output_with_try() {
     struct B {
         some: Option<bool>,
-    };
+    }
 
     struct Query;
 

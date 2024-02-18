@@ -163,12 +163,12 @@ impl<T: OutputType + ?Sized> OutputType for Box<T> {
     }
 
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    async fn resolve(
+    fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
-    ) -> ServerResult<Value> {
-        T::resolve(&**self, ctx, field).await
+    ) -> impl Future<Output = ServerResult<Value>> + Send {
+        T::resolve(self.as_ref(), ctx, field)
     }
 }
 
