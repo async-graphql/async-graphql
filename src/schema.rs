@@ -220,6 +220,34 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    pub fn with_sorted_fields(mut self) -> Self {
+        use crate::registry::MetaType;
+        for (_, ty) in &mut self.registry.types {
+            match ty {
+                MetaType::Object { fields, .. } | MetaType::Interface { fields, .. } => {
+                    fields.sort_keys();
+                }
+                MetaType::InputObject { input_fields, .. } => {
+                    input_fields.sort_keys();
+                }
+                MetaType::Scalar { .. } | MetaType::Enum { .. } | MetaType::Union { .. } => {
+                    // have no fields
+                }
+            }
+        }
+        self
+    }
+
+    pub fn with_sorted_enums(mut self) -> Self {
+        use crate::registry::MetaType;
+        for (_, ty) in &mut self.registry.types {
+            if let MetaType::Enum { enum_values, .. } = ty {
+                enum_values.sort_keys();
+            }
+        }
+        self
+    }
+
     /// Consumes this builder and returns a schema.
     pub fn finish(mut self) -> Schema<Query, Mutation, Subscription> {
         // federation
