@@ -220,9 +220,10 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Make all fields sorted on introspection queries.
     pub fn with_sorted_fields(mut self) -> Self {
         use crate::registry::MetaType;
-        for (_, ty) in &mut self.registry.types {
+        for ty in self.registry.types.values_mut() {
             match ty {
                 MetaType::Object { fields, .. } | MetaType::Interface { fields, .. } => {
                     fields.sort_keys();
@@ -238,9 +239,10 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         self
     }
 
+    /// Make all enum variants sorted on introspection queries.
     pub fn with_sorted_enums(mut self) -> Self {
         use crate::registry::MetaType;
-        for (_, ty) in &mut self.registry.types {
+        for ty in &mut self.registry.types.values_mut() {
             if let MetaType::Enum { enum_values, .. } = ty {
                 enum_values.sort_keys();
             }
