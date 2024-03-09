@@ -311,46 +311,50 @@ pub fn generate(
                         let field = ::std::clone::Clone::clone(&field);
                         let field_name = ::std::clone::Clone::clone(&field_name);
                         async move {
-                            let ctx_selection_set = query_env.create_context(
-                                &schema_env,
-                                ::std::option::Option::Some(#crate_name::QueryPathNode {
-                                    parent: ::std::option::Option::None,
-                                    segment: #crate_name::QueryPathSegment::Name(&field_name),
-                                }),
-                                &field.node.selection_set,
-                            );
+                            let f = |execute_data: ::std::option::Option<#crate_name::Data>| {
+                                let schema_env = ::std::clone::Clone::clone(&schema_env);
+                                let query_env = ::std::clone::Clone::clone(&query_env);
+                                async move {
+                                    let ctx_selection_set = query_env.create_context(
+                                        &schema_env,
+                                        ::std::option::Option::Some(#crate_name::QueryPathNode {
+                                            parent: ::std::option::Option::None,
+                                            segment: #crate_name::QueryPathSegment::Name(&field_name),
+                                        }),
+                                        &field.node.selection_set,
+                                        execute_data.as_ref(),
+                                    );
 
-                            let execute_fut = async {
-                                let parent_type = #gql_typename;
-                                #[allow(bare_trait_objects)]
-                                let ri = #crate_name::extensions::ResolveInfo {
-                                    path_node: ctx_selection_set.path_node.as_ref().unwrap(),
-                                    parent_type: &parent_type,
-                                    return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
-                                    name: field.node.name.node.as_str(),
-                                    alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
-                                    is_for_introspection: false,
-                                    field: &field.node,
-                                };
-                                let resolve_fut = async {
-                                    #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
-                                        .await
-                                        .map(::std::option::Option::Some)
-                                };
-                                #crate_name::futures_util::pin_mut!(resolve_fut);
-                                let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
-                                    let mut map = #crate_name::indexmap::IndexMap::new();
-                                    map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
-                                    #crate_name::Response::new(#crate_name::Value::Object(map))
-                                })
-                                .unwrap_or_else(|err| #crate_name::Response::from_errors(::std::vec![err]));
+                                    let parent_type = #gql_typename;
+                                    #[allow(bare_trait_objects)]
+                                    let ri = #crate_name::extensions::ResolveInfo {
+                                        path_node: ctx_selection_set.path_node.as_ref().unwrap(),
+                                        parent_type: &parent_type,
+                                        return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
+                                        name: field.node.name.node.as_str(),
+                                        alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
+                                        is_for_introspection: false,
+                                        field: &field.node,
+                                    };
+                                    let resolve_fut = async {
+                                        #crate_name::OutputType::resolve(&msg, &ctx_selection_set, &*field)
+                                            .await
+                                            .map(::std::option::Option::Some)
+                                    };
+                                    #crate_name::futures_util::pin_mut!(resolve_fut);
+                                    let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
+                                        let mut map = #crate_name::indexmap::IndexMap::new();
+                                        map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
+                                        #crate_name::Response::new(#crate_name::Value::Object(map))
+                                    })
+                                    .unwrap_or_else(|err| #crate_name::Response::from_errors(::std::vec![err]));
 
-                                use ::std::iter::Extend;
-                                resp.errors.extend(::std::mem::take(&mut *query_env.errors.lock().unwrap()));
-                                resp
+                                    use ::std::iter::Extend;
+                                    resp.errors.extend(::std::mem::take(&mut *query_env.errors.lock().unwrap()));
+                                    resp
+                                }
                             };
-                            #crate_name::futures_util::pin_mut!(execute_fut);
-                            ::std::result::Result::Ok(query_env.extensions.execute(query_env.operation_name.as_deref(), &mut execute_fut).await)
+                            ::std::result::Result::Ok(query_env.extensions.execute(query_env.operation_name.as_deref(), f).await)
                         }
                     }
                 });
