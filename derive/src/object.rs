@@ -981,6 +981,7 @@ fn generate_parameter_extraction(
 
     let mut non_mut_ident = ident.clone();
     non_mut_ident.mutability = None;
+    let ident = &ident.ident;
     Ok(quote! {
         #[allow(non_snake_case, unused_variables, unused_mut)]
         // Todo: if there are no processors we can drop the mut.

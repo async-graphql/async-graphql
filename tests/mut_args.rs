@@ -3,7 +3,6 @@
 use async_graphql::*;
 
 #[tokio::test]
-#[allow(unused_mut)] // FIXME: Clippy's bug
 pub async fn test_mut_args() {
     struct Query;
 
