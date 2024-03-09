@@ -275,6 +275,7 @@ impl<'a> Fields<'a> {
                                                 item: directive,
                                                 schema_env: ctx_field.schema_env,
                                                 query_env: ctx_field.query_env,
+                                                execute_data: ctx_field.execute_data,
                                             };
                                             let directive_instance = directive_factory
                                                 .create(&ctx_directive, &directive.node)?;

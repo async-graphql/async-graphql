@@ -18,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::stream::BoxStream;
+use futures_util::{future::BoxFuture, stream::BoxStream, FutureExt};
 
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
@@ -141,7 +141,7 @@ type ParseFut<'a> = &'a mut (dyn Future<Output = ServerResult<ExecutableDocument
 type ValidationFut<'a> =
     &'a mut (dyn Future<Output = Result<ValidationResult, Vec<ServerError>>> + Send + Unpin);
 
-type ExecuteFut<'a> = &'a mut (dyn Future<Output = Response> + Send + Unpin);
+type ExecuteFutFactory<'a> = Box<dyn FnOnce(Option<Data>) -> BoxFuture<'a, Response> + Send + 'a>;
 
 /// A future type used to resolve the field
 pub type ResolveFut<'a> = &'a mut (dyn Future<Output = ServerResult<Option<Value>>> + Send + Unpin);
@@ -272,12 +272,27 @@ impl<'a> NextValidation<'a> {
 /// The remainder of a extension chain for execute.
 pub struct NextExecute<'a> {
     chain: &'a [Arc<dyn Extension>],
-    execute_fut: ExecuteFut<'a>,
+    execute_fut_factory: ExecuteFutFactory<'a>,
+    execute_data: Option<Data>,
 }
 
 impl<'a> NextExecute<'a> {
-    /// Call the [Extension::execute] function of next extension.
-    pub async fn run(self, ctx: &ExtensionContext<'_>, operation_name: Option<&str>) -> Response {
+    async fn internal_run(
+        self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        data: Option<Data>,
+    ) -> Response {
+        let execute_data = match (self.execute_data, data) {
+            (Some(mut data1), Some(data2)) => {
+                data1.merge(data2);
+                Some(data1)
+            }
+            (Some(data), None) => Some(data),
+            (None, Some(data)) => Some(data),
+            (None, None) => None,
+        };
+
         if let Some((first, next)) = self.chain.split_first() {
             first
                 .execute(
@@ -285,13 +300,30 @@ impl<'a> NextExecute<'a> {
                     operation_name,
                     NextExecute {
                         chain: next,
-                        execute_fut: self.execute_fut,
+                        execute_fut_factory: self.execute_fut_factory,
+                        execute_data,
                     },
                 )
                 .await
         } else {
-            self.execute_fut.await
+            (self.execute_fut_factory)(execute_data).await
         }
+    }
+
+    /// Call the [Extension::execute] function of next extension.
+    pub async fn run(self, ctx: &ExtensionContext<'_>, operation_name: Option<&str>) -> Response {
+        self.internal_run(ctx, operation_name, None).await
+    }
+
+    /// Call the [Extension::execute] function of next extension with context
+    /// data.
+    pub async fn run_with_data(
+        self,
+        ctx: &ExtensionContext<'_>,
+        operation_name: Option<&str>,
+        data: Data,
+    ) -> Response {
+        self.internal_run(ctx, operation_name, Some(data)).await
     }
 }
 
@@ -427,7 +459,7 @@ impl Extensions {
     }
 
     #[inline]
-    pub fn attach_query_data(&mut self, data: Arc<Data>) {
+    pub(crate) fn attach_query_data(&mut self, data: Arc<Data>) {
         self.query_data = Some(data);
     }
 
@@ -491,14 +523,19 @@ impl Extensions {
         next.run(&self.create_context()).await
     }
 
-    pub async fn execute(
-        &self,
+    pub async fn execute<'a, 'b, F, T>(
+        &'a self,
         operation_name: Option<&str>,
-        execute_fut: ExecuteFut<'_>,
-    ) -> Response {
+        execute_fut_factory: F,
+    ) -> Response
+    where
+        F: FnOnce(Option<Data>) -> T + Send + 'a,
+        T: Future<Output = Response> + Send + 'a,
+    {
         let next = NextExecute {
             chain: &self.extensions,
-            execute_fut,
+            execute_fut_factory: Box::new(|data| execute_fut_factory(data).boxed()),
+            execute_data: None,
         };
         next.run(&self.create_context(), operation_name).await
     }

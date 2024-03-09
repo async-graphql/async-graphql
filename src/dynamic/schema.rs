@@ -306,9 +306,19 @@ impl Schema {
         self.0.env.registry.export_sdl(options)
     }
 
-    async fn execute_once(&self, env: QueryEnv, root_value: &FieldValue<'static>) -> Response {
+    async fn execute_once(
+        &self,
+        env: QueryEnv,
+        root_value: &FieldValue<'static>,
+        execute_data: Option<Data>,
+    ) -> Response {
         // execute
-        let ctx = env.create_context(&self.0.env, None, &env.operation.node.selection_set);
+        let ctx = env.create_context(
+            &self.0.env,
+            None,
+            &env.operation.node.selection_set,
+            execute_data.as_ref(),
+        );
         let res = match &env.operation.node.ty {
             OperationType::Query => {
                 async move { self.query_root() }
@@ -361,14 +371,18 @@ impl Schema {
                 .await
                 {
                     Ok((env, cache_control)) => {
-                        let fut = async {
-                            self.execute_once(env.clone(), &request.root_value)
-                                .await
-                                .cache_control(cache_control)
+                        let f = {
+                            |execute_data| {
+                                let env = env.clone();
+                                async move {
+                                    self.execute_once(env, &request.root_value, execute_data)
+                                        .await
+                                        .cache_control(cache_control)
+                                }
+                            }
                         };
-                        futures_util::pin_mut!(fut);
                         env.extensions
-                            .execute(env.operation_name.as_deref(), &mut fut)
+                            .execute(env.operation_name.as_deref(), f)
                             .await
                     }
                     Err(errors) => Response::from_errors(errors),
@@ -420,7 +434,7 @@ impl Schema {
                 };
 
                 if env.operation.node.ty != OperationType::Subscription {
-                    yield schema.execute_once(env, &request.root_value).await;
+                    yield schema.execute_once(env, &request.root_value, None).await;
                     return;
                 }
 
@@ -428,6 +442,7 @@ impl Schema {
                     &schema.0.env,
                     None,
                     &env.operation.node.selection_set,
+                    None,
                 );
                 let mut streams = Vec::new();
                 subscription.collect_streams(&schema, &ctx, &mut streams, &request.root_value);

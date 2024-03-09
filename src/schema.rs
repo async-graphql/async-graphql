@@ -465,7 +465,7 @@ where
         )
     }
 
-    async fn execute_once(&self, env: QueryEnv) -> Response {
+    async fn execute_once(&self, env: QueryEnv, execute_data: Option<&Data>) -> Response {
         // execute
         let ctx = ContextBase {
             path_node: None,
@@ -473,6 +473,7 @@ where
             item: &env.operation.node.selection_set,
             schema_env: &self.0.env,
             query_env: &env,
+            execute_data,
         };
 
         let res = match &env.operation.node.ty {
@@ -523,14 +524,16 @@ where
                 .await
                 {
                     Ok((env, cache_control)) => {
-                        let fut = async {
-                            self.execute_once(env.clone())
-                                .await
-                                .cache_control(cache_control)
+                        let f = |execute_data: Option<Data>| {
+                            let env = env.clone();
+                            async move {
+                                self.execute_once(env, execute_data.as_ref())
+                                    .await
+                                    .cache_control(cache_control)
+                            }
                         };
-                        futures_util::pin_mut!(fut);
                         env.extensions
-                            .execute(env.operation_name.as_deref(), &mut fut)
+                            .execute(env.operation_name.as_deref(), f)
                             .await
                     }
                     Err(errors) => Response::from_errors(errors),
@@ -581,7 +584,19 @@ where
                 };
 
                 if env.operation.node.ty != OperationType::Subscription {
-                    yield schema.execute_once(env).await.cache_control(cache_control);
+                    let f = |execute_data: Option<Data>| {
+                        let env = env.clone();
+                        let schema = schema.clone();
+                        async move {
+                            schema.execute_once(env, execute_data.as_ref())
+                                .await
+                                .cache_control(cache_control)
+                        }
+                    };
+                    yield env.extensions
+                        .execute(env.operation_name.as_deref(), f)
+                        .await
+                        .cache_control(cache_control);
                     return;
                 }
 
@@ -589,6 +604,7 @@ where
                     &schema.0.env,
                     None,
                     &env.operation.node.selection_set,
+                    None,
                 );
 
                 let mut streams = Vec::new();
@@ -763,11 +779,10 @@ pub(crate) async fn prepare_request(
     complexity: Option<usize>,
     depth: Option<usize>,
 ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
-    let mut request = request;
+    let mut request = extensions.prepare_request(request).await?;
     let query_data = Arc::new(std::mem::take(&mut request.data));
     extensions.attach_query_data(query_data.clone());
 
-    let mut request = extensions.prepare_request(request).await?;
     let mut document = {
         let query = &request.query;
         let parsed_doc = request.parsed_query.take();
@@ -855,8 +870,7 @@ pub(crate) async fn prepare_request(
         fragments: document.fragments,
         uploads: request.uploads,
         session_data,
-        ctx_data: query_data,
-        extension_data: Arc::new(request.data),
+        query_data,
         http_headers: Default::default(),
         introspection_mode: request.introspection_mode,
         errors: Default::default(),
