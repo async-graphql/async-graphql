@@ -125,6 +125,15 @@ impl Request {
         Ok(self.parsed_query.as_ref().unwrap())
     }
 
+    /// Sets the parsed query into the request.
+    ///
+    /// This is useful special with dynamic schema when the query has been
+    /// parsed ahead of time. It can reduce performance overhead of parsing
+    /// the query again.
+    pub fn set_parsed_query(&mut self, doc: ExecutableDocument) {
+        self.parsed_query = Some(doc);
+    }
+
     /// Set a variable to an upload value.
     ///
     /// `var_path` is a dot-separated path to the item that begins with
