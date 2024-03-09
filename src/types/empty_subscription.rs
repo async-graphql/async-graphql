@@ -13,7 +13,7 @@ pub struct EmptySubscription;
 
 impl SubscriptionType for EmptySubscription {
     fn type_name() -> Cow<'static, str> {
-        Cow::Borrowed("EmptyMutation")
+        Cow::Borrowed("EmptySubscription")
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
