@@ -108,7 +108,7 @@ pub fn generate(
 
         directive_input_args.push(quote! {
             if let Some(val) = #crate_name::InputType::as_raw_value(&#arg_ident) {
-                args.insert(::std::string::ToString::to_string(#name), #crate_name::ScalarType::to_value(val));
+                args.insert(::std::string::ToString::to_string(#name), #crate_name::InputType::to_value(val));
             };
         });
     }
