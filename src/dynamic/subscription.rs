@@ -9,7 +9,13 @@ use crate::{
     dynamic::{
         resolve::resolve, FieldValue, InputValue, ObjectAccessor, ResolverContext, Schema,
         SchemaError, TypeRef,
-    }, extensions::ResolveInfo, parser::types::Selection, registry::{Deprecation, MetaField, MetaType, Registry}, subscription::BoxFieldStream, ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result, ServerResult, Value
+    },
+    extensions::ResolveInfo,
+    parser::types::Selection,
+    registry::{Deprecation, MetaField, MetaType, Registry},
+    subscription::BoxFieldStream,
+    ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result,
+    ServerResult, Value,
 };
 
 type BoxResolveFut<'a> = BoxFuture<'a, Result<BoxStream<'a, Result<FieldValue<'a>>>>>;
@@ -251,7 +257,7 @@ impl Subscription {
                                         let resolve_fut = resolve(&schema, &ctx_field, &field_type, Some(&value));
                                         futures_util::pin_mut!(resolve_fut);
                                         let value = ctx_field.query_env.extensions.resolve(ri, &mut resolve_fut).await;
-    
+
                                         match value {
                                             Ok(value) => {
                                                 let mut map = IndexMap::new();
