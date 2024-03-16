@@ -24,7 +24,8 @@ impl<'a> __Schema<'a> {
 /// points for query, mutation, and subscription operations.
 #[Object(internal, name = "__Schema")]
 impl<'a> __Schema<'a> {
-    /// description of __Schema for newer graphiql introspection schema requirements
+    /// description of __Schema for newer graphiql introspection schema
+    /// requirements
     async fn description(&self) -> String {
         String::from("A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.")
     }
