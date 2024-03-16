@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.3] 2024-03-16
+
+- Sort schema fields & enums if required [#1475](https://github.com/async-graphql/async-graphql/pull/1475)
+- Change the `type_name` of `EmptySubscription` fix [#1435](https://github.com/async-graphql/async-graphql/issues/1435) [#1475](https://github.com/async-graphql/async-graphql/pull/1475)
+- add `Request::set_parsed_query` method [#1483](https://github.com/async-graphql/async-graphql/pull/1483)
+- Upgrade strum to 0.26 [#1485](https://github.com/async-graphql/async-graphql/pull/1485)
+- Fix validation of non-nullable variables with default values [#1491](https://github.com/async-graphql/async-graphql/pull/1491)
+- add `NextExecute::run_with_data` method to attach context data before execution
+- feat: add registry method in dynamic::Registry [#1492](https://github.com/async-graphql/async-graphql/pull/1492)
+- Allow non-scalars to be used as directive arguments [#1493](https://github.com/async-graphql/async-graphql/pull/1493)
+- fix: add description to __schema introspection result [#1489](https://github.com/async-graphql/async-graphql/pull/1489)
+
 # [7.0.2] 2024-02-18
 
 - Fix `#[derive(OneofObject)]` rejecting enums where the type comes from a macro subsitution [#1473](https://github.com/async-graphql/async-graphql/pull/1473)

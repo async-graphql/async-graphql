@@ -14,8 +14,8 @@ use crate::{
     parser::types::Selection,
     registry::{Deprecation, MetaField, MetaType, Registry},
     subscription::BoxFieldStream,
-    ContextSelectionSet, Name, QueryPathNode, QueryPathSegment, Response, Result, ServerResult,
-    Value,
+    ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result,
+    ServerResult, Value,
 };
 
 type BoxResolveFut<'a> = BoxFuture<'a, Result<BoxStream<'a, Result<FieldValue<'a>>>>>;
@@ -233,34 +233,42 @@ impl Subscription {
                             .map_err(|err| ctx_field.set_error_path(err.into_server_error(ctx_field.item.pos)))?;
 
                             while let Some(value) = stream.next().await.transpose().map_err(|err| ctx_field.set_error_path(err.into_server_error(ctx_field.item.pos)))? {
-                                let execute_fut = async {
-                                    let ri = ResolveInfo {
-                                        path_node: &QueryPathNode {
-                                            parent: None,
-                                            segment: QueryPathSegment::Name(&field_name),
-                                        },
-                                        parent_type: schema.0.env.registry.subscription_type.as_ref().unwrap(),
-                                        return_type: &field_type.to_string(),
-                                        name: field.node.name.node.as_str(),
-                                        alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
-                                        is_for_introspection: false,
-                                        field: &field.node,
-                                    };
-                                    let resolve_fut = resolve(&schema, &ctx_field, &field_type, Some(&value));
-                                    futures_util::pin_mut!(resolve_fut);
-                                    let value = ctx_field.query_env.extensions.resolve(ri, &mut resolve_fut).await;
+                                let f = |execute_data: Option<Data>| {
+                                    let schema = schema.clone();
+                                    let field_name = field_name.clone();
+                                    let field_type = field_type.clone();
+                                    let ctx_field = ctx_field.clone();
 
-                                    match value {
-                                        Ok(value) => {
-                                            let mut map = IndexMap::new();
-                                            map.insert(field_name.clone(), value.unwrap_or_default());
-                                            Response::new(Value::Object(map))
-                                        },
-                                        Err(err) => Response::from_errors(vec![err]),
+                                    async move {
+                                        let mut ctx_field = ctx_field.clone();
+                                        ctx_field.execute_data = execute_data.as_ref();
+                                        let ri = ResolveInfo {
+                                            path_node: &QueryPathNode {
+                                                parent: None,
+                                                segment: QueryPathSegment::Name(&field_name),
+                                            },
+                                            parent_type: schema.0.env.registry.subscription_type.as_ref().unwrap(),
+                                            return_type: &field_type.to_string(),
+                                            name: field.node.name.node.as_str(),
+                                            alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
+                                            is_for_introspection: false,
+                                            field: &field.node,
+                                        };
+                                        let resolve_fut = resolve(&schema, &ctx_field, &field_type, Some(&value));
+                                        futures_util::pin_mut!(resolve_fut);
+                                        let value = ctx_field.query_env.extensions.resolve(ri, &mut resolve_fut).await;
+
+                                        match value {
+                                            Ok(value) => {
+                                                let mut map = IndexMap::new();
+                                                map.insert(field_name.clone(), value.unwrap_or_default());
+                                                Response::new(Value::Object(map))
+                                            },
+                                            Err(err) => Response::from_errors(vec![err]),
+                                        }
                                     }
                                 };
-                                futures_util::pin_mut!(execute_fut);
-                                let resp = ctx_field.query_env.extensions.execute(ctx_field.query_env.operation_name.as_deref(), &mut execute_fut).await;
+                                let resp = ctx_field.query_env.extensions.execute(ctx_field.query_env.operation_name.as_deref(), f).await;
                                 let is_err = !resp.errors.is_empty();
                                 yield resp;
                                 if is_err {

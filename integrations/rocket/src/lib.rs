@@ -11,6 +11,7 @@
 
 #![warn(missing_docs)]
 #![forbid(unsafe_code)]
+#![allow(clippy::blocks_in_conditions)]
 
 use core::any::Any;
 use std::io::Cursor;

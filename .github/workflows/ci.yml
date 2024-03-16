@@ -70,7 +70,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: nightly-2022-11-02, os: ubuntu-20.04 }
+          - { rust: nightly-2023-09-07, os: ubuntu-20.04 }
     steps:
       - name: Checkout
         uses: actions/checkout@v2
