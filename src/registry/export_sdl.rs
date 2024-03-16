@@ -697,7 +697,7 @@ extend schema @link(
 
     #[test]
     fn test_type_directive_sdl_without_federation() {
-        let expected = r#"directive @custom_type_directive on FIELD_DEFINITION | OBJECT
+        let expected = r#"directive @custom_type_directive(optionalWithoutDefault: String, optionalWithDefault: String = "DEFAULT") on FIELD_DEFINITION | OBJECT
 schema {
 	query: Query
 }
@@ -710,7 +710,35 @@ schema {
                 __DirectiveLocation::FIELD_DEFINITION,
                 __DirectiveLocation::OBJECT,
             ],
-            args: Default::default(),
+            args: [
+                (
+                    "optionalWithoutDefault".to_string(),
+                    MetaInputValue {
+                        name: "optionalWithoutDefault".to_string(),
+                        description: None,
+                        ty: "String".to_string(),
+                        default_value: None,
+                        visible: None,
+                        inaccessible: false,
+                        tags: vec![],
+                        is_secret: false,
+                    },
+                ),
+                (
+                    "optionalWithDefault".to_string(),
+                    MetaInputValue {
+                        name: "optionalWithDefault".to_string(),
+                        description: None,
+                        ty: "String".to_string(),
+                        default_value: Some("\"DEFAULT\"".to_string()),
+                        visible: None,
+                        inaccessible: false,
+                        tags: vec![],
+                        is_secret: false,
+                    },
+                ),
+            ]
+            .into(),
             is_repeatable: false,
             visible: None,
             composable: None,

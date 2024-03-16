@@ -713,7 +713,7 @@ impl MetaDirective {
             let args = self
                 .args
                 .values()
-                .map(|value| format!("{}: {}", value.name, value.ty))
+                .map(|value| self.argument_sdl(value))
                 .collect::<Vec<_>>()
                 .join(", ");
             write!(sdl, "({})", args).ok();
@@ -726,6 +726,15 @@ impl MetaDirective {
             .join(" | ");
         write!(sdl, " on {}", locations).ok();
         sdl
+    }
+
+    pub(crate) fn argument_sdl(&self, argument: &MetaInputValue) -> String {
+        let argument_default = match &argument.default_value {
+            Some(default) => format!(" = {default}"),
+            None => "".to_string(),
+        };
+
+        format!("{}: {}{}", argument.name, argument.ty, argument_default)
     }
 }
 
