@@ -325,7 +325,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: field,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            execute_data: self.execute_data.clone(),
+            execute_data: self.execute_data,
         }
     }
 
@@ -340,7 +340,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: selection_set,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            execute_data: self.execute_data.clone(),
+            execute_data: self.execute_data,
         }
     }
 
@@ -615,7 +615,7 @@ impl<'a, T> ContextBase<'a, T> {
             item: self.item,
             schema_env: self.schema_env,
             query_env: self.query_env,
-            execute_data: self.execute_data.clone(),
+            execute_data: self.execute_data,
         }
     }
 }

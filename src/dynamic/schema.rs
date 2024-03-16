@@ -463,6 +463,8 @@ impl Schema {
     ) -> impl Stream<Item = Response> + Send + Unpin {
         self.execute_stream_with_session_data(request, Default::default())
     }
+
+    /// Returns the registry of this schema.
     pub fn registry(&self) -> &Registry {
         &self.0.env.registry
     }
