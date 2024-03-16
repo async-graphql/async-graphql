@@ -29,12 +29,7 @@ impl<'a> Visitor<'a> for DefaultValuesOfCorrectType {
         }
 
         if let Some(value) = &variable_definition.node.default_value {
-            if !variable_definition.node.var_type.node.nullable {
-                ctx.report_error(vec![variable_definition.pos],format!(
-                    "Argument \"{}\" has type \"{}\" and is not nullable, so it can't have a default value",
-                    variable_definition.node.name, variable_definition.node.var_type,
-                ));
-            } else if let Some(reason) = is_valid_input_value(
+            if let Some(reason) = is_valid_input_value(
                 ctx.registry,
                 &variable_definition.node.var_type.to_string(),
                 &value.node,
@@ -101,8 +96,8 @@ mod tests {
     }
 
     #[test]
-    fn no_required_variables_with_default_values() {
-        expect_fails_rule!(
+    fn required_variables_with_default_values() {
+        expect_passes_rule!(
             factory,
             r#"
           query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {

@@ -132,6 +132,59 @@ pub async fn test_variable_null() {
 }
 
 #[tokio::test]
+pub async fn test_required_variable_with_default() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn int_val(&self, value: i32) -> i32 {
+            value
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    // test variable default
+    {
+        let query = Request::new(
+            r#"
+            query QueryWithVariables($intVal: Int! = 10) {
+                intVal(value: $intVal)
+            }
+            "#,
+        );
+        let resp = schema.execute(query).await;
+        assert_eq!(
+            resp.data,
+            value!({
+                "intVal": 10,
+            }),
+            "{}",
+            resp.data
+        );
+    }
+
+    // test variable null
+    {
+        let query = Request::new(
+            r#"
+            query QueryWithVariables($intVal: Int! = 10) {
+                intVal(value: $intVal)
+            }
+            "#,
+        )
+        .variables(Variables::from_value(value!({
+            "intVal": null,
+        })));
+        let resp = schema.execute(query).await;
+        assert_eq!(
+            resp.errors.first().map(|v| v.message.as_str()),
+            Some("Invalid value for argument \"value\", expected type \"Int\"")
+        );
+    }
+}
+
+#[tokio::test]
 pub async fn test_variable_in_input_object() {
     #[derive(InputObject)]
     struct MyInput {
