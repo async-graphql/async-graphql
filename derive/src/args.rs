@@ -278,6 +278,8 @@ pub struct SimpleObject {
     #[darling(default)]
     pub input_name: Option<String>,
     #[darling(default)]
+    pub input_name_suffix: Option<String>,
+    #[darling(default)]
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
@@ -438,6 +440,8 @@ pub struct Union {
     // for OneofObject
     #[darling(default)]
     pub input_name: Option<String>,
+    #[darling(default)]
+    pub input_name_suffix: Option<String>,
 }
 
 #[derive(FromVariant)]
@@ -506,6 +510,8 @@ pub struct InputObject {
     #[darling(default)]
     pub input_name: Option<String>,
     #[darling(default)]
+    pub input_name_suffix: Option<String>,
+    #[darling(default)]
     pub rename_fields: Option<RenameRule>,
     #[darling(default)]
     pub visible: Option<Visible>,
@@ -559,6 +565,8 @@ pub struct OneofObject {
     pub name: Option<String>,
     #[darling(default)]
     pub input_name: Option<String>,
+    #[darling(default)]
+    pub input_name_suffix: Option<String>,
     #[darling(default)]
     pub name_type: bool,
     #[darling(default)]
