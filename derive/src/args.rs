@@ -688,6 +688,8 @@ pub struct Subscription {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub guard: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -713,6 +715,8 @@ pub struct SubscriptionField {
     pub guard: Option<Expr>,
     pub visible: Option<Visible>,
     pub complexity: Option<Expr>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromField)]
