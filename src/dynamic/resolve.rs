@@ -601,6 +601,7 @@ async fn resolve_value(
             )
             .await
         }
+        (Type::Interface(interface), FieldValueInner::Value(Value::Null)) => Ok(None),
         (Type::Interface(interface), _) => Err(ctx.set_error_path(
             Error::new(format!(
                 "internal: invalid value for interface \"{}\", expected \"FieldValue::WithType\"",
@@ -608,7 +609,6 @@ async fn resolve_value(
             ))
             .into_server_error(ctx.item.pos),
         )),
-
         (Type::Union(union), FieldValueInner::WithType { value, ty }) => {
             if !union.possible_types.contains(ty.as_ref()) {
                 return Err(ctx.set_error_path(
