@@ -9,7 +9,7 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -46,12 +46,11 @@ jobs:
             registryName: async-graphql-tide
             path: integrations/tide
     steps:
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: get version
         working-directory: ${{ matrix.package.path }}
         run: echo PACKAGE_VERSION=$(sed -nE 's/^\s*version = "(.*?)"/\1/p' Cargo.toml) >> $GITHUB_ENV

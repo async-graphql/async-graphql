@@ -16,17 +16,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-20.04 }
+          - { rust: stable, os: ubuntu-22.04 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt
-          override: true
       - name: Build with all features
         run: cargo build --all-features
       - name: Build
@@ -43,17 +42,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: 1.75.0, os: ubuntu-20.04 }
+          - { rust: 1.75.0, os: ubuntu-22.04 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt
-          override: true
       - name: Build with all features
         run: cargo build --all-features
       - name: Build
@@ -70,16 +68,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: nightly-2023-09-07, os: ubuntu-20.04 }
+          - { rust: nightly-2023-09-07, os: ubuntu-22.04 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
           components: rustfmt
       - name: Check format
         run: cargo +${{ matrix.rust }} fmt --all -- --check
@@ -94,36 +91,34 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-20.04 }
+          - { rust: stable, os: ubuntu-22.04 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
           components: clippy
       - name: Check with clippy
         run: cargo clippy --all
 
   book_examples:
     name: Test book examples
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          override: true
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: "0.4.22"
+          mdbook-version: "0.4.37"
       - name: Build with all features
         run: cargo build --workspace --all-features
       - name: Run book tests for en language
@@ -140,16 +135,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { rust: stable, os: ubuntu-20.04 }
+          - { rust: stable, os: ubuntu-22.04 }
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: ${{ matrix.rust }}
-          override: true
           components: clippy, rustfmt
       - name: Check examples with clippy
         run: cargo clippy --all
@@ -166,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: AutoCorrect
         uses: huacnlee/autocorrect-action@v2
