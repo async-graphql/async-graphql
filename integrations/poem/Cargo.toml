@@ -15,12 +15,12 @@ version = "7.0.3"
 async-graphql.workspace = true
 
 futures-util = { workspace = true, default-features = false }
-poem = { version = "2.0.0", features = ["websocket"] }
+poem = { version = "2.0.1", features = ["websocket"] }
 serde_json.workspace = true
 tokio-util = { workspace = true, default-features = false, features = [
     "compat",
 ] }
-mime = "0.3.16"
-tokio = { version = "1.17.0", features = ["time"] }
-tokio-stream = "0.1.14"
-http = "1.0.0"
+mime = "0.3.17"
+tokio = { version = "1.36.0", features = ["time"] }
+tokio-stream = "0.1.15"
+http = "1.1.0"
