@@ -1,4 +1,4 @@
-use std::{iter::FromIterator, str::FromStr};
+use std::str::FromStr;
 
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};

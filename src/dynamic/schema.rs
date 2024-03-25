@@ -523,9 +523,8 @@ mod tests {
     use tokio::sync::Mutex;
 
     use crate::{
-        dynamic::{DynamicRequestExt, *},
-        extensions::*,
-        value, PathSegment, Request, Response, ServerError, ServerResult, ValidationResult, Value,
+        dynamic::*, extensions::*, value, PathSegment, Request, Response, ServerError,
+        ServerResult, ValidationResult, Value,
     };
 
     #[tokio::test]
