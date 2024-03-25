@@ -67,10 +67,7 @@ impl<'a> GraphiQLSource<'a> {
 
     /// Sets a header to be sent with requests GraphiQL will send.
     pub fn header(self, name: &'a str, value: &'a str) -> GraphiQLSource<'a> {
-        let mut headers = match self.headers {
-            Some(headers) => headers,
-            None => HashMap::new(),
-        };
+        let mut headers = self.headers.unwrap_or_default();
         headers.insert(name, value);
         GraphiQLSource {
             headers: Some(headers),

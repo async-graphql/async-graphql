@@ -84,9 +84,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        parser::parse_query,
-        validation::{visit, VisitorContext},
-        EmptyMutation, Object, Schema, Subscription,
+        parser::parse_query, validation::visit, EmptyMutation, Object, Schema, Subscription,
     };
 
     struct Query;

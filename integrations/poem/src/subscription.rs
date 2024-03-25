@@ -10,7 +10,6 @@ use futures_util::{
     Future, Sink, SinkExt, Stream, StreamExt,
 };
 use poem::{
-    http,
     http::StatusCode,
     web::websocket::{Message, WebSocket},
     Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,

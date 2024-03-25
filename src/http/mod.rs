@@ -21,7 +21,6 @@ pub use graphiql_plugin::{graphiql_plugin_explorer, GraphiQLPlugin};
 pub use graphiql_source::graphiql_source;
 #[cfg(feature = "graphiql")]
 pub use graphiql_v2_source::{Credentials, GraphiQLSource};
-use mime;
 pub use multipart::MultipartOptions;
 pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart_mixed};
 #[cfg(feature = "playground")]
