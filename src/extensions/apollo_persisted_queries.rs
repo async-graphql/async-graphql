@@ -1,6 +1,6 @@
 //! Apollo persisted queries extension.
 
-use std::sync::Arc;
+use std::{num::NonZeroUsize, sync::Arc};
 
 use async_graphql_parser::types::ExecutableDocument;
 use futures_util::lock::Mutex;
@@ -36,7 +36,9 @@ pub struct LruCacheStorage(Arc<Mutex<lru::LruCache<String, ExecutableDocument>>>
 impl LruCacheStorage {
     /// Creates a new LRU Cache that holds at most `cap` items.
     pub fn new(cap: usize) -> Self {
-        Self(Arc::new(Mutex::new(lru::LruCache::new(cap))))
+        Self(Arc::new(Mutex::new(lru::LruCache::new(
+            NonZeroUsize::new(cap).unwrap(),
+        ))))
     }
 }
 
