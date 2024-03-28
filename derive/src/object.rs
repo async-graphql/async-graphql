@@ -399,6 +399,7 @@ pub fn generate(
                         secret,
                         inaccessible,
                         tags,
+                        directives,
                         ..
                     },
                 ) in &args
@@ -429,6 +430,8 @@ pub fn generate(
                         .iter()
                         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                         .collect::<Vec<_>>();
+                    let directives =
+                        gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
 
                     schema_args.push(quote! {
                             args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
@@ -440,6 +443,7 @@ pub fn generate(
                                 inaccessible: #inaccessible,
                                 tags: ::std::vec![ #(#tags),* ],
                                 is_secret: #secret,
+                                directive_invocations: ::std::vec![ #(#directives),* ],
                             });
                         });
 

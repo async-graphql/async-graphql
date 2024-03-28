@@ -7,6 +7,8 @@ use crate::{
     args::{self, RenameRuleExt, RenameTarget},
     utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
 };
+use crate::args::TypeDirectiveLocation;
+use crate::utils::gen_directive_calls;
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);
@@ -32,6 +34,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let directives = gen_directive_calls(&enum_args.directives, TypeDirectiveLocation::Enum);
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -64,6 +67,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+        let directives = gen_directive_calls(&variant.directives, TypeDirectiveLocation::EnumValue);
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
@@ -86,6 +90,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 visible: #visible,
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],
+                directive_invocations: ::std::vec![ #(#directives),* ]
             });
         });
     }
@@ -159,6 +164,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     }
                 })
             }
