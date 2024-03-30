@@ -387,11 +387,7 @@ impl ser::SerializeStruct for SerializeStruct {
     type Error = SerializerError;
 
     #[inline]
-    fn serialize_field<T>(
-        &mut self,
-        key: &'static str,
-        value: &T,
-    ) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
         T: ser::Serialize + ?Sized,
     {
@@ -414,11 +410,7 @@ impl ser::SerializeStructVariant for SerializeStructVariant {
     type Error = SerializerError;
 
     #[inline]
-    fn serialize_field<T>(
-        &mut self,
-        key: &'static str,
-        value: &T,
-    ) -> Result<(), Self::Error>
+    fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
     where
         T: ser::Serialize + ?Sized,
     {
