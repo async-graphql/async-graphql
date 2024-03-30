@@ -5,7 +5,7 @@ use async_graphql::{
     Executor,
 };
 use futures_util::StreamExt;
-use poem::{async_trait, Body, Endpoint, FromRequest, IntoResponse, Request, Response, Result};
+use poem::{Body, Endpoint, FromRequest, IntoResponse, Request, Response, Result};
 
 use crate::{GraphQLBatchRequest, GraphQLBatchResponse, GraphQLRequest};
 
@@ -43,7 +43,6 @@ impl<E> GraphQL<E> {
     }
 }
 
-#[async_trait]
 impl<E> Endpoint for GraphQL<E>
 where
     E: Executor,
