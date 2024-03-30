@@ -1,6 +1,5 @@
 use async_graphql::http::MultipartOptions;
 use poem::{
-    async_trait,
     error::BadRequest,
     http::{header, Method},
     FromRequest, Request, RequestBody, Result,
@@ -47,7 +46,6 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// ```
 pub struct GraphQLRequest(pub async_graphql::Request);
 
-#[async_trait]
 impl<'a> FromRequest<'a> for GraphQLRequest {
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         Ok(GraphQLRequest(
@@ -63,7 +61,6 @@ impl<'a> FromRequest<'a> for GraphQLRequest {
 /// An extractor for GraphQL batch request.
 pub struct GraphQLBatchRequest(pub async_graphql::BatchRequest);
 
-#[async_trait]
 impl<'a> FromRequest<'a> for GraphQLBatchRequest {
     async fn from_request(req: &'a Request, body: &mut RequestBody) -> Result<Self> {
         if req.method() == Method::GET {
