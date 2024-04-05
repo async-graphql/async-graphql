@@ -38,9 +38,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
 mod tests {
     use super::*;
     use crate::{
-        parser::parse_query,
-        validation::{visit, VisitorContext},
-        EmptyMutation, EmptySubscription, Object, Schema,
+        parser::parse_query, validation::visit, EmptyMutation, EmptySubscription, Object, Schema,
     };
 
     struct Query;

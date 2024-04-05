@@ -1,6 +1,5 @@
 //! Executable document-related GraphQL types.
 
-use async_graphql_value::{ConstValue, Name, Value};
 use serde::{Deserialize, Serialize};
 
 use super::*;
