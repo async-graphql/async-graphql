@@ -43,6 +43,17 @@ pub async fn test_extension_ctx() {
 
     #[async_trait::async_trait]
     impl Extension for MyExtensionImpl {
+        async fn prepare_request(
+            &self,
+            ctx: &ExtensionContext<'_>,
+            request: Request,
+            next: NextPrepareRequest<'_>,
+        ) -> ServerResult<Request> {
+            let data = ctx.data::<MyData>();
+            assert!(data.is_ok());
+            next.run(ctx, request).await
+        }
+
         async fn parse_query(
             &self,
             ctx: &ExtensionContext<'_>,

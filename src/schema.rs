@@ -779,10 +779,11 @@ pub(crate) async fn prepare_request(
     complexity: Option<usize>,
     depth: Option<usize>,
 ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
-    let mut request = extensions.prepare_request(request).await?;
+    let mut request = request;
     let query_data = Arc::new(std::mem::take(&mut request.data));
     extensions.attach_query_data(query_data.clone());
 
+    let mut request = extensions.prepare_request(request).await?;
     let mut document = {
         let query = &request.query;
         let parsed_doc = request.parsed_query.take();
