@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::Eq, collections::HashSet as StdHashSet, hash::Hash};
+use std::{borrow::Cow, collections::HashSet as StdHashSet, hash::Hash};
 
 use hashbrown::HashSet;
 

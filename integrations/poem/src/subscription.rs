@@ -10,7 +10,6 @@ use futures_util::{
     Future, Sink, SinkExt, Stream, StreamExt,
 };
 use poem::{
-    http,
     http::StatusCode,
     web::websocket::{Message, WebSocket},
     Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
@@ -22,7 +21,6 @@ use poem::{
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GraphQLProtocol(pub WebSocketProtocols);
 
-#[poem::async_trait]
 impl<'a> FromRequest<'a> for GraphQLProtocol {
     async fn from_request(req: &'a Request, _body: &mut RequestBody) -> Result<Self> {
         req.headers()
@@ -82,7 +80,6 @@ impl<E> GraphQLSubscription<E> {
     }
 }
 
-#[poem::async_trait]
 impl<E> Endpoint for GraphQLSubscription<E>
 where
     E: Executor,

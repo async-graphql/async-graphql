@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::Eq, collections::HashSet, hash::Hash};
+use std::{borrow::Cow, collections::HashSet, hash::Hash};
 
 use crate::{
     parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
