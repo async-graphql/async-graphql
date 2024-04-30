@@ -15,7 +15,6 @@ version = "7.0.3"
 async-graphql.workspace = true
 
 async-trait.workspace = true
-axum = { version = "0.7.0", features = ["ws"] }
 bytes.workspace = true
 futures-util.workspace = true
 serde_json.workspace = true
@@ -26,3 +25,9 @@ tokio-util = { workspace = true, default-features = false, features = [
 ] }
 tokio-stream = "0.1.14"
 tower-service = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+axum = { version = "0.7.0", default_features = false }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+axum = { version = "0.7.0", features = ["ws"] }
