@@ -79,6 +79,7 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
 }
 
 #[cfg(test)]
+#[allow(clippy::diverging_sub_expression)]
 mod tests {
     use futures_util::stream::BoxStream;
 

@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+#![allow(clippy::diverging_sub_expression)]
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 

@@ -35,6 +35,7 @@ impl<'ctx, 'a> Visitor<'ctx> for DepthCalculate<'a> {
 }
 
 #[cfg(test)]
+#[allow(clippy::diverging_sub_expression)]
 mod tests {
     use super::*;
     use crate::{

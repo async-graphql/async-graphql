@@ -219,6 +219,7 @@ impl Registry {
 }
 
 #[cfg(test)]
+#[allow(clippy::diverging_sub_expression)]
 mod tests {
     use super::*;
     use crate::{parser::parse_query, *};
