@@ -1,4 +1,5 @@
 #![allow(clippy::uninlined_format_args)]
+#![allow(clippy::diverging_sub_expression)]
 
 use async_graphql::*;
 use chrono::{NaiveDate, NaiveDateTime};

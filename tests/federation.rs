@@ -1,4 +1,6 @@
 #![allow(unreachable_code)]
+#![allow(dead_code)]
+#![allow(clippy::diverging_sub_expression)]
 
 use std::{collections::HashMap, convert::Infallible};
 
