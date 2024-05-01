@@ -3,11 +3,12 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{ext::IdentExt, Error};
 
-use crate::args::TypeDirectiveLocation;
-use crate::utils::gen_directive_calls;
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
-    utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    utils::{
+        gen_directive_calls, generate_default, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult,
+    },
 };
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
@@ -20,10 +21,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_calls(
-        &object_args.directives,
-        TypeDirectiveLocation::InputObject,
-    );
+    let directives =
+        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -77,8 +76,10 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
 
-        let directive_invocations =
-            gen_directive_calls(&field.directives, TypeDirectiveLocation::InputFieldDefinition);
+        let directive_invocations = gen_directive_calls(
+            &field.directives,
+            TypeDirectiveLocation::InputFieldDefinition,
+        );
 
         if field.skip || field.skip_input {
             get_fields.push(quote! {

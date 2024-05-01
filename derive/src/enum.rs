@@ -4,11 +4,12 @@ use quote::quote;
 use syn::{ext::IdentExt, Error};
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
-    utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    utils::{
+        gen_deprecation, gen_directive_calls, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult,
+    },
 };
-use crate::args::TypeDirectiveLocation;
-use crate::utils::gen_directive_calls;
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(enum_args.internal);

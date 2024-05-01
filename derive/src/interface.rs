@@ -7,15 +7,16 @@ use quote::quote;
 use syn::{visit_mut::VisitMut, Error, Type};
 
 use crate::{
-    args::{self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget},
+    args::{
+        self, InterfaceField, InterfaceFieldArgument, RenameRuleExt, RenameTarget,
+        TypeDirectiveLocation,
+    },
     output_type::OutputType,
     utils::{
-        gen_deprecation, generate_default, get_crate_name, get_rustdoc, visible_fn,
-        GeneratorResult, RemoveLifetime,
+        gen_deprecation, gen_directive_calls, generate_default, get_crate_name, get_rustdoc,
+        visible_fn, GeneratorResult, RemoveLifetime,
     },
 };
-use crate::args::TypeDirectiveLocation;
-use crate::utils::gen_directive_calls;
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(interface_args.internal);
@@ -40,7 +41,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_calls(&interface_args.directives, TypeDirectiveLocation::Interface);
+    let directives =
+        gen_directive_calls(&interface_args.directives, TypeDirectiveLocation::Interface);
     let gql_typename = if !interface_args.name_type {
         let name = interface_args
             .name
@@ -248,7 +250,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 .iter()
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
-            let directives = gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
+            let directives =
+                gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
 
             schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {

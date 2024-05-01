@@ -2,9 +2,8 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::InputValue,
-    registry::{MetaInputValue, MetaType, Registry},
+    registry::{MetaDirectiveInvocation, MetaInputValue, MetaType, Registry},
 };
-use crate::registry::MetaDirectiveInvocation;
 
 /// A GraphQL input object type
 ///

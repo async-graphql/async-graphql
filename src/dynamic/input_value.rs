@@ -1,5 +1,8 @@
-use crate::registry::MetaDirectiveInvocation;
-use crate::{dynamic::TypeRef, registry::MetaInputValue, Value};
+use crate::{
+    dynamic::TypeRef,
+    registry::{MetaDirectiveInvocation, MetaInputValue},
+    Value,
+};
 
 /// A GraphQL input value type
 #[derive(Debug)]

@@ -438,11 +438,11 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                
+
                 for directive in directive_invocations {
                     write!(sdl, " {}", directive.sdl()).ok();
                 }
-                
+
                 self.write_implements(sdl, name);
 
                 writeln!(sdl, " {{").ok();
@@ -471,11 +471,11 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                
+
                 for directive in directive_invocations {
                     write!(sdl, " {}", directive.sdl()).ok();
                 }
-                
+
                 writeln!(sdl, " {{").ok();
 
                 let mut values = enum_values.values().collect::<Vec<_>>();
@@ -536,11 +536,11 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
-                
+
                 for directive in raw_directives {
                     write!(sdl, " {}", directive.sdl()).ok();
                 }
-                
+
                 writeln!(sdl, " {{").ok();
 
                 let mut fields = input_fields.values().collect::<Vec<_>>();

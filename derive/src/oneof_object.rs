@@ -5,11 +5,9 @@ use syn::{Error, Type};
 
 use crate::{
     args,
-    args::{RenameRuleExt, RenameTarget},
-    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    utils::{gen_directive_calls, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
 };
-use crate::args::TypeDirectiveLocation;
-use crate::utils::gen_directive_calls;
 
 pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -24,7 +22,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
+    let directives =
+        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
     let gql_typename = if !object_args.name_type {
         let name = object_args
             .input_name
@@ -94,8 +93,11 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             Type::Group(tg) => &*tg.elem,
             ty => ty,
         };
-        
-        let directives = gen_directive_calls(&variant.directives, TypeDirectiveLocation::InputFieldDefinition);
+
+        let directives = gen_directive_calls(
+            &variant.directives,
+            TypeDirectiveLocation::InputFieldDefinition,
+        );
 
         if let Type::Path(_) = ty {
             enum_names.push(enum_name);

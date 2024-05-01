@@ -1,5 +1,7 @@
 use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema};
-use async_graphql_derive::{ComplexObject, Enum, InputObject, Interface, Object, OneofObject, SimpleObject, TypeDirective};
+use async_graphql_derive::{
+    ComplexObject, Enum, InputObject, Interface, Object, OneofObject, SimpleObject, TypeDirective,
+};
 
 #[test]
 pub fn test_type_directive_1() {
@@ -55,7 +57,6 @@ pub fn test_type_directive_1() {
     let expected = include_str!("schemas/test_fed2_compose.schema.graphql");
     assert_eq!(expected, &sdl)
 }
-
 
 #[test]
 fn test_type_directive_2() {
@@ -140,7 +141,7 @@ fn test_type_directive_2() {
         async fn field(
             &self,
             #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface".to_string()))]
-            _arg: String
+            _arg: String,
         ) -> &'static str {
             "hello"
         }

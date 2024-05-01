@@ -95,11 +95,11 @@ pub mod location_traits {
     pub trait Directive_At_INTERFACE {
         fn check() {}
     }
-    
+
     pub trait Directive_At_ENUM {
         fn check() {}
     }
-    
+
     pub trait Directive_At_ENUM_VALUE {
         fn check() {}
     }
