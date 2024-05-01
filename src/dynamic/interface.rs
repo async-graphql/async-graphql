@@ -262,6 +262,7 @@ impl Interface {
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),
                 rust_typename: None,
+                directive_invocations: vec![],
             },
         );
 
