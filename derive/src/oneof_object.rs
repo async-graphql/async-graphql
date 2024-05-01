@@ -8,6 +8,8 @@ use crate::{
     args::{RenameRuleExt, RenameTarget},
     utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
 };
+use crate::args::TypeDirectiveLocation;
+use crate::utils::gen_directive_calls;
 
 pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
@@ -22,6 +24,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
     let gql_typename = if !object_args.name_type {
         let name = object_args
             .input_name
@@ -91,6 +94,8 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             Type::Group(tg) => &*tg.elem,
             ty => ty,
         };
+        
+        let directives = gen_directive_calls(&variant.directives, TypeDirectiveLocation::InputFieldDefinition);
 
         if let Type::Path(_) = ty {
             enum_names.push(enum_name);
@@ -108,6 +113,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     is_secret: #secret,
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                 });
             });
 
@@ -163,6 +169,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: true,
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     })
                 }
 
@@ -215,6 +222,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: true,
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     })
                 }
 

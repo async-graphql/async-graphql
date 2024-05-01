@@ -1,8 +1,8 @@
 use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema};
-use async_graphql_derive::{Object, SimpleObject, TypeDirective};
+use async_graphql_derive::{ComplexObject, Enum, InputObject, Interface, Object, OneofObject, SimpleObject, TypeDirective};
 
 #[test]
-pub fn test_type_directive() {
+pub fn test_type_directive_1() {
     #[TypeDirective(
         location = "FieldDefinition",
         location = "Object",
@@ -54,4 +54,160 @@ pub fn test_type_directive() {
 
     let expected = include_str!("schemas/test_fed2_compose.schema.graphql");
     assert_eq!(expected, &sdl)
+}
+
+
+#[test]
+fn test_type_directive_2() {
+    #[TypeDirective(location = "FieldDefinition")]
+    fn type_directive_field_definition(description: String) {}
+
+    #[TypeDirective(location = "ArgumentDefinition")]
+    fn type_directive_argument_definition(description: String) {}
+
+    #[TypeDirective(location = "InputFieldDefinition")]
+    fn type_directive_input_field_definition(description: String) {}
+
+    #[TypeDirective(location = "Object")]
+    fn type_directive_object(description: String) {}
+
+    #[TypeDirective(location = "InputObject")]
+    fn type_directive_input_object(description: String) {}
+
+    #[TypeDirective(location = "Enum")]
+    fn type_directive_enum(description: String) {}
+
+    #[TypeDirective(location = "EnumValue")]
+    fn type_directive_enum_value(description: String) {}
+
+    #[TypeDirective(location = "Interface")]
+    fn type_directive_interface(description: String) {}
+
+    #[derive(InputObject)]
+    #[graphql(directive = type_directive_input_object::apply("This is INPUT_OBJECT in InputObject".to_string()))]
+    struct TestInput {
+        #[graphql(directive = type_directive_input_field_definition::apply("This is INPUT_FIELD_DEFINITION".to_string()))]
+        field: String,
+    }
+
+    #[derive(OneofObject)]
+    #[graphql(directive = type_directive_input_object::apply("This is INPUT_OBJECT in OneofObject".to_string()))]
+    enum TestOneOfObject {
+        #[graphql(directive = type_directive_input_field_definition::apply("This is INPUT_FIELD_DEFINITION in OneofObject".to_string()))]
+        Foo(String),
+        #[graphql(directive = type_directive_input_field_definition::apply("This is INPUT_FIELD_DEFINITION in OneofObject".to_string()))]
+        Bar(i32),
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(directive = type_directive_object::apply("This is OBJECT in SimpleObject".to_string()))]
+    struct TestSimpleObject {
+        #[graphql(directive = type_directive_field_definition::apply("This is FIELD_DEFINITION in SimpleObject".to_string()))]
+        field: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex, directive = type_directive_object::apply("This is OBJECT in (Complex / Simple)Object".to_string()))]
+    struct TestComplexObject {
+        #[graphql(directive = type_directive_field_definition::apply("This is FIELD_DEFINITION in (Complex / Simple)Object".to_string()))]
+        field: String,
+    }
+
+    #[ComplexObject]
+    impl TestComplexObject {
+        async fn test(
+            &self,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in ComplexObject".to_string()))]
+            _arg: String,
+        ) -> &'static str {
+            "test"
+        }
+    }
+
+    #[derive(Enum, Copy, Clone, PartialEq, Eq)]
+    #[graphql(directive = type_directive_enum::apply("This is ENUM in Enum".to_string()))]
+    enum TestEnum {
+        #[graphql(directive = type_directive_enum_value::apply("This is ENUM_VALUE in Enum".to_string()))]
+        Foo,
+        #[graphql(directive = type_directive_enum_value::apply("This is ENUM_VALUE in Enum".to_string()))]
+        Bar,
+    }
+
+    struct TestObjectForInterface;
+
+    #[Object]
+    impl TestObjectForInterface {
+        async fn field(
+            &self,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface".to_string()))]
+            _arg: String
+        ) -> &'static str {
+            "hello"
+        }
+    }
+    #[derive(Interface)]
+    #[graphql(
+        field(
+            name = "field",
+            ty = "String",
+            directive = type_directive_field_definition::apply("This is INTERFACE in Interface".to_string()),
+            arg(
+                name = "_arg",
+                ty = "String",
+                directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface".to_string())
+            )
+        ),
+        directive = type_directive_interface::apply("This is INTERFACE in Interface".to_string())
+    )]
+    enum TestInterface {
+        TestSimpleObjectForInterface(TestObjectForInterface),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn test_argument(
+            &self,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Object".to_string()))]
+            _arg: String,
+        ) -> &'static str {
+            "hello"
+        }
+
+        pub async fn test_input_object(&self, _arg: TestInput) -> &'static str {
+            "hello"
+        }
+
+        pub async fn test_complex_object(&self) -> TestComplexObject {
+            TestComplexObject {
+                field: "hello".to_string(),
+            }
+        }
+
+        pub async fn test_simple_object(&self) -> TestSimpleObject {
+            TestSimpleObject {
+                field: "hello".to_string(),
+            }
+        }
+
+        pub async fn test_one_of_object(&self, _arg: TestOneOfObject) -> &'static str {
+            "hello"
+        }
+
+        pub async fn test_enum(&self, _arg: TestEnum) -> &'static str {
+            "hello"
+        }
+
+        pub async fn test_interface(&self) -> TestObjectForInterface {
+            TestObjectForInterface
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .register_output_type::<TestInterface>()
+        .finish();
+    let sdl = schema.sdl();
+    let expected = include_str!("schemas/test_fed2_compose_2.schema.graphql");
+    assert_eq!(expected, sdl);
 }

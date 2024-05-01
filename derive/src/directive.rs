@@ -62,6 +62,7 @@ pub fn generate(
             validator,
             visible,
             secret,
+            directives,
             ..
         } = parse_graphql_attrs::<args::Argument>(&arg_attrs)?.unwrap_or_default();
 
@@ -97,6 +98,7 @@ pub fn generate(
                 inaccessible: false,
                 tags: ::std::default::Default::default(),
                 is_secret: #secret,
+                directive_invocations: ::std::vec![ #(#directives),* ],
             });
         });
 

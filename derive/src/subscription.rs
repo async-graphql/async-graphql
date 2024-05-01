@@ -127,6 +127,7 @@ pub fn generate(
                             inaccessible: false,
                             tags: ::std::default::Default::default(),
                             is_secret: #secret,
+                            directive_invocations: ::std::vec![],
                         });
                     });
 
