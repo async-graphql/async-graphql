@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.5] 2024-05-09
+
+- Fix compiler and clippy warnings [#1501](https://github.com/async-graphql/async-graphql/pull/1501)
+- Added support for deploying to wasm targets with axum - (without subscriptions) [#1517](https://github.com/async-graphql/async-graphql/pull/1517)
+- Bump opentelemetry (0.21.0 -> 0.22.0) [#1513](https://github.com/async-graphql/async-graphql/pull/1513)
+- Update lru dependency [#1504](https://github.com/async-graphql/async-graphql/pull/1504)
+- Support TypeDirective for ArgumentDefinition, Enum, EnumValue, InputFieldDefinition, InputObject, Interface [#1509](https://github.com/async-graphql/async-graphql/pull/1509)
+- Add `display` attribute for Enum macro [#1518](https://github.com/async-graphql/async-graphql/issues/1518)
+
 # [7.0.3] 2024-03-16
 
 - Sort schema fields & enums if required [#1475](https://github.com/async-graphql/async-graphql/pull/1475)
