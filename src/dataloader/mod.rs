@@ -488,8 +488,6 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
     use fnv::FnvBuildHasher;
 
     use super::*;

@@ -92,3 +92,19 @@ pub async fn test_remote_enum() {
     let _: remote::RemoteEnum = LocalEnum::A.into();
     let _: LocalEnum = remote::RemoteEnum::A.into();
 }
+
+#[tokio::test]
+pub async fn test_display() {
+    #[derive(Enum, Copy, Clone, Eq, PartialEq)]
+    #[graphql(display)]
+    enum MyEnum {
+        A,
+        #[graphql(name = "bbb")]
+        B,
+        C,
+    }
+
+    assert_eq!(MyEnum::A.to_string(), "A");
+    assert_eq!(MyEnum::B.to_string(), "bbb");
+    assert_eq!(MyEnum::C.to_string(), "C");
+}

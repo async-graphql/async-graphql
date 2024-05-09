@@ -107,7 +107,7 @@ impl<'a> MetaTypeName<'a> {
 }
 
 /// actual directive invocation on SDL definitions
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MetaDirectiveInvocation {
     /// name of directive to invoke
     pub name: String,
@@ -155,6 +155,8 @@ pub struct MetaInputValue {
     pub tags: Vec<String>,
     /// Indicate that an input obnject is secret
     pub is_secret: bool,
+    /// Custom directive invocations
+    pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
 type ComputeComplexityFn = fn(
@@ -244,6 +246,7 @@ pub struct MetaEnumValue {
     pub visible: Option<MetaVisibleFn>,
     pub inaccessible: bool,
     pub tags: Vec<String>,
+    pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
@@ -298,6 +301,7 @@ impl MetaTypeId {
                 keys: None,
                 visible: None,
                 rust_typename: Some(rust_typename),
+                directive_invocations: vec![],
             },
             MetaTypeId::Union => MetaType::Union {
                 name: "".to_string(),
@@ -316,6 +320,7 @@ impl MetaTypeId {
                 inaccessible: false,
                 tags: vec![],
                 rust_typename: Some(rust_typename),
+                directive_invocations: vec![],
             },
             MetaTypeId::InputObject => MetaType::InputObject {
                 name: "".to_string(),
@@ -326,6 +331,7 @@ impl MetaTypeId {
                 tags: vec![],
                 rust_typename: Some(rust_typename),
                 oneof: false,
+                directive_invocations: vec![],
             },
         }
     }
@@ -484,6 +490,8 @@ pub enum MetaType {
         tags: Vec<String>,
         /// The Rust typename corresponding to the interface
         rust_typename: Option<&'static str>,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Union
     ///
@@ -536,6 +544,8 @@ pub enum MetaType {
         tags: Vec<String>,
         /// The Rust typename corresponding to the enum
         rust_typename: Option<&'static str>,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Input object
     ///
@@ -566,6 +576,8 @@ pub enum MetaType {
         ///
         /// Reference: <https://github.com/graphql/graphql-spec/pull/825>
         oneof: bool,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
 }
 
@@ -775,6 +787,7 @@ impl Registry {
                     inaccessible: false,
                     tags: Default::default(),
                     is_secret: false,
+                    directive_invocations: vec![]
                 });
                 args
             },
@@ -802,6 +815,7 @@ impl Registry {
                     inaccessible: false,
                     tags: Default::default(),
                     is_secret: false,
+                    directive_invocations: vec![]
                 });
                 args
             },
@@ -1059,6 +1073,7 @@ impl Registry {
                                     inaccessible: false,
                                     tags: Default::default(),
                                     is_secret: false,
+                                    directive_invocations: vec![],
                                 },
                             );
                             args
@@ -1126,6 +1141,7 @@ impl Registry {
                                 inaccessible: false,
                                 tags: Default::default(),
                                 is_secret: false,
+                                directive_invocations: vec![],
                             },
                         );
                         args

@@ -4,8 +4,11 @@ use quote::quote;
 use syn::{ext::IdentExt, Error};
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
-    utils::{generate_default, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    utils::{
+        gen_directive_calls, generate_default, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult,
+    },
 };
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
@@ -18,6 +21,8 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let directives =
+        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -70,6 +75,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+
+        let directive_invocations = gen_directive_calls(
+            &field.directives,
+            TypeDirectiveLocation::InputFieldDefinition,
+        );
 
         if field.skip || field.skip_input {
             get_fields.push(quote! {
@@ -190,6 +200,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],
                 is_secret: #secret,
+                directive_invocations: ::std::vec![ #(#directive_invocations),* ],
             });
         })
     }
@@ -250,6 +261,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: false,
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     })
                 }
 
@@ -301,6 +313,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         oneof: false,
+                        directive_invocations: ::std::vec![ #(#directives),* ],
                     })
                 }
 

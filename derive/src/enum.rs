@@ -4,8 +4,11 @@ use quote::quote;
 use syn::{ext::IdentExt, Error};
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
-    utils::{gen_deprecation, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
+    utils::{
+        gen_deprecation, gen_directive_calls, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult,
+    },
 };
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
@@ -32,11 +35,13 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let directives = gen_directive_calls(&enum_args.directives, TypeDirectiveLocation::Enum);
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
     let mut enum_items = Vec::new();
+    let mut enum_names = Vec::new();
     let mut items = Vec::new();
     let mut schema_enum_items = Vec::new();
 
@@ -64,12 +69,14 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+        let directives = gen_directive_calls(&variant.directives, TypeDirectiveLocation::EnumValue);
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
 
         enum_items.push(item_ident);
+        enum_names.push(gql_item_name.clone());
         items.push(quote! {
             #crate_name::resolver_utils::EnumItem {
                 name: #gql_item_name,
@@ -86,6 +93,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                 visible: #visible,
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],
+                directive_invocations: ::std::vec![ #(#directives),* ]
             });
         });
     }
@@ -130,6 +138,25 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .into());
     }
 
+    let display = if enum_args.display {
+        let items = enum_items.iter().zip(&enum_names).map(|(item, name)| {
+            quote! {
+                #ident::#item => #name,
+            }
+        });
+        Some(quote! {
+            impl ::std::fmt::Display for #ident {
+                fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+                    f.write_str(match self {
+                        #(#items)*
+                    })
+                }
+            }
+        })
+    } else {
+        None
+    };
+
     let visible = visible_fn(&enum_args.visible);
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
@@ -159,6 +186,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                        directive_invocations: ::std::vec![ #(#directives),* ]
                     }
                 })
             }
@@ -210,6 +238,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         }
 
         #remote_conversion
+        #display
     };
     Ok(expanded.into())
 }

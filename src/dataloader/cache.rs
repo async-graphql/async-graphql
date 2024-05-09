@@ -3,6 +3,7 @@ use std::{
     collections::{hash_map::RandomState, HashMap},
     hash::{BuildHasher, Hash},
     marker::PhantomData,
+    num::NonZeroUsize,
 };
 
 /// Factory for creating cache storage.
@@ -172,7 +173,9 @@ impl CacheFactory for LruCache {
         K: Send + Sync + Clone + Eq + Hash + 'static,
         V: Send + Sync + Clone + 'static,
     {
-        Box::new(LruCacheImpl(lru::LruCache::new(self.cap)))
+        Box::new(LruCacheImpl(lru::LruCache::new(
+            NonZeroUsize::new(self.cap).unwrap(),
+        )))
     }
 }
 

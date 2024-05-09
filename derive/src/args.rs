@@ -299,6 +299,8 @@ pub struct Argument {
     #[darling(multiple, rename = "tag")]
     pub tags: Vec<String>,
     pub secret: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -379,6 +381,8 @@ pub struct Enum {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub display: bool,
+    #[darling(default)]
     pub name_type: bool,
     #[darling(default)]
     pub rename_items: Option<RenameRule>,
@@ -390,6 +394,8 @@ pub struct Enum {
     pub inaccessible: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromVariant)]
@@ -409,6 +415,8 @@ pub struct EnumItem {
     pub inaccessible: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -487,6 +495,8 @@ pub struct InputObjectField {
     pub secret: bool,
     #[darling(default)]
     pub shareable: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -522,6 +532,8 @@ pub struct InputObject {
     pub complex: bool,
     #[darling(default)]
     pub shareable: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromVariant)]
@@ -543,6 +555,8 @@ pub struct OneofObjectField {
     pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -571,6 +585,8 @@ pub struct OneofObject {
     pub tags: Vec<String>,
     #[darling(default, multiple, rename = "concrete")]
     pub concretes: Vec<ConcreteType>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta)]
@@ -591,6 +607,8 @@ pub struct InterfaceFieldArgument {
     pub tags: Vec<String>,
     #[darling(default)]
     pub secret: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta)]
@@ -621,6 +639,8 @@ pub struct InterfaceField {
     pub shareable: bool,
     #[darling(default)]
     pub override_from: Option<String>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromVariant)]
@@ -657,6 +677,8 @@ pub struct Interface {
     pub inaccessible: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]
@@ -978,8 +1000,14 @@ pub struct TypeDirective {
 #[darling(rename_all = "PascalCase")]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum TypeDirectiveLocation {
+    ArgumentDefinition,
+    Enum,
+    EnumValue,
     FieldDefinition,
+    InputFieldDefinition,
     Object,
+    InputObject,
+    Interface,
 }
 
 impl TypeDirectiveLocation {

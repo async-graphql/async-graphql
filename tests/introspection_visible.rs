@@ -1,3 +1,5 @@
+#![allow(clippy::diverging_sub_expression)]
+
 use async_graphql::*;
 use futures_util::Stream;
 use serde::Deserialize;

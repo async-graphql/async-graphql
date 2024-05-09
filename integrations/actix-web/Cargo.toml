@@ -9,30 +9,30 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-actix-web"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.3"
+version = "7.0.5"
 
 [dependencies]
 async-graphql.workspace = true
 
-actix = "0.13.0"
-actix-http = "3.1.0"
-actix-web = { version = "4.1.0", default-features = false, features = [
+actix = "0.13.3"
+actix-http = "3.6.0"
+actix-web = { version = "4.5.1", default-features = false, features = [
     "http2",
 ] }
-actix-web-actors = "4.1.0"
-async-channel = "1.6.1"
-futures-channel = "0.3.13"
-futures-util = { version = "0.3.0", default-features = false }
+actix-web-actors = "4.3.0"
+async-channel = "2.2.0"
+futures-channel = "0.3.30"
+futures-util = { version = "0.3.30", default-features = false }
 serde_cbor = { version = "0.11.2", optional = true }
 serde_json.workspace = true
 thiserror.workspace = true
-async-stream = "0.3.0"
+async-stream = "0.3.5"
 
 [features]
 cbor = ["serde_cbor"]
 default = []
 
 [dev-dependencies]
-actix-rt = "2.6.0"
+actix-rt = "2.9.0"
 async-mutex = "1.4.0"
 serde = { version = "1", features = ["derive"] }

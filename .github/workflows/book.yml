@@ -10,10 +10,10 @@ on:
 jobs:
   deploy_en:
     name: Deploy book on gh-pages
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v1
       - name: Render book
@@ -25,10 +25,10 @@ jobs:
           mv docs/zh-CN/gh-pages gh-pages/zh-CN
           mv docs/index.html gh-pages
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v2.5.1
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          emptyCommits: true
-          keepFiles: false
+          allow_empty_commit: true
+          keep_files: false
         env:
           ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           PUBLISH_BRANCH: gh-pages

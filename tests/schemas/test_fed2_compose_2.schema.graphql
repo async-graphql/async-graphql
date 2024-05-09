@@ -1,0 +1,61 @@
+directive @oneOf on INPUT_OBJECT
+
+
+
+
+
+type Query {
+	testArgument(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object")): String!
+	testInputObject(arg: TestInput!): String!
+	testComplexObject: TestComplexObject!
+	testSimpleObject: TestSimpleObject!
+	testOneOfObject(arg: TestOneOfObject!): String!
+	testEnum(arg: TestEnum!): String!
+	testInterface: TestObjectForInterface!
+}
+
+
+type TestComplexObject @type_directive_object(description: "This is OBJECT in (Complex / Simple)Object") {
+	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in (Complex / Simple)Object")
+	test(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject")): String!
+}
+
+enum TestEnum @type_directive_enum(description: "This is ENUM in Enum") {
+	FOO @type_directive_enum_value(description: "This is ENUM_VALUE in Enum")
+	BAR @type_directive_enum_value(description: "This is ENUM_VALUE in Enum")
+}
+
+input TestInput @type_directive_input_object(description: "This is INPUT_OBJECT in InputObject") {
+	field: String! @type_directive_input_field_definition(description: "This is INPUT_FIELD_DEFINITION")
+}
+
+interface TestInterface @type_directive_interface(description: "This is INTERFACE in Interface") {
+	field(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface")): String! @type_directive_field_definition(description: "This is INTERFACE in Interface")
+}
+
+type TestObjectForInterface implements TestInterface {
+	field(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface")): String!
+}
+
+input TestOneOfObject @oneOf @type_directive_input_object(description: "This is INPUT_OBJECT in OneofObject") {
+	foo: String @type_directive_input_field_definition(description: "This is INPUT_FIELD_DEFINITION in OneofObject")
+	bar: Int @type_directive_input_field_definition(description: "This is INPUT_FIELD_DEFINITION in OneofObject")
+}
+
+type TestSimpleObject @type_directive_object(description: "This is OBJECT in SimpleObject") {
+	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in SimpleObject")
+}
+
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @type_directive_argument_definition(description: String!) on ARGUMENT_DEFINITION
+directive @type_directive_enum(description: String!) on ENUM
+directive @type_directive_enum_value(description: String!) on ENUM_VALUE
+directive @type_directive_field_definition(description: String!) on FIELD_DEFINITION
+directive @type_directive_input_field_definition(description: String!) on INPUT_FIELD_DEFINITION
+directive @type_directive_input_object(description: String!) on INPUT_OBJECT
+directive @type_directive_interface(description: String!) on INTERFACE
+directive @type_directive_object(description: String!) on OBJECT
+schema {
+	query: Query
+}

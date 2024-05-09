@@ -9,20 +9,25 @@ keywords = ["futures", "async", "graphql", "axum"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-axum"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.3"
+version = "7.0.5"
 
 [dependencies]
 async-graphql.workspace = true
 
 async-trait.workspace = true
-axum = { version = "0.7.0", features = ["ws"] }
 bytes.workspace = true
 futures-util.workspace = true
 serde_json.workspace = true
-tokio = { version = "1.17.0", features = ["time"] }
+tokio = { version = "1.36.0", features = ["time"] }
 tokio-util = { workspace = true, default-features = false, features = [
     "io",
     "compat",
 ] }
-tokio-stream = "0.1.14"
+tokio-stream = "0.1.15"
 tower-service = "0.3"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+axum = { version = "0.7.5", default_features = false }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+axum = { version = "0.7.5", features = ["ws"] }

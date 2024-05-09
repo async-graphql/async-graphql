@@ -1,4 +1,5 @@
 #![allow(unused_variables)]
+#![allow(clippy::diverging_sub_expression)]
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
@@ -7,7 +8,7 @@ use once_cell::sync::Lazy;
 use crate::{
     futures_util::stream::Stream,
     parser::types::ExecutableDocument,
-    validation::visitor::{visit, RuleError, Visitor, VisitorContext},
+    validation::visitor::{visit, RuleError, Visitor},
     *,
 };
 

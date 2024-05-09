@@ -1,4 +1,4 @@
-use std::{iter::FromIterator, str::FromStr};
+use std::str::FromStr;
 
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
@@ -9,12 +9,13 @@ use syn::{
 };
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget},
+    args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
+        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
+        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
+        GeneratorResult,
     },
 };
 
@@ -231,6 +232,7 @@ pub fn generate(
                     inaccessible,
                     tags,
                     secret,
+                    directives,
                     ..
                 },
             ) in &args
@@ -261,6 +263,8 @@ pub fn generate(
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+                let directives =
+                    gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
                 schema_args.push(quote! {
                         args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                             name: ::std::string::ToString::to_string(#name),
@@ -271,6 +275,7 @@ pub fn generate(
                             inaccessible: #inaccessible,
                             tags: ::std::vec![ #(#tags),* ],
                             is_secret: #secret,
+                            directive_invocations: ::std::vec![ #(#directives),* ],
                         });
                     });
 

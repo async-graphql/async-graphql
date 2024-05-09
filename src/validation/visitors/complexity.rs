@@ -79,14 +79,13 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
 }
 
 #[cfg(test)]
+#[allow(clippy::diverging_sub_expression)]
 mod tests {
     use futures_util::stream::BoxStream;
 
     use super::*;
     use crate::{
-        parser::parse_query,
-        validation::{visit, VisitorContext},
-        EmptyMutation, Object, Schema, Subscription,
+        parser::parse_query, validation::visit, EmptyMutation, Object, Schema, Subscription,
     };
 
     struct Query;

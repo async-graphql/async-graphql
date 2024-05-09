@@ -105,6 +105,7 @@ impl Enum {
                     visible: None,
                     inaccessible: item.inaccessible,
                     tags: item.tags.clone(),
+                    directive_invocations: vec![],
                 },
             );
         }
@@ -119,6 +120,7 @@ impl Enum {
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),
                 rust_typename: None,
+                directive_invocations: vec![],
             },
         );
 
