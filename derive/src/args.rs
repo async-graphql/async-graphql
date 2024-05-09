@@ -381,6 +381,8 @@ pub struct Enum {
     #[darling(default)]
     pub name: Option<String>,
     #[darling(default)]
+    pub display: bool,
+    #[darling(default)]
     pub name_type: bool,
     #[darling(default)]
     pub rename_items: Option<RenameRule>,
