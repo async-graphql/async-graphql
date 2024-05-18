@@ -1514,3 +1514,146 @@ pub async fn test_introspection_default() {
     let res = schema.execute(query).await.into_result().unwrap().data;
     assert_eq!(res, res_json);
 }
+
+#[tokio::test]
+pub async fn test_introspection_directives() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn a(&self) -> String {
+            "a".into()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"
+      query IntrospectionQuery {
+        __schema {
+          directives {
+            name
+            locations
+            args {
+              ...InputValue
+            }
+          }
+        }
+      }
+      
+      fragment InputValue on __InputValue {
+        name
+        type {
+          ...TypeRef
+        }
+        defaultValue
+      }
+      
+      fragment TypeRef on __Type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    "#;
+
+    let res_json = value!({"__schema": {
+      "directives": [
+        {
+          "name": "deprecated",
+          "locations": [
+            "FIELD_DEFINITION",
+            "ARGUMENT_DEFINITION",
+            "INPUT_FIELD_DEFINITION",
+            "ENUM_VALUE"
+          ],
+          "args": [
+            {
+              "name": "reason",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "defaultValue": "\"No longer supported\""
+            }
+          ]
+        },
+        {
+          "name": "include",
+          "locations": [
+            "FIELD",
+            "FRAGMENT_SPREAD",
+            "INLINE_FRAGMENT"
+          ],
+          "args": [
+            {
+              "name": "if",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean"
+                }
+              },
+              "defaultValue": null
+            }
+          ]
+        },
+        {
+          "name": "oneOf",
+          "locations": [
+            "INPUT_OBJECT"
+          ],
+          "args": []
+        },
+        {
+          "name": "skip",
+          "locations": [
+            "FIELD",
+            "FRAGMENT_SPREAD",
+            "INLINE_FRAGMENT"
+          ],
+          "args": [
+            {
+              "name": "if",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean"
+                }
+              },
+              "defaultValue": null
+            }
+          ]
+        },
+        {
+          "name": "specifiedBy",
+          "locations": [
+            "SCALAR"
+          ],
+          "args": [
+            {
+              "name": "url",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String"
+                }
+              },
+              "defaultValue": null
+            }
+          ]
+        }
+      ]
+    }});
+    let res = schema.execute(query).await.into_result().unwrap().data;
+
+    assert_eq!(res, res_json);
+}
