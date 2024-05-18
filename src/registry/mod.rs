@@ -824,6 +824,20 @@ impl Registry {
             composable: None,
         });
 
+        self.add_directive(MetaDirective {
+            name: "oneOf".into(),
+            description: Some(
+                "Indicates that an Input Object is a OneOf Input Object (and thus requires
+                        exactly one of its field be provided)"
+                    .to_string(),
+            ),
+            locations: vec![__DirectiveLocation::INPUT_OBJECT],
+            args: Default::default(),
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
         // create system scalars
         <bool as InputType>::create_type_info(self);
         <i32 as InputType>::create_type_info(self);

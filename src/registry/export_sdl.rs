@@ -95,15 +95,6 @@ impl Registry {
     pub(crate) fn export_sdl(&self, options: SDLExportOptions) -> String {
         let mut sdl = String::new();
 
-        let has_oneof = self
-            .types
-            .values()
-            .any(|ty| matches!(ty, MetaType::InputObject { oneof: true, .. }));
-
-        if has_oneof {
-            sdl.write_str("directive @oneOf on INPUT_OBJECT\n\n").ok();
-        }
-
         for ty in self.types.values() {
             if ty.name().starts_with("__") {
                 continue;
