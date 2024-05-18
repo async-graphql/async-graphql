@@ -95,6 +95,22 @@ impl Registry {
     pub(crate) fn export_sdl(&self, options: SDLExportOptions) -> String {
         let mut sdl = String::new();
 
+        for ty in self.types.values() {
+            if ty.name().starts_with("__") {
+                continue;
+            }
+
+            if options.federation {
+                const FEDERATION_TYPES: &[&str] = &["_Any", "_Entity", "_Service"];
+                if FEDERATION_TYPES.contains(&ty.name()) {
+                    continue;
+                }
+            }
+
+            self.export_type(ty, &mut sdl, &options);
+            writeln!(sdl).ok();
+        }
+
         self.directives.values().for_each(|directive| {
             // Filter out deprecated directive from SDL if it is not used
             if directive.name == "deprecated"
@@ -179,22 +195,6 @@ impl Registry {
                 writeln!(sdl, "\tsubscription: {}", subscription_type).ok();
             }
             writeln!(sdl, "}}").ok();
-        }
-
-        for ty in self.types.values() {
-            if ty.name().starts_with("__") {
-                continue;
-            }
-
-            if options.federation {
-                const FEDERATION_TYPES: &[&str] = &["_Any", "_Entity", "_Service"];
-                if FEDERATION_TYPES.contains(&ty.name()) {
-                    continue;
-                }
-            }
-
-            self.export_type(ty, &mut sdl, &options);
-            writeln!(sdl).ok();
         }
 
         sdl
