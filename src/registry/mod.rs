@@ -825,6 +825,43 @@ impl Registry {
         });
 
         self.add_directive(MetaDirective {
+            name: "deprecated".into(),
+            description: Some(
+                "Marks an element of a GraphQL schema as no longer supported.".to_string(),
+            ),
+            locations: vec![
+                __DirectiveLocation::FIELD_DEFINITION,
+                __DirectiveLocation::ARGUMENT_DEFINITION,
+                __DirectiveLocation::INPUT_FIELD_DEFINITION,
+                __DirectiveLocation::ENUM_VALUE,
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "reason".to_string(),
+                    MetaInputValue {
+                        name: "reason".to_string(),
+                        description: Some(
+                            "A reason for why it is deprecated, formatted using Markdown syntax"
+                                .to_string(),
+                        ),
+                        ty: "String".to_string(),
+                        default_value: Some(r#""No longer supported""#.to_string()),
+                        visible: None,
+                        inaccessible: false,
+                        tags: Default::default(),
+                        is_secret: false,
+                        directive_invocations: vec![],
+                    },
+                );
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
+        self.add_directive(MetaDirective {
             name: "oneOf".into(),
             description: Some(
                 "Indicates that an Input Object is a OneOf Input Object (and thus requires
