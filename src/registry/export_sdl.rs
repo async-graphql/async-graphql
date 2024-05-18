@@ -139,8 +139,6 @@ impl Registry {
             writeln!(sdl, "{}", directive.sdl()).ok();
         });
 
-        writeln!(sdl).ok();
-
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
             writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.3\",").ok();
