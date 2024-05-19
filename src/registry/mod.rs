@@ -769,6 +769,34 @@ pub struct Registry {
 impl Registry {
     pub(crate) fn add_system_types(&mut self) {
         self.add_directive(MetaDirective {
+            name: "skip".into(),
+            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
+            locations: vec![
+                __DirectiveLocation::FIELD,
+                __DirectiveLocation::FRAGMENT_SPREAD,
+                __DirectiveLocation::INLINE_FRAGMENT
+            ],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert("if".to_string(), MetaInputValue {
+                    name: "if".to_string(),
+                    description: Some("Skipped when true.".to_string()),
+                    ty: "Boolean!".to_string(),
+                    default_value: None,
+                    visible: None,
+                    inaccessible: false,
+                    tags: Default::default(),
+                    is_secret: false,
+                    directive_invocations: vec![]
+                });
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
+        self.add_directive(MetaDirective {
             name: "include".into(),
             description: Some("Directs the executor to include this field or fragment only when the `if` argument is true.".to_string()),
             locations: vec![
@@ -797,28 +825,78 @@ impl Registry {
         });
 
         self.add_directive(MetaDirective {
-            name: "skip".into(),
-            description: Some("Directs the executor to skip this field or fragment when the `if` argument is true.".to_string()),
+            name: "deprecated".into(),
+            description: Some(
+                "Marks an element of a GraphQL schema as no longer supported.".into(),
+            ),
             locations: vec![
-                __DirectiveLocation::FIELD,
-                __DirectiveLocation::FRAGMENT_SPREAD,
-                __DirectiveLocation::INLINE_FRAGMENT
+                __DirectiveLocation::FIELD_DEFINITION,
+                __DirectiveLocation::ARGUMENT_DEFINITION,
+                __DirectiveLocation::INPUT_FIELD_DEFINITION,
+                __DirectiveLocation::ENUM_VALUE,
             ],
             args: {
                 let mut args = IndexMap::new();
-                args.insert("if".to_string(), MetaInputValue {
-                    name: "if".to_string(),
-                    description: Some("Skipped when true.".to_string()),
-                    ty: "Boolean!".to_string(),
-                    default_value: None,
-                    visible: None,
-                    inaccessible: false,
-                    tags: Default::default(),
-                    is_secret: false,
-                    directive_invocations: vec![]
-                });
+                args.insert(
+                    "reason".into(),
+                    MetaInputValue {
+                        name: "reason".into(),
+                        description: Some(
+                            "A reason for why it is deprecated, formatted using Markdown syntax"
+                                .into(),
+                        ),
+                        ty: "String".into(),
+                        default_value: Some(r#""No longer supported""#.into()),
+                        visible: None,
+                        inaccessible: false,
+                        tags: Default::default(),
+                        is_secret: false,
+                        directive_invocations: vec![],
+                    },
+                );
                 args
             },
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
+        self.add_directive(MetaDirective {
+            name: "specifiedBy".into(),
+            description: Some("Provides a scalar specification URL for specifying the behavior of custom scalar types.".into()),
+            locations: vec![__DirectiveLocation::SCALAR],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "url".into(),
+                    MetaInputValue {
+                        name: "url".into(),
+                        description: Some("URL that specifies the behavior of this scalar.".into()),
+                        ty: "String!".into(),
+                        default_value: None,
+                        visible: None,
+                        inaccessible: false,
+                        tags: Default::default(),
+                        is_secret: false,
+                        directive_invocations: vec![],
+                    },
+                );
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
+        self.add_directive(MetaDirective {
+            name: "oneOf".into(),
+            description: Some(
+                "Indicates that an Input Object is a OneOf Input Object (and thus requires
+                        exactly one of its field be provided)"
+                    .to_string(),
+            ),
+            locations: vec![__DirectiveLocation::INPUT_OBJECT],
+            args: Default::default(),
             is_repeatable: false,
             visible: None,
             composable: None,

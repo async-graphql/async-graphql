@@ -95,15 +95,6 @@ impl Registry {
     pub(crate) fn export_sdl(&self, options: SDLExportOptions) -> String {
         let mut sdl = String::new();
 
-        let has_oneof = self
-            .types
-            .values()
-            .any(|ty| matches!(ty, MetaType::InputObject { oneof: true, .. }));
-
-        if has_oneof {
-            sdl.write_str("directive @oneOf on INPUT_OBJECT\n\n").ok();
-        }
-
         for ty in self.types.values() {
             if ty.name().starts_with("__") {
                 continue;
@@ -121,6 +112,46 @@ impl Registry {
         }
 
         self.directives.values().for_each(|directive| {
+            // Filter out deprecated directive from SDL if it is not used
+            if directive.name == "deprecated"
+                && !self.types.values().any(|ty| match ty {
+                    MetaType::Object { fields, .. } => fields
+                        .values()
+                        .any(|field| field.deprecation.is_deprecated()),
+                    MetaType::Enum { enum_values, .. } => enum_values
+                        .values()
+                        .any(|value| value.deprecation.is_deprecated()),
+                    _ => false,
+                })
+            {
+                return;
+            }
+
+            // Filter out specifiedBy directive from SDL if it is not used
+            if directive.name == "specifiedBy"
+                && !self.types.values().any(|ty| {
+                    matches!(
+                        ty,
+                        MetaType::Scalar {
+                            specified_by_url: Some(_),
+                            ..
+                        }
+                    )
+                })
+            {
+                return;
+            }
+
+            // Filter out oneOf directive from SDL if it is not used
+            if directive.name == "oneOf"
+                && !self
+                    .types
+                    .values()
+                    .any(|ty| matches!(ty, MetaType::InputObject { oneof: true, .. }))
+            {
+                return;
+            }
+
             writeln!(sdl, "{}", directive.sdl()).ok();
         });
 
