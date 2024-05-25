@@ -234,26 +234,24 @@ fn collect_field<'a>(
     fields.push(
         async move {
             let ctx_field = ctx.with_field(field);
-            let arguments = ObjectAccessor(Cow::Owned(
-                {
-                    let mut args = field
-                        .node
-                        .arguments
-                        .iter()
-                        .map(|(name, value)| {
-                            ctx_field
-                                .resolve_input_value(value.clone())
-                                .map(|value| (name.node.clone(), value))
-                        })
-                        .collect::<ServerResult<IndexMap<Name, Value>>>()?;
-                    field_def.arguments.iter().for_each(|(name, arg)| {
-                        if let Some(def) = &arg.default_value {
-                            args.entry(Name::new(name)).or_insert(def.clone());
-                        }
-                    });
-                    args
-                }
-            ));
+            let arguments = ObjectAccessor(Cow::Owned({
+                let mut args = field
+                    .node
+                    .arguments
+                    .iter()
+                    .map(|(name, value)| {
+                        ctx_field
+                            .resolve_input_value(value.clone())
+                            .map(|value| (name.node.clone(), value))
+                    })
+                    .collect::<ServerResult<IndexMap<Name, Value>>>()?;
+                field_def.arguments.iter().for_each(|(name, arg)| {
+                    if let Some(def) = &arg.default_value {
+                        args.entry(Name::new(name)).or_insert(def.clone());
+                    }
+                });
+                args
+            }));
 
             let resolve_info = ResolveInfo {
                 path_node: ctx_field.path_node.as_ref().unwrap(),
