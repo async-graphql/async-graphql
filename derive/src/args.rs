@@ -587,6 +587,9 @@ pub struct OneofObject {
     pub concretes: Vec<ConcreteType>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    // for Interface
+    #[darling(default, multiple, rename = "field")]
+    pub fields: Vec<InterfaceField>,
 }
 
 #[derive(FromMeta)]
@@ -679,6 +682,9 @@ pub struct Interface {
     pub tags: Vec<String>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    // for OneofObject
+    #[darling(default)]
+    pub input_name: Option<String>,
 }
 
 #[derive(FromMeta, Default)]
