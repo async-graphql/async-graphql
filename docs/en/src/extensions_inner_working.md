@@ -87,7 +87,7 @@ async fn prepare_request(
     request: Request,
     next: NextPrepareRequest<'_>,
 ) -> ServerResult<Request> {
-    // The code here will be un before the prepare_request is executed, just after the request lifecycle hook.
+    // The code here will be run before the prepare_request is executed, just after the request lifecycle hook.
     let result = next.run(ctx, request).await;
     // The code here will be run just after the prepare_request
     result
