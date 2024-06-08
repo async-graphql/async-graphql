@@ -473,3 +473,78 @@ pub async fn test_issue_330() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_interface_with_oneof_object() {
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjAInput")]
+    struct MyObjA {
+        id: i32,
+        title_a: String,
+    }
+
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(input_name = "MyObjBInput")]
+    struct MyObjB {
+        id: i32,
+        title_b: String,
+    }
+
+    #[derive(OneofObject, Interface)]
+    #[graphql(input_name = "NodeInput", field(name = "id", ty = "&i32"))]
+    enum Node {
+        MyObjA(MyObjA),
+        MyObjB(MyObjB),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node(&self, input: Node) -> Node {
+            input
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query_a = r#"{
+            node(input: { myObjA: { id: 10, titleA: "abc" } }) {
+                id
+                ... on MyObjA {
+                    titleA
+                }
+                ... on MyObjB {
+                    titleB
+                }
+            }
+        }"#;
+    assert_eq!(
+        schema.execute(query_a).await.into_result().unwrap().data,
+        value!({
+            "node": {
+                "id": 10,
+                "titleA": "abc",
+            }
+        })
+    );
+    let query_b = r#"{
+            node(input: { myObjB: { id: 10, titleB: "abc" } }) {
+                id
+                ... on MyObjA {
+                    titleA
+                }
+                ... on MyObjB {
+                    titleB
+                }
+            }
+        }"#;
+    assert_eq!(
+        schema.execute(query_b).await.into_result().unwrap().data,
+        value!({
+            "node": {
+                "id": 10,
+                "titleB": "abc",
+            }
+        })
+    );
+}
