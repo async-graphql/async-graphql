@@ -44,8 +44,8 @@ impl<'a> AltairSource<'a> {
     ///     .finish();
     /// ```
     ///
-    /// With strongly-typed [AltairConfigOptions], useful when reading options from config files:
-    /// ```rust
+    /// With strongly-typed [AltairConfigOptions], useful when reading options
+    /// from config files: ```rust
     /// use async_graphql::http::*;
     ///
     /// AltairSource::build()
@@ -97,10 +97,12 @@ pub struct AltairWindowOptions {
         skip_serializing_if = "Option::is_none"
     )]
     pub endpoint_url: Option<String>,
-    /// URL to set as the subscription endpoint. This can be relative or absolute.
+    /// URL to set as the subscription endpoint. This can be relative or
+    /// absolute.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subscriptions_endpoint: Option<String>,
-    /// URL protocol for the subscription endpoint. This is used if the specified subscriptions endpoint is relative.
+    /// URL protocol for the subscription endpoint. This is used if the
+    /// specified subscriptions endpoint is relative.
     ///
     /// e.g. wss
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -159,7 +161,8 @@ pub struct AltairConfigOptions {
     pub initial_environments: Option<AltairInitialEnvironments>,
     /// Namespace for storing the data for the altair instance.
     ///
-    /// Use this when you have multiple altair instances running on the same domain.
+    /// Use this when you have multiple altair instances running on the same
+    /// domain.
     ///
     /// e.g. altair_dev_
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -167,13 +170,15 @@ pub struct AltairConfigOptions {
     /// Initial app settings to use
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initial_settings: Option<AltairSettingsState>,
-    /// Indicates if the state should be preserved for subsequent app loads (default true)
+    /// Indicates if the state should be preserved for subsequent app loads
+    /// (default true)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preserve_state: Option<bool>,
     /// List of options for windows to be loaded
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub initial_windows: Vec<AltairWindowOptions>,
-    /// Persisted settings for the app. The settings will be merged with the app settings.
+    /// Persisted settings for the app. The settings will be merged with the app
+    /// settings.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub persisted_settings: Option<AltairSettingsState>,
     /// Disable the account and remote syncing functionality

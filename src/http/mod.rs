@@ -16,10 +16,9 @@ mod websocket;
 
 use std::io::ErrorKind;
 
-use futures_util::io::{AsyncRead, AsyncReadExt};
-
 #[cfg(feature = "altair")]
 pub use altair_source::*;
+use futures_util::io::{AsyncRead, AsyncReadExt};
 #[cfg(feature = "graphiql")]
 pub use graphiql_plugin::{graphiql_plugin_explorer, GraphiQLPlugin};
 #[cfg(feature = "graphiql")]
