@@ -1,4 +1,5 @@
 use async_graphql::*;
+use serde::{Deserialize, Serialize};
 
 #[tokio::test]
 pub async fn test_directive_skip() {
@@ -126,4 +127,96 @@ pub async fn test_custom_directive() {
             .data,
         value!({ "value": "&abc*" })
     );
+}
+
+#[tokio::test]
+pub async fn test_no_unused_directives() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn a(&self) -> String {
+            "a".into()
+        }
+    }
+
+    let sdl = Schema::new(Query, EmptyMutation, EmptySubscription).sdl();
+
+    assert!(!sdl.contains("directive @deprecated"));
+    assert!(!sdl.contains("directive @specifiedBy"));
+    assert!(!sdl.contains("directive @oneOf"));
+}
+
+#[tokio::test]
+pub async fn test_includes_deprecated_directive() {
+    #[derive(SimpleObject)]
+    struct A {
+        #[graphql(deprecation = "Use `Foo` instead")]
+        a: String,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn a(&self) -> A {
+            A { a: "a".into() }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert!(schema.sdl().contains(r#"directive @deprecated(reason: String = "No longer supported") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE"#))
+}
+
+#[tokio::test]
+pub async fn test_includes_specified_by_directive() {
+    #[derive(Serialize, Deserialize)]
+    struct A {
+        a: String,
+    }
+
+    scalar!(
+        A,
+        "A",
+        "This is A",
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn a(&self) -> A {
+            A { a: "a".into() }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert!(schema
+        .sdl()
+        .contains(r#"directive @specifiedBy(url: String!) on SCALAR"#))
+}
+
+#[tokio::test]
+pub async fn test_includes_one_of_directive() {
+    #[derive(OneofObject)]
+    enum AB {
+        A(String),
+        B(i64),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn ab(&self, _input: AB) -> bool {
+            true
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    assert!(schema.sdl().contains(r#"directive @oneOf on INPUT_OBJECT"#))
 }

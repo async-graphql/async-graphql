@@ -1,5 +1,3 @@
-directive @oneOf on INPUT_OBJECT
-
 
 
 
@@ -47,6 +45,7 @@ type TestSimpleObject @type_directive_object(description: "This is OBJECT in Sim
 }
 
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @oneOf on INPUT_OBJECT
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @type_directive_argument_definition(description: String!) on ARGUMENT_DEFINITION
 directive @type_directive_enum(description: String!) on ENUM
