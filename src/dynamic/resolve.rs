@@ -247,7 +247,9 @@ fn collect_field<'a>(
                     .collect::<ServerResult<IndexMap<Name, Value>>>()?;
                 field_def.arguments.iter().for_each(|(name, arg)| {
                     if let Some(def) = &arg.default_value {
-                        args.entry(Name::new(name)).or_insert(def.clone());
+                        if !args.contains_key(name.as_str()) {
+                            args.insert(Name::new(name), def.clone());
+                        }
                     }
                 });
                 args
