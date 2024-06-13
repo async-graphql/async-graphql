@@ -4,6 +4,7 @@ use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
+use quote::ToTokens;
 use syn::{visit_mut::VisitMut, Error, Type};
 
 use crate::{
@@ -61,8 +62,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut possible_types = Vec::new();
     let mut get_introspection_typename = Vec::new();
     let mut collect_all_fields = Vec::new();
+    let mut unit_struct_impls = Vec::new();
+    let mut unit_struct_types = vec![None; s.len()];
+    let mut is_unit_struct = vec![false; s.len()];
 
-    for variant in s {
+    for (i, (variant, unit_struct_type)) in s.iter().zip(unit_struct_types.iter_mut()).enumerate() {
         let enum_name = &variant.ident;
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
@@ -74,9 +78,28 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 .into())
             }
             Style::Unit => {
-                return Err(
-                    Error::new_spanned(enum_name, "Empty variants are not supported").into(),
-                )
+                let enum_name_string = enum_name.to_string();
+                let new_ty = Type::Path(syn::TypePath {
+                    qself: None,
+                    path: syn::Path::from(Ident::new(&enum_name_string, Span::call_site())),
+                });
+                unit_struct_impls.push(quote! {
+                    #[derive(::std::clone::Clone, #crate_name::SimpleObject)]
+                });
+                for InterfaceField { name, ty, .. } in &interface_args.fields {
+                    let name_string = name.to_string();
+                    let ty_string = ty.to_token_stream().to_string();
+                    let ident_string = ident.to_string();
+                    unit_struct_impls.push(quote! {
+                        #[graphql(interface_impl(interface_type = #ident_string, name = #name_string, ty = #ty_string))]
+                    });
+                }
+                unit_struct_impls.push(quote! {
+                    struct #enum_name;
+                });
+                *unit_struct_type = Some(new_ty);
+                is_unit_struct[i] = true;
+                unit_struct_type.as_ref().unwrap()
             }
             Style::Struct => {
                 return Err(Error::new_spanned(
@@ -98,16 +121,29 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             let mut assert_ty = p.clone();
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
-            type_into_impls.push(quote! {
-                #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
+            if !is_unit_struct[i] {
+                type_into_impls.push(quote! {
+                    #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
 
-                #[allow(clippy::all, clippy::pedantic)]
-                impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
-                    fn from(obj: #p) -> Self {
-                        #ident::#enum_name(obj)
+                    #[allow(clippy::all, clippy::pedantic)]
+                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
+                        fn from(obj: #p) -> Self {
+                            #ident::#enum_name(obj)
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                type_into_impls.push(quote! {
+                    #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
+
+                    #[allow(clippy::all, clippy::pedantic)]
+                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
+                        fn from(obj: #p) -> Self {
+                            #ident::#enum_name
+                        }
+                    }
+                });
+            }
             enum_names.push(enum_name);
 
             registry_types.push(quote! {
@@ -119,13 +155,25 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 possible_types.insert(<#p as #crate_name::OutputType>::type_name().into_owned());
             });
 
-            get_introspection_typename.push(quote! {
-                #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
-            });
+            if !is_unit_struct[i] {
+                get_introspection_typename.push(quote! {
+                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
+                });
+            } else {
+                get_introspection_typename.push(quote! {
+                    #ident::#enum_name => <#p as #crate_name::OutputType>::type_name()
+                });
+            }
 
-            collect_all_fields.push(quote! {
-                #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
-            });
+            if !is_unit_struct[i] {
+                collect_all_fields.push(quote! {
+                    #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
+                });
+            } else {
+                collect_all_fields.push(quote! {
+                    #ident::#enum_name => #p.collect_all_fields(ctx, fields)
+                });
+            }
         } else {
             return Err(Error::new_spanned(ty, "Invalid type").into());
         }
@@ -268,12 +316,23 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 });
         }
 
-        for enum_name in &enum_names {
-            calls.push(quote! {
-                #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*)
-                    .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
-                    .map(::std::convert::Into::into)
-            });
+        for (i, enum_name) in enum_names.iter().enumerate() {
+            if !is_unit_struct[i] {
+                calls.push(quote! {
+                    #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*)
+                        .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
+                        .map(::std::convert::Into::into)
+                });
+            } else {
+                let ty = unit_struct_types[i].as_ref().unwrap();
+                if let Type::Path(p) = ty {
+                    calls.push(quote! {
+                        #ident::#enum_name => #p.#method_name(#(#use_params),*)
+                                .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
+                                .map(::std::convert::Into::into)
+                    });
+                }
+            }
         }
 
         let desc = desc
@@ -357,6 +416,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
 
     let visible = visible_fn(&interface_args.visible);
     let expanded = quote! {
+        #(#unit_struct_impls)*
         #(#type_into_impls)*
 
         #[allow(clippy::all, clippy::pedantic)]

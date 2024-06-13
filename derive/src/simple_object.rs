@@ -297,7 +297,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let field_name = interface_impl.name.to_string();
         let method_name = Ident::new_raw(&field_name, Span::call_site());
         let method_name_interface =
-            Ident::new_raw(&format!("{field_name}_interface"), Span::call_site());
+            Ident::new_raw(&format!("interface_impl_{field_name}"), Span::call_site());
         let ty = &interface_impl.ty;
         getters.push(quote! {
             #[inline]

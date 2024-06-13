@@ -171,7 +171,7 @@ pub fn generate(
             });
             if object_args.interface {
                 method.sig.ident = Ident::new(
-                    &format!("{}_interface", method.sig.ident),
+                    &format!("interface_impl_{}", method.sig.ident),
                     method.sig.ident.span(),
                 );
             }
