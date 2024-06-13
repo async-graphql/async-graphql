@@ -64,9 +64,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let mut collect_all_fields = Vec::new();
     let mut unit_struct_impls = Vec::new();
     let mut unit_struct_types = vec![None; s.len()];
-    let mut is_unit_struct = vec![false; s.len()];
 
-    for (i, (variant, unit_struct_type)) in s.iter().zip(unit_struct_types.iter_mut()).enumerate() {
+    for (variant, unit_struct_type) in s.iter().zip(unit_struct_types.iter_mut()) {
         let enum_name = &variant.ident;
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
@@ -98,7 +97,6 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     struct #enum_name;
                 });
                 *unit_struct_type = Some(new_ty);
-                is_unit_struct[i] = true;
                 unit_struct_type.as_ref().unwrap()
             }
             Style::Struct => {
@@ -111,6 +109,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         };
 
         if let Type::Path(p) = ty {
+            let is_unit_struct = unit_struct_type.is_some();
             // This validates that the field type wasn't already used
             if !enum_items.insert(p) {
                 return Err(
@@ -121,29 +120,22 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             let mut assert_ty = p.clone();
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
-            if !is_unit_struct[i] {
-                type_into_impls.push(quote! {
-                    #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
-
-                    #[allow(clippy::all, clippy::pedantic)]
-                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
-                        fn from(obj: #p) -> Self {
-                            #ident::#enum_name(obj)
-                        }
-                    }
-                });
+            let match_arm = if is_unit_struct {
+                quote! { #ident::#enum_name }
             } else {
-                type_into_impls.push(quote! {
-                    #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
+                quote! { #ident::#enum_name(obj) }
+            };
+            type_into_impls.push(quote! {
+                #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
 
-                    #[allow(clippy::all, clippy::pedantic)]
-                    impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
-                        fn from(obj: #p) -> Self {
-                            #ident::#enum_name
-                        }
+                #[allow(clippy::all, clippy::pedantic)]
+                impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {
+                    fn from(obj: #p) -> Self {
+                        #match_arm
                     }
-                });
-            }
+                }
+            });
+
             enum_names.push(enum_name);
 
             registry_types.push(quote! {
@@ -155,25 +147,19 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 possible_types.insert(<#p as #crate_name::OutputType>::type_name().into_owned());
             });
 
-            if !is_unit_struct[i] {
-                get_introspection_typename.push(quote! {
-                    #ident::#enum_name(obj) => <#p as #crate_name::OutputType>::type_name()
-                });
-            } else {
-                get_introspection_typename.push(quote! {
-                    #ident::#enum_name => <#p as #crate_name::OutputType>::type_name()
-                });
-            }
+            get_introspection_typename.push(quote! {
+                #match_arm => <#p as #crate_name::OutputType>::type_name()
+            });
 
-            if !is_unit_struct[i] {
-                collect_all_fields.push(quote! {
-                    #ident::#enum_name(obj) => obj.collect_all_fields(ctx, fields)
-                });
+            let collect_all_fields_impl = if is_unit_struct {
+                quote! { #p.collect_all_fields(ctx, fields) }
             } else {
-                collect_all_fields.push(quote! {
-                    #ident::#enum_name => #p.collect_all_fields(ctx, fields)
-                });
-            }
+                quote! { obj.collect_all_fields(ctx, fields) }
+            };
+
+            collect_all_fields.push(quote! {
+                #match_arm => #collect_all_fields_impl
+            });
         } else {
             return Err(Error::new_spanned(ty, "Invalid type").into());
         }
@@ -317,13 +303,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         }
 
         for (i, enum_name) in enum_names.iter().enumerate() {
-            if !is_unit_struct[i] {
-                calls.push(quote! {
-                    #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*)
-                        .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
-                        .map(::std::convert::Into::into)
-                });
-            } else {
+            let is_unit_struct = unit_struct_types[i].is_some();
+            if is_unit_struct {
                 let ty = unit_struct_types[i].as_ref().unwrap();
                 if let Type::Path(p) = ty {
                     calls.push(quote! {
@@ -332,6 +313,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                                 .map(::std::convert::Into::into)
                     });
                 }
+            } else {
+                calls.push(quote! {
+                    #ident::#enum_name(obj) => obj.#method_name(#(#use_params),*)
+                        .await.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err))
+                        .map(::std::convert::Into::into)
+                });
             }
         }
 
