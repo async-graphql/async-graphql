@@ -237,6 +237,9 @@ pub struct InterfaceImpl {
     pub interface_type: Type,
     pub name: SpannedValue<String>,
     pub ty: Type,
+
+    #[darling(default)]
+    pub method: Option<String>,
 }
 
 #[derive(FromDeriveInput)]

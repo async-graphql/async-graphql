@@ -84,12 +84,20 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 unit_struct_impls.push(quote! {
                     #[derive(::std::clone::Clone, #crate_name::SimpleObject)]
                 });
-                for InterfaceField { name, ty, .. } in &interface_args.fields {
+                for InterfaceField {
+                    name, ty, method, ..
+                } in &interface_args.fields
+                {
                     let name_string = name.to_string();
                     let ty_string = ty.to_token_stream().to_string();
                     let ident_string = ident.to_string();
+                    let method_override = if let Some(method) = method {
+                        quote! { method = #method, }
+                    } else {
+                        quote! {}
+                    };
                     unit_struct_impls.push(quote! {
-                        #[graphql(interface_impl(interface_type = #ident_string, name = #name_string, ty = #ty_string))]
+                        #[graphql(interface_impl(interface_type = #ident_string, name = #name_string, ty = #ty_string, #method_override))]
                     });
                 }
                 unit_struct_impls.push(quote! {

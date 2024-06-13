@@ -295,7 +295,10 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     for interface_impl in interface_impls {
         let interface_ty = &interface_impl.interface_type;
         let field_name = interface_impl.name.to_string();
-        let method_name = Ident::new_raw(&field_name, Span::call_site());
+        let mut method_name = Ident::new_raw(&field_name, Span::call_site());
+        if let Some(method_override) = &interface_impl.method {
+            method_name = Ident::new_raw(&method_override, Span::call_site());
+        }
         let method_name_interface =
             Ident::new_raw(&format!("interface_impl_{field_name}"), Span::call_site());
         let ty = &interface_impl.ty;
