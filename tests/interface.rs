@@ -548,3 +548,204 @@ pub async fn test_interface_with_oneof_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_interface_impl() {
+    #[derive(SimpleObject, Clone)]
+    #[graphql(interface_impl(interface_type = "Node", name = "id", ty = "i32"))]
+    struct NewType {
+        title_a: String,
+    }
+
+    #[derive(SimpleObject, Clone)]
+    #[graphql(interface_impl(interface_type = "Node", name = "id", ty = "i32"))]
+    struct NewTypeUnit;
+
+    #[derive(Interface)]
+    #[graphql(field(name = "id", ty = "i32"))]
+    enum Node {
+        NewType(NewType),
+        NewTypeUnit(NewTypeUnit),
+    }
+
+    #[ComplexObject(interface)]
+    impl Node {
+        async fn id(&self) -> i32 {
+            match self {
+                Node::NewType(_) => 1,
+                Node::NewTypeUnit(_) => 2,
+            }
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn get_a(&self) -> Node {
+            Node::NewType(NewType {
+                title_a: "a".to_string(),
+            })
+        }
+
+        async fn get_b(&self) -> Node {
+            Node::NewTypeUnit(NewTypeUnit)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query_a = r"{
+            getA {
+                __typename
+                id
+                ... on NewType {
+                    titleA
+                }
+            }
+        }";
+    assert_eq!(
+        schema.execute(query_a).await.into_result().unwrap().data,
+        value!({
+            "getA": {
+                "__typename": "NewType",
+                "id": 1,
+                "titleA": "a",
+            }
+        })
+    );
+    let query_inner_a = r"{
+            getA {
+                __typename
+                ... on NewType {
+                    id
+                    titleA
+                }
+            }
+        }";
+    assert_eq!(
+        schema.execute(query_inner_a).await.into_result().unwrap().data,
+        value!({
+            "getA": {
+                "__typename": "NewType",
+                "id": 1,
+                "titleA": "a",
+            }
+        })
+    );
+    let query_b = r"{
+            getB {
+                __typename
+                id
+                ... on NewType {
+                    titleA
+                }
+            }
+        }";
+    assert_eq!(
+        schema.execute(query_b).await.into_result().unwrap().data,
+        value!({
+            "getB": {
+                "__typename": "NewTypeUnit",
+                "id": 2,
+            }
+        })
+    );
+}
+
+#[tokio::test]
+pub async fn test_unit_variant() {
+    #[derive(Interface)]
+    #[graphql(field(name = "id", ty = "i32"))]
+    enum Node {
+        NewType(NewType),
+        NewTypeUnit(NewTypeUnit),
+        Unit
+    }
+
+    #[ComplexObject(interface)]
+    impl Node {
+        async fn id(&self) -> i32 {
+            match self {
+                Node::NewTypeUnit(_) => 2,
+                Node::Unit => 3,
+                // This will get ignored!
+                Node::NewType(_) => 999,
+            }
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct NewType {
+        #[graphql(owned)]
+        id: i32,
+    }
+
+    #[derive(SimpleObject, Clone)]
+    #[graphql(interface_impl(interface_type = "Node", name = "id", ty = "i32"))]
+    struct NewTypeUnit;
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn new_type(&self) -> Node {
+            Node::NewType(NewType { id: 1 })
+        }
+
+        async fn new_type_unit(&self) -> Node {
+            Node::NewTypeUnit(NewTypeUnit)
+        }
+
+        async fn unit(&self) -> Node {
+            Node::Unit
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r"{
+        newType {
+            __typename
+            id
+        }
+    }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "newType": {
+                "__typename": "NewType",
+                "id": 1,
+            }
+        })
+    );
+    let query = r"{
+        newTypeUnit {
+            __typename
+            id
+        }
+    }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "newTypeUnit": {
+                "__typename": "NewTypeUnit",
+                "id": 2,
+            }
+        })
+    );
+    let query = r"{
+        unit {
+            __typename
+            id
+        }
+    }";
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "unit": {
+                "__typename": "Unit",
+                "id": 3,
+            }
+        })
+    );
+
+}
