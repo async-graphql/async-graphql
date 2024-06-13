@@ -3,8 +3,7 @@ use std::collections::HashSet;
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
-use quote::quote;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use syn::{visit_mut::VisitMut, Error, Type};
 
 use crate::{

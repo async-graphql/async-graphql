@@ -623,7 +623,12 @@ pub async fn test_interface_impl() {
             }
         }";
     assert_eq!(
-        schema.execute(query_inner_a).await.into_result().unwrap().data,
+        schema
+            .execute(query_inner_a)
+            .await
+            .into_result()
+            .unwrap()
+            .data,
         value!({
             "getA": {
                 "__typename": "NewType",
@@ -659,7 +664,7 @@ pub async fn test_unit_variant() {
     enum Node {
         NewType(NewType),
         NewTypeUnit(NewTypeUnit),
-        Unit
+        Unit,
     }
 
     #[ComplexObject(interface)]
@@ -747,5 +752,4 @@ pub async fn test_unit_variant() {
             }
         })
     );
-
 }
