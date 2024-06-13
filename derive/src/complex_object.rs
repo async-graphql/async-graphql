@@ -144,7 +144,7 @@ pub fn generate(
                 let ty = ty.value_type();
                 let ident = &method.sig.ident;
 
-                schema_fields.push(quote! {
+                register_fields.push(quote! {
                     #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::ObjectType);
                     <#ty>::create_type_info(registry);
                     if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
