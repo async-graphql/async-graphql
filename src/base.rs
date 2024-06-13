@@ -269,4 +269,9 @@ pub trait ComplexObject {
         &self,
         ctx: &Context<'_>,
     ) -> impl Future<Output = ServerResult<Option<Value>>> + Send;
+
+    fn register_field(
+        registry: &mut registry::Registry,
+        name: &str,
+    ) -> (String, registry::MetaField);
 }

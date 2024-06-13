@@ -232,6 +232,13 @@ pub struct SimpleObjectField {
     pub directives: Vec<Expr>,
 }
 
+#[derive(FromMeta)]
+pub struct InterfaceImpl {
+    pub interface_type: Type,
+    pub name: SpannedValue<String>,
+    pub ty: Type,
+}
+
 #[derive(FromDeriveInput)]
 #[darling(attributes(graphql), forward_attrs(doc))]
 pub struct SimpleObject {
@@ -266,6 +273,8 @@ pub struct SimpleObject {
     pub interface_object: bool,
     #[darling(default, multiple, rename = "tag")]
     pub tags: Vec<String>,
+    #[darling(default, multiple, rename = "interface_impl")]
+    pub interface_impls: Vec<InterfaceImpl>,
     #[darling(default)]
     pub visible: Option<Visible>,
     #[darling(default, multiple, rename = "concrete")]
@@ -940,6 +949,7 @@ pub struct ComplexObject {
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub guard: Option<Expr>,
+    pub interface: bool,
 }
 
 #[derive(FromMeta, Default)]

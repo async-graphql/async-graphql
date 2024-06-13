@@ -30,6 +30,7 @@ pub fn generate(
 
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
+    let mut register_fields = Vec::new();
 
     // Computation of the derivated fields
     let mut derived_impls = vec![];
@@ -168,6 +169,12 @@ pub fn generate(
                     .rename_fields
                     .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
             });
+            if object_args.interface {
+                method.sig.ident = Ident::new(
+                    &format!("{}_interface", method.sig.ident),
+                    method.sig.ident.span(),
+                );
+            }
             let field_desc = get_rustdoc(&method.attrs)?
                 .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -370,29 +377,35 @@ pub fn generate(
             };
 
             schema_fields.push(quote! {
-                #(#cfg_attrs)*
-                fields.push((#field_name.to_string(), #crate_name::registry::MetaField {
-                    name: ::std::borrow::ToOwned::to_owned(#field_name),
-                    description: #field_desc,
-                    args: {
-                        let mut args = #crate_name::indexmap::IndexMap::new();
-                        #(#schema_args)*
-                        args
-                    },
-                    ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
-                    deprecation: #field_deprecation,
-                    cache_control: #cache_control,
-                    external: #external,
-                    provides: #provides,
-                    requires: #requires,
-                    shareable: #shareable,
-                    inaccessible: #inaccessible,
-                    tags: ::std::vec![ #(#tags),* ],
-                    override_from: #override_from,
-                    visible: #visible,
-                    compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![],
-                }));
+                if name == #field_name {
+                    #(#cfg_attrs)*
+                    return (#field_name.to_string(), #crate_name::registry::MetaField {
+                        name: ::std::borrow::ToOwned::to_owned(#field_name),
+                        description: #field_desc,
+                        args: {
+                            let mut args = #crate_name::indexmap::IndexMap::new();
+                            #(#schema_args)*
+                            args
+                        },
+                        ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+                        deprecation: #field_deprecation,
+                        cache_control: #cache_control,
+                        external: #external,
+                        provides: #provides,
+                        requires: #requires,
+                        shareable: #shareable,
+                        inaccessible: #inaccessible,
+                        tags: ::std::vec![ #(#tags),* ],
+                        override_from: #override_from,
+                        visible: #visible,
+                        compute_complexity: #complexity,
+                        directive_invocations: ::std::vec![],
+                    });
+                }
+            });
+
+            register_fields.push(quote! {
+                fields.push(Self::register_field(registry, #field_name));
             });
 
             let field_ident = &method.sig.ident;
@@ -452,13 +465,18 @@ pub fn generate(
         impl #generics #crate_name::ComplexObject for #self_ty #where_clause {
             fn fields(registry: &mut #crate_name::registry::Registry) -> ::std::vec::Vec<(::std::string::String, #crate_name::registry::MetaField)> {
                 let mut fields = ::std::vec::Vec::new();
-                #(#schema_fields)*
+                #(#register_fields)*
                 fields
             }
 
             async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                 #(#resolvers)*
                 ::std::result::Result::Ok(::std::option::Option::None)
+            }
+
+            fn register_field(registry: &mut #crate_name::registry::Registry, name: &std::primitive::str) -> (::std::string::String, #crate_name::registry::MetaField) {
+                #(#schema_fields)*
+                ::std::panic!("Field not found: {}", name)
             }
         }
     };

@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use darling::ast::Data;
 use proc_macro::TokenStream;
+use proc_macro2::Span;
 use quote::quote;
 use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
 
@@ -36,6 +37,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let shareable = object_args.shareable;
     let inaccessible = object_args.inaccessible;
     let interface_object = object_args.interface_object;
+    let interface_impls = &object_args.interface_impls;
     let resolvable = matches!(object_args.resolvability, Resolvability::Resolvable);
     let tags = object_args
         .tags
@@ -288,6 +290,37 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 }
             });
         }
+    }
+
+    for interface_impl in interface_impls {
+        let interface_ty = &interface_impl.interface_type;
+        let field_name = interface_impl.name.to_string();
+        let method_name = Ident::new_raw(&field_name, Span::call_site());
+        let method_name_interface =
+            Ident::new_raw(&format!("{field_name}_interface"), Span::call_site());
+        let ty = &interface_impl.ty;
+        getters.push(quote! {
+            #[inline]
+            #[allow(missing_docs)]
+            async fn #method_name(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::Result<#ty> {
+                #interface_ty::from(::std::clone::Clone::clone(self)).#method_name_interface(ctx).await
+            }
+        });
+
+        resolvers.push(quote! {
+            if ctx.item.node.name.node == #field_name {
+                let f = async move {
+                    self.#method_name(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))
+                };
+                let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+            }
+        });
+
+        schema_fields.push(quote! {
+            fields.extend(vec![<#interface_ty as #crate_name::ComplexObject>::register_field(registry, #field_name)]);
+        });
     }
 
     if !object_args.fake && resolvers.is_empty() {
