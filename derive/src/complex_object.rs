@@ -144,7 +144,7 @@ pub fn generate(
                 let ty = ty.value_type();
                 let ident = &method.sig.ident;
 
-                register_fields.push(quote! {
+                schema_fields.push(quote! {
                     #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::ObjectType);
                     <#ty>::create_type_info(registry);
                     if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
@@ -376,7 +376,7 @@ pub fn generate(
                 quote! { ::std::option::Option::None }
             };
 
-            schema_fields.push(quote! {
+            register_fields.push(quote! {
                 if name == #field_name {
                     #(#cfg_attrs)*
                     return (#field_name.to_string(), #crate_name::registry::MetaField {
@@ -404,7 +404,7 @@ pub fn generate(
                 }
             });
 
-            register_fields.push(quote! {
+            schema_fields.push(quote! {
                 fields.push(Self::register_field(registry, #field_name));
             });
 
@@ -465,7 +465,7 @@ pub fn generate(
         impl #generics #crate_name::ComplexObject for #self_ty #where_clause {
             fn fields(registry: &mut #crate_name::registry::Registry) -> ::std::vec::Vec<(::std::string::String, #crate_name::registry::MetaField)> {
                 let mut fields = ::std::vec::Vec::new();
-                #(#register_fields)*
+                #(#schema_fields)*
                 fields
             }
 
@@ -475,7 +475,7 @@ pub fn generate(
             }
 
             fn register_field(registry: &mut #crate_name::registry::Registry, name: &std::primitive::str) -> (::std::string::String, #crate_name::registry::MetaField) {
-                #(#schema_fields)*
+                #(#register_fields)*
                 ::std::panic!("Field not found: {}", name)
             }
         }
