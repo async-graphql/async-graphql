@@ -1,7 +1,8 @@
-use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema};
+use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema, Subscription};
 use async_graphql_derive::{
     ComplexObject, Enum, InputObject, Interface, Object, OneofObject, SimpleObject, TypeDirective,
 };
+use futures_util::{stream, Stream};
 
 #[test]
 pub fn test_type_directive_1() {
@@ -50,7 +51,30 @@ pub fn test_type_directive_1() {
         }
     }
 
-    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+    struct Subscription;
+
+    #[Subscription(
+        directive = testDirective::apply("object type".to_string(), 3, None),
+    )]
+    impl Subscription {
+        #[graphql(
+        directive = testDirective::apply("object field".to_string(), 4, None),
+        directive = noArgsDirective::apply())
+        ]
+        async fn value(&self) -> impl Stream<Item = &'static str> {
+            stream::iter(vec!["abc"])
+        }
+
+        async fn another_value(&self) -> impl Stream<Item = SimpleValue> {
+            stream::iter(vec![SimpleValue {
+                some_data: "data".to_string(),
+            }])
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, Subscription)
+        .enable_subscription_in_federation()
+        .finish();
 
     let sdl = schema.sdl_with_options(SDLExportOptions::new().federation().compose_directive());
 

@@ -12,6 +12,11 @@ type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
 }
 
 
+type Subscription @testDirective(scope: "object type", input: 3) {
+	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
+	anotherValue: SimpleValue!
+}
+
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @noArgsDirective on FIELD_DEFINITION
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT

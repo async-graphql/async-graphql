@@ -6,12 +6,13 @@ use syn::{
 };
 
 use crate::{
-    args::{self, RenameRuleExt, RenameTarget, SubscriptionField},
+    args::{self, RenameRuleExt, RenameTarget, SubscriptionField, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, generate_default, generate_guards, get_cfg_attrs,
-        get_crate_name, get_rustdoc, get_type_path_and_name, parse_complexity_expr,
-        parse_graphql_attrs, remove_graphql_attrs, visible_fn, GeneratorResult,
+        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
+        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
+        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
+        GeneratorResult,
     },
 };
 
@@ -24,6 +25,8 @@ pub fn generate(
     let generics = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
     let extends = subscription_args.extends;
+    let directives =
+        gen_directive_calls(&subscription_args.directives, TypeDirectiveLocation::Object);
 
     let gql_typename = if !subscription_args.name_type {
         let name = subscription_args
@@ -245,6 +248,9 @@ pub fn generate(
                 quote! { ::std::option::Option::None }
             };
 
+            let directives =
+                gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
+
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -267,7 +273,7 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::default::Default::default(),
+                    directive_invocations: ::std::vec![ #(#directives),* ]
                 });
             });
 
@@ -421,7 +427,7 @@ pub fn generate(
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                    directive_invocations: ::std::default::Default::default(),
+                    directive_invocations: ::std::vec![ #(#directives),* ]
                 })
             }
 
