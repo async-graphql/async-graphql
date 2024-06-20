@@ -95,7 +95,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_uuid() {
+    fn test_parse_bson_uuid() {
         let id = Uuid::new();
         let bson_value = bson::bson!(id);
         let extended_json_value = json!(bson_value);
@@ -103,6 +103,18 @@ mod tests {
         assert_eq!(
             id,
             <Uuid as ScalarType>::parse(gql_value).expect("parsing succeeds")
+        );
+    }
+
+    #[test]
+    fn test_parse_bson_object_id() {
+        let id = ObjectId::from_bytes([42; 12]);
+        let bson_value = bson::bson!(id);
+        let extended_json_value = json!(bson_value);
+        let gql_value = Value::from_json(extended_json_value).expect("valid json");
+        assert_eq!(
+            id,
+            <ObjectId as ScalarType>::parse(gql_value).expect("parsing succeeds")
         );
     }
 }
