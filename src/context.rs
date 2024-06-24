@@ -8,6 +8,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use async_graphql_parser::types::ConstDirective;
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
 use serde::{
@@ -764,6 +765,36 @@ impl<'a> SelectionField<'a> {
     #[inline]
     pub fn alias(&self) -> Option<&'a str> {
         self.field.alias.as_ref().map(|alias| alias.node.as_str())
+    }
+
+    /// Get the directives of this field.
+    pub fn directives(&self) -> ServerResult<Vec<ConstDirective>> {
+        let mut directives = Vec::with_capacity(self.field.directives.len());
+
+        for directive in &self.field.directives {
+            let directive = &directive.node;
+
+            let mut arguments = Vec::with_capacity(directive.arguments.len());
+            for (name, value) in &directive.arguments {
+                let pos = name.pos;
+                arguments.push((
+                    name.clone(),
+                    value.position_node(
+                        value
+                            .node
+                            .clone()
+                            .into_const_with(|name| self.context.var_value(&name, pos))?,
+                    ),
+                ));
+            }
+
+            directives.push(ConstDirective {
+                name: directive.name.clone(),
+                arguments,
+            });
+        }
+
+        Ok(directives)
     }
 
     /// Get the arguments of this field.
