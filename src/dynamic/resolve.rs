@@ -2,6 +2,7 @@ use std::{borrow::Cow, pin::Pin};
 
 use async_graphql_derive::SimpleObject;
 use async_graphql_parser::{types::Field, Positioned};
+use async_graphql_value::ConstValue;
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
@@ -553,6 +554,8 @@ async fn resolve_value(
             }
             Ok(Some(Value::Enum(Name::new(name))))
         }
+
+        (Type::Enum(e), FieldValueInner::Value(ConstValue::Null)) => Ok(Some(ConstValue::Null)),
         (Type::Enum(e), _) => Err(ctx.set_error_path(
             Error::new(format!("internal: invalid item for enum \"{}\"", e.name))
                 .into_server_error(ctx.item.pos),
