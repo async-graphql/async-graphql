@@ -27,6 +27,9 @@ pub use serde_json::Number;
 pub use serializer::{to_value, SerializerError};
 pub use variables::Variables;
 
+#[cfg(feature = "raw_value")]
+pub use value_serde::RAW_VALUE_TOKEN;
+
 /// A GraphQL name.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Name).
