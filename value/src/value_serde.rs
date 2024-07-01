@@ -9,6 +9,13 @@ use serde::{
 
 use crate::{ConstValue, Name, Number, Value};
 
+/// The token used by `serde_json` to represent raw values.
+///
+/// It should be kept in sync with the following original until made public:
+/// https://github.com/serde-rs/json/blob/b48b9a3a0c09952579e98c8940fe0d1ee4aae588/src/raw.rs#L292
+#[cfg(feature = "raw_value")]
+pub const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
+
 impl Serialize for ConstValue {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
@@ -19,7 +26,17 @@ impl Serialize for ConstValue {
             ConstValue::Binary(v) => serializer.serialize_bytes(v),
             ConstValue::Enum(v) => serializer.serialize_str(v),
             ConstValue::List(v) => v.serialize(serializer),
-            ConstValue::Object(v) => v.serialize(serializer),
+            ConstValue::Object(v) => {
+                #[cfg(feature = "raw_value")]
+                if v.len() == 1 {
+                    if let Some(ConstValue::String(v)) = v.get(RAW_VALUE_TOKEN) {
+                        if let Ok(v) = serde_json::value::RawValue::from_string(v.clone()) {
+                            return v.serialize(serializer);
+                        }
+                    }
+                }
+                v.serialize(serializer)
+            }
         }
     }
 }
