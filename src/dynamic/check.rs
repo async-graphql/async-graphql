@@ -38,7 +38,7 @@ impl SchemaInner {
         if let Some(subscription_type) = &self.env.registry.subscription_type {
             if let Some(ty) = self.types.get(subscription_type) {
                 if !matches!(ty, Type::Subscription(_)) {
-                    return Err("The subsciprtion root must be an subscription object".into());
+                    return Err("The subscription root must be a subscription object".into());
                 }
             }
         }
