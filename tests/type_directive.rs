@@ -118,8 +118,10 @@ fn test_type_directive_2() {
     impl TestComplexObject {
         async fn test(
             &self,
-            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in ComplexObject".to_string()))]
-            _arg: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in ComplexObject.arg1".to_string()))]
+            _arg1: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in ComplexObject.arg2".to_string()))]
+            _arg2: String,
         ) -> &'static str {
             "test"
         }
@@ -140,8 +142,10 @@ fn test_type_directive_2() {
     impl TestObjectForInterface {
         async fn field(
             &self,
-            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface".to_string()))]
-            _arg: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface.arg1".to_string()))]
+            _arg1: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface.arg2".to_string()))]
+            _arg2: String,
         ) -> &'static str {
             "hello"
         }
@@ -153,9 +157,14 @@ fn test_type_directive_2() {
             ty = "String",
             directive = type_directive_field_definition::apply("This is INTERFACE in Interface".to_string()),
             arg(
-                name = "_arg",
+                name = "_arg1",
                 ty = "String",
-                directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface".to_string())
+                directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface.arg1".to_string())
+            ),
+            arg(
+                name = "_arg2",
+                ty = "String",
+                directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Interface.arg2".to_string())
             )
         ),
         directive = type_directive_interface::apply("This is INTERFACE in Interface".to_string())
@@ -170,8 +179,10 @@ fn test_type_directive_2() {
     impl Query {
         pub async fn test_argument(
             &self,
-            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Object".to_string()))]
-            _arg: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Object.arg1".to_string()))]
+            _arg1: String,
+            #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in Object.arg2".to_string()))]
+            _arg2: String,
         ) -> &'static str {
             "hello"
         }

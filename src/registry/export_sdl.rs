@@ -259,10 +259,8 @@ impl Registry {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
-                }
 
-                for (_, meta_input_value) in &field.args {
-                    for directive in &meta_input_value.directive_invocations {
+                    for directive in &arg.directive_invocations {
                         write!(sdl, " {}", directive.sdl()).ok();
                     }
                 }
