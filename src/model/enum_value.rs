@@ -1,7 +1,6 @@
 use crate::{registry, Object};
 
 pub struct __EnumValue<'a> {
-    pub registry: &'a registry::Registry,
     pub value: &'a registry::MetaEnumValue,
 }
 

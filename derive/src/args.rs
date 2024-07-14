@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use darling::{
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},

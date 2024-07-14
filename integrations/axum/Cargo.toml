@@ -27,7 +27,7 @@ tokio-stream = "0.1.15"
 tower-service = "0.3"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-axum = { version = "0.7.5", default_features = false }
+axum = { version = "0.7.5", default-features = false }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 axum = { version = "0.7.5", features = ["ws"] }

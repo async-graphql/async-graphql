@@ -4,7 +4,7 @@ use syn::{Error, GenericArgument, PathArguments, Result, Type};
 
 pub enum OutputType<'a> {
     Value(&'a Type),
-    Result(&'a Type, &'a Type),
+    Result(&'a Type),
 }
 
 impl<'a> OutputType<'a> {
@@ -22,7 +22,7 @@ impl<'a> OutputType<'a> {
                     let mut res = None;
                     for arg in &args.args {
                         if let GenericArgument::Type(value_ty) = arg {
-                            res = Some(OutputType::Result(input, value_ty));
+                            res = Some(OutputType::Result(value_ty));
                             break;
                         }
                     }
@@ -45,7 +45,7 @@ impl<'a> OutputType<'a> {
     pub fn value_type(&self) -> Type {
         let tokens = match self {
             OutputType::Value(ty) => quote! {#ty},
-            OutputType::Result(_, ty) => quote! {#ty},
+            OutputType::Result(ty) => quote! {#ty},
         };
         let mut ty = syn::parse2::<syn::Type>(tokens).unwrap();
         Self::remove_lifecycle(&mut ty);
