@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.7] 2024-07-14
+
+- Support raw values from serde_json [#1554](https://github.com/async-graphql/async-graphql/pull/1554)
+- The custom directive `ARGUMENT_DEFINITION` is not being output at the appropriate location in SDL [#1559](https://github.com/async-graphql/async-graphql/pull/1559)
+- Support for JSON extended representations of BSON ObjectId and Uuid [#1542](https://github.com/async-graphql/async-graphql/pull/1542)
+- feat: get directives from SelectionField [#1548](https://github.com/async-graphql/async-graphql/pull/1548)
+- Support Directives on Subscriptions [#1500](https://github.com/async-graphql/async-graphql/pull/1500)
+- fix subscription err typo [#1556](https://github.com/async-graphql/async-graphql/pull/1556)
+
 # [7.0.6] 2024-06-08
 
 - add license files to each project [#1523](https://github.com/async-graphql/async-graphql/issues/1523)
