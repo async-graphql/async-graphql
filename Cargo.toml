@@ -30,6 +30,7 @@ dynamic-schema = []
 graphiql = ["handlebars"]
 altair = ["handlebars", "schemars"]
 playground = []
+raw_value = ["async-graphql-value/raw_value"]
 
 [[bench]]
 harness = false
