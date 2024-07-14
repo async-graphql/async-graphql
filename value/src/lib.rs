@@ -25,6 +25,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use serde_json::Number;
 pub use serializer::{to_value, SerializerError};
+#[cfg(feature = "raw_value")]
+pub use value_serde::RAW_VALUE_TOKEN;
 pub use variables::Variables;
 
 /// A GraphQL name.

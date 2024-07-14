@@ -285,7 +285,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let oty = OutputType::parse(ty)?;
         let ty = match oty {
             OutputType::Value(ty) => ty,
-            OutputType::Result(_, ty) => ty,
+            OutputType::Result(ty) => ty,
         };
         let schema_ty = oty.value_type();
 

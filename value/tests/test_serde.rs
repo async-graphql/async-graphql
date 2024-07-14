@@ -66,3 +66,42 @@ fn test_binary() {
         Bytes::from_static(b"123456")
     );
 }
+
+#[cfg(feature = "raw_value")]
+#[test]
+fn test_raw_value() {
+    use indexmap::IndexMap;
+    use serde_json::value::RawValue;
+
+    #[derive(Serialize)]
+    struct Struct {
+        field: Box<RawValue>,
+    }
+
+    let object = Struct {
+        field: RawValue::from_string("[0, 1, 2]".into()).unwrap(),
+    };
+
+    let value = to_value(&object).unwrap();
+    assert_eq!(
+        value,
+        ConstValue::Object({
+            let mut map = IndexMap::default();
+            map.insert(
+                Name::new("field"),
+                ConstValue::Object({
+                    let mut map = IndexMap::default();
+                    map.insert(
+                        Name::new(RAW_VALUE_TOKEN),
+                        ConstValue::String("[0, 1, 2]".into()),
+                    );
+                    map
+                }),
+            );
+            map
+        })
+    );
+
+    let value = serde_json::to_string(&value).unwrap();
+    assert_eq!(value, r#"{"field":[0, 1, 2]}"#);
+}

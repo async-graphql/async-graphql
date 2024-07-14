@@ -382,3 +382,57 @@ pub async fn test_derived_field_complex_object_derived() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_derived_field_with_skip_simple_object() {
+    use serde::{Deserialize, Serialize};
+
+    struct Query;
+
+    #[derive(Serialize, Deserialize)]
+    struct ValueDerived(String);
+
+    scalar!(ValueDerived);
+
+    impl From<i32> for ValueDerived {
+        fn from(value: i32) -> Self {
+            ValueDerived(format!("{}", value))
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct TestObj {
+        #[graphql(derived(owned, name = "value2", into = "ValueDerived"), skip)]
+        pub value1: i32,
+    }
+
+    #[Object]
+    impl Query {
+        async fn test(&self, #[graphql(default = 100)] input: i32) -> TestObj {
+            TestObj { value1: input }
+        }
+    }
+
+    let query = "{ test { value2 } }";
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "test": {
+                "value2": "100",
+            }
+        })
+    );
+
+    let query = "{ test(input: 2) { value2 }}";
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    dbg!(schema.execute(query).await);
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "test": {
+                "value2": "2",
+            }
+        })
+    );
+}

@@ -3,7 +3,7 @@
 
 
 type Query {
-	testArgument(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object")): String!
+	testArgument(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object.arg2")): String!
 	testInputObject(arg: TestInput!): String!
 	testComplexObject: TestComplexObject!
 	testSimpleObject: TestSimpleObject!
@@ -15,7 +15,7 @@ type Query {
 
 type TestComplexObject @type_directive_object(description: "This is OBJECT in (Complex / Simple)Object") {
 	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in (Complex / Simple)Object")
-	test(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject")): String!
+	test(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg2")): String!
 }
 
 enum TestEnum @type_directive_enum(description: "This is ENUM in Enum") {
@@ -28,11 +28,11 @@ input TestInput @type_directive_input_object(description: "This is INPUT_OBJECT 
 }
 
 interface TestInterface @type_directive_interface(description: "This is INTERFACE in Interface") {
-	field(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface")): String! @type_directive_field_definition(description: "This is INTERFACE in Interface")
+	field(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface.arg2")): String! @type_directive_field_definition(description: "This is INTERFACE in Interface")
 }
 
 type TestObjectForInterface implements TestInterface {
-	field(arg: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface")): String!
+	field(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Interface.arg2")): String!
 }
 
 input TestOneOfObject @oneOf @type_directive_input_object(description: "This is INPUT_OBJECT in OneofObject") {

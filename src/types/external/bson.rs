@@ -11,6 +11,13 @@ impl ScalarType for ObjectId {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(ObjectId::parse_str(s)?),
+            Value::Object(o) => {
+                let json = Value::Object(o).into_json()?;
+                let bson = Bson::try_from(json)?;
+                bson.as_object_id().ok_or(InputValueError::custom(
+                    "could not parse the value as a BSON ObjectId",
+                ))
+            }
             _ => Err(InputValueError::expected_type(value)),
         }
     }
@@ -25,6 +32,17 @@ impl ScalarType for Uuid {
     fn parse(value: Value) -> InputValueResult<Self> {
         match value {
             Value::String(s) => Ok(Uuid::parse_str(s)?),
+            Value::Object(o) => {
+                let json = Value::Object(o).into_json()?;
+                let Bson::Binary(binary) = Bson::try_from(json)? else {
+                    return Err(InputValueError::custom(
+                        "could not parse the value as BSON Binary",
+                    ));
+                };
+                binary.to_uuid().map_err(|_| {
+                    InputValueError::custom("could not deserialize BSON Binary to Uuid")
+                })
+            }
             _ => Err(InputValueError::expected_type(value)),
         }
     }
@@ -67,5 +85,36 @@ impl ScalarType for Document {
 
     fn to_value(&self) -> Value {
         bson::from_document(self.clone()).unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn test_parse_bson_uuid() {
+        let id = Uuid::new();
+        let bson_value = bson::bson!(id);
+        let extended_json_value = json!(bson_value);
+        let gql_value = Value::from_json(extended_json_value).expect("valid json");
+        assert_eq!(
+            id,
+            <Uuid as ScalarType>::parse(gql_value).expect("parsing succeeds")
+        );
+    }
+
+    #[test]
+    fn test_parse_bson_object_id() {
+        let id = ObjectId::from_bytes([42; 12]);
+        let bson_value = bson::bson!(id);
+        let extended_json_value = json!(bson_value);
+        let gql_value = Value::from_json(extended_json_value).expect("valid json");
+        assert_eq!(
+            id,
+            <ObjectId as ScalarType>::parse(gql_value).expect("parsing succeeds")
+        );
     }
 }

@@ -184,10 +184,7 @@ impl<'a> __Type<'a> {
                     .values()
                     .filter(|value| is_visible(ctx, &value.visible))
                     .filter(|value| include_deprecated || !value.deprecation.is_deprecated())
-                    .map(|value| __EnumValue {
-                        registry: self.registry,
-                        value,
-                    })
+                    .map(|value| __EnumValue { value })
                     .collect(),
             )
         } else {

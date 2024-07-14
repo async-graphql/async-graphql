@@ -59,41 +59,35 @@
 //! This crate offers the following features, all of which are not activated by
 //! default:
 //!
-//! - `apollo_tracing`: Enable the [Apollo tracing
-//!   extension](extensions/struct.ApolloTracing.html).
-//! - `apollo_persisted_queries`: Enable the [Apollo persisted queries
-//!   extension](extensions/apollo_persisted_queries/struct.
-//!   ApolloPersistedQueries.html).
-//! - `log`: Enable the [logger extension](extensions/struct.Logger.html).
-//! - `tracing`: Enable the [tracing extension](extensions/struct.Tracing.html).
-//! - `opentelemetry`: Enable the [OpenTelemetry
-//!   extension](extensions/struct.OpenTelemetry.html).
-//! - `unblock`: Support [asynchronous reader for
-//!   Upload](types/struct.Upload.html)
-//! - `bson`: Integrate with the [`bson` crate](https://crates.io/crates/bson).
-//! - `chrono`: Integrate with the [`chrono` crate](https://crates.io/crates/chrono).
-//! - `chrono-tz`: Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).
-//! - `url`: Integrate with the [`url` crate](https://crates.io/crates/url).
-//! - `uuid`: Integrate with the [`uuid` crate](https://crates.io/crates/uuid).
-//! - `string_number`: Enable the
-//!   [StringNumber](types/struct.StringNumber.html).
-//! - `dataloader`: Support [DataLoader](dataloader/struct.DataLoader.html).
-//! - `secrecy`: Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).
-//! - `decimal`: Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).
-//! - `bigdecimal`: Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal).
-//! - `cbor`: Support for [serde_cbor](https://crates.io/crates/serde_cbor).
-//! - `smol_str`: Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).
-//! - `hashbrown`: Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).
-//! - `time`: Integrate with the [`time` crate](https://github.com/time-rs/time).
-//! - `tokio-sync`: Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html)
-//!   and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html).
-//! - `fast_chemail`: Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).
-//! - `tempfile`: Save the uploaded content in the temporary file.
-//! - `dynamic-schema`: Support dynamic schema.
-//! - `graphiql`: Enables the [GraphiQL IDE](https://github.com/graphql/graphiql)
-//!   integration
-//! - `playground`: Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground)
-//!   integration
+//! | feature                        | enables                                                                                                                                                                                       |
+//! |:-------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+//! | **`apollo_tracing`**           | Enable the [Apollo tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.ApolloTracing.html).                                                               |
+//! | **`apollo_persisted_queries`** | Enable the [Apollo persisted queries extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).                   |
+//! | **`bson`**                     | Integrate with the [`bson` crate](https://crates.io/crates/bson).                                                                                                                             |
+//! | **`bigdecimal`**               | Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal).                                                                                                                 |
+//! | **`cbor`**                     | Support for [serde_cbor](https://crates.io/crates/serde_cbor).                                                                                                                                |
+//! | **`chrono`**                   | Integrate with the [`chrono` crate](https://crates.io/crates/chrono).                                                                                                                         |
+//! | **`chrono-tz`**                | Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).                                                                                                                   |
+//! | **`dataloader`**               | Support [DataLoader](dataloader/struct.DataLoader.html).                                                                                                                                      |
+//! | **`decimal`**                  | Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).                                                                                                             |
+//! | **`dynamic-schema`**           | Support dynamic schema                                                                                                                                                                        |
+//! | **`fast_chemail`**             | Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).                                                                                                             |
+//! | **`graphiql`**                 | Enables the [GraphiQL IDE](https://github.com/graphql/graphiql) integration                                                                                                                   |
+//! | **`hashbrown`**                | Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).                                                                                                               |
+//! | **`log`**                      | Enable the [Logger extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.Logger.html).                                                                              |
+//! | **`opentelemetry`**            | Enable the [OpenTelemetry extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.OpenTelemetry.html).                                                                |
+//! | **`playground`**               | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration                                                                                               |
+//! | **`rawvalue`**                 | Support raw values from [`serde_json`](https://crates.io/crates/serde_json)                                                                                                                   |
+//! | **`secrecy`**                  | Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).                                                                                                                       |
+//! | **`smol_str`**                 | Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).                                                                                                                     |
+//! | **`string_number`**            | Enable the [StringNumber](types/struct.StringNumber.html).                                                                                                                                    |
+//! | **`time`**                     | Integrate with the [`time` crate](https://github.com/time-rs/time).                                                                                                                           |
+//! | **`tracing`**                  | Enable the [Tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.Tracing.html).                                                                            |
+//! | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
+//! | **`tokio-sync`**               | Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html). |
+//! | **`unblock`**                  | Support [Asynchronous reader for Upload](types/struct.Upload.html)                                                                                                                            |
+//! | **`uuid`**                     | Integrate with the [`uuid` crate](https://crates.io/crates/uuid).                                                                                                                             |
+//! | **`url`**                      | Integrate with the [`url` crate](https://crates.io/crates/url).                                                                                                                               |
 //!
 //! ## Integrations
 //!
