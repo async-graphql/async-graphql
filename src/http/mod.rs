@@ -31,7 +31,8 @@ pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart
 pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
 use serde::Deserialize;
 pub use websocket::{
-    ClientMessage, Protocols as WebSocketProtocols, WebSocket, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
+    ClientMessage, DefaultOnPingType, Protocols as WebSocketProtocols, WebSocket, WsMessage,
+    ALL_WEBSOCKET_PROTOCOLS,
 };
 
 use crate::{BatchRequest, ParseRequestError, Request};
