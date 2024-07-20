@@ -24,7 +24,7 @@ pub async fn test_batch_request() {
         serde_json::json!([
             {"data": { "value": 30 }},
             {"data": { "value": 70 }},
-            {"data": null, "errors": [{
+            {"errors": [{
                 "message": r#"Unknown field "value1" on type "Query". Did you mean "value"?"#,
                 "locations": [{"line": 1, "column": 3}]
             }]},
