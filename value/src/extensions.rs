@@ -1,6 +1,9 @@
+use std::{
+    collections::HashMap,
+    ops::{Deref, DerefMut},
+};
+
 use serde::{Deserialize, Deserializer, Serialize};
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
 
 /// Extensions of a query.
 #[derive(Debug, Clone, Default, Serialize, Eq, PartialEq)]

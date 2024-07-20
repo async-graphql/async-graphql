@@ -175,8 +175,9 @@ pub async fn receive_batch_cbor(body: impl AsyncRead) -> Result<BatchRequest, Pa
 
 #[cfg(test)]
 mod tests {
-    use async_graphql_value::Extensions;
     use std::collections::HashMap;
+
+    use async_graphql_value::Extensions;
 
     use super::*;
     use crate::{value, Variables};
