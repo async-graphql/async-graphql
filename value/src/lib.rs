@@ -5,6 +5,7 @@
 #![forbid(unsafe_code)]
 
 mod deserializer;
+mod extensions;
 mod macros;
 mod serializer;
 mod value_serde;
@@ -19,6 +20,7 @@ use std::{
 
 use bytes::Bytes;
 pub use deserializer::{from_value, DeserializerError};
+pub use extensions::Extensions;
 #[doc(hidden)]
 pub use indexmap;
 use indexmap::IndexMap;

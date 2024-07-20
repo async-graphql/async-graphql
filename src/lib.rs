@@ -210,7 +210,7 @@ pub mod registry;
 
 pub use async_graphql_parser as parser;
 pub use async_graphql_value::{
-    from_value, to_value, value, ConstValue as Value, DeserializerError, Name, Number,
+    from_value, to_value, value, ConstValue as Value, DeserializerError, Extensions, Name, Number,
     SerializerError, Variables,
 };
 #[doc(hidden)]
