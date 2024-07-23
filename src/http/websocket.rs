@@ -70,8 +70,9 @@ pin_project! {
     ///
     /// - [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
     /// - [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
-    pub struct WebSocket<S, E, OnInit> {
+    pub struct WebSocket<S, E, OnInit, OnPing> {
         on_connection_init: Option<OnInit>,
+        on_ping: Option<OnPing>,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
@@ -87,12 +88,14 @@ type MessageMapStream<S> =
     futures_util::stream::Map<S, fn(<S as Stream>::Item) -> serde_json::Result<ClientMessage>>;
 
 type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
+#[doc(hidden)]
+pub type DefaultOnPingType = fn(Option<serde_json::Value>) -> ();
 
 fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
     futures_util::future::ready(Ok(Data::default()))
 }
 
-impl<S, E> WebSocket<S, E, DefaultOnConnInitType>
+impl<S, E> WebSocket<S, E, DefaultOnConnInitType, DefaultOnPingType>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
@@ -101,6 +104,7 @@ where
     pub fn from_message_stream(executor: E, stream: S, protocol: Protocols) -> Self {
         WebSocket {
             on_connection_init: Some(default_on_connection_init),
+            on_ping: None,
             init_fut: None,
             connection_data: None,
             data: None,
@@ -112,7 +116,7 @@ where
     }
 }
 
-impl<S, E> WebSocket<MessageMapStream<S>, E, DefaultOnConnInitType>
+impl<S, E> WebSocket<MessageMapStream<S>, E, DefaultOnConnInitType, DefaultOnPingType>
 where
     E: Executor,
     S: Stream,
@@ -126,7 +130,7 @@ where
     }
 }
 
-impl<S, E, OnInit> WebSocket<S, E, OnInit>
+impl<S, E, OnInit, OnPing> WebSocket<S, E, OnInit, OnPing>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
@@ -149,13 +153,37 @@ where
     /// client in the [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
     /// From that point on the returned data will be accessible to all requests.
     #[must_use]
-    pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F>
+    pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F, OnPing>
     where
         F: FnOnce(serde_json::Value) -> R + Send + 'static,
         R: Future<Output = Result<Data>> + Send + 'static,
     {
         WebSocket {
             on_connection_init: Some(callback),
+            on_ping: self.on_ping,
+            init_fut: self.init_fut,
+            connection_data: self.connection_data,
+            data: self.data,
+            executor: self.executor,
+            streams: self.streams,
+            stream: self.stream,
+            protocol: self.protocol,
+        }
+    }
+
+    /// Specify a connection initialize callback function.
+    ///
+    /// This function if present, will be called with the data sent by the
+    /// client in the [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
+    /// From that point on the returned data will be accessible to all requests.
+    #[must_use]
+    pub fn on_ping<F>(self, on_ping: Option<F>) -> WebSocket<S, E, OnInit, F>
+    where
+        F: FnOnce(Option<serde_json::Value>) -> (),
+    {
+        WebSocket {
+            on_connection_init: self.on_connection_init,
+            on_ping,
             init_fut: self.init_fut,
             connection_data: self.connection_data,
             data: self.data,
@@ -167,12 +195,13 @@ where
     }
 }
 
-impl<S, E, OnInit, InitFut> Stream for WebSocket<S, E, OnInit>
+impl<S, E, OnInit, InitFut, OnPing> Stream for WebSocket<S, E, OnInit, OnPing>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
     OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
     InitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnPing: Fn(Option<serde_json::Value>) -> (),
 {
     type Item = WsMessage;
 
@@ -248,7 +277,11 @@ where
                     // handled by disconnecting the websocket
                     ClientMessage::ConnectionTerminate => return Poll::Ready(None),
                     // Pong must be sent in response from the receiving party as soon as possible.
-                    ClientMessage::Ping { .. } => {
+                    ClientMessage::Ping { payload } => {
+                        if let Some(on_ping) = this.on_ping {
+                            on_ping(payload);
+                        }
+
                         return Poll::Ready(Some(WsMessage::Text(
                             serde_json::to_string(&ServerMessage::Pong { payload: None }).unwrap(),
                         )));
