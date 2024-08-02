@@ -45,7 +45,7 @@ pub struct Request {
 
     /// The extensions config of the request.
     #[serde(default)]
-    pub extensions: HashMap<String, Value>,
+    pub extensions: Option<HashMap<String, Value>>,
 
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,

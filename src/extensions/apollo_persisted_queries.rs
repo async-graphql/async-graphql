@@ -88,7 +88,11 @@ impl<T: CacheStorage> Extension for ApolloPersistedQueriesExtension<T> {
         mut request: Request,
         next: NextPrepareRequest<'_>,
     ) -> ServerResult<Request> {
-        let res = if let Some(value) = request.extensions.remove("persistedQuery") {
+        let res = if let Some(Some(value)) = request
+            .extensions
+            .as_mut()
+            .map(|hash| hash.remove("persistedQuery"))
+        {
             let persisted_query: PersistedQuery = from_value(value).map_err(|_| {
                 ServerError::new("Invalid \"PersistedQuery\" extension configuration.", None)
             })?;
@@ -150,13 +154,15 @@ mod tests {
             .finish();
 
         let mut request = Request::new("{ value }");
-        request.extensions.insert(
+        let mut extensions = std::collections::HashMap::<_, _>::new();
+        extensions.insert(
             "persistedQuery".to_string(),
             value!({
                 "version": 1,
                 "sha256Hash": "854174ebed716fe24fd6659c30290aecd9bc1d17dc4f47939a1848a1b8ed3c6b",
             }),
         );
+        request.extensions = Some(extensions);
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap().data,
@@ -166,13 +172,15 @@ mod tests {
         );
 
         let mut request = Request::new("");
-        request.extensions.insert(
+        let mut extensions = std::collections::HashMap::<_, _>::new();
+        extensions.insert(
             "persistedQuery".to_string(),
             value!({
                 "version": 1,
                 "sha256Hash": "854174ebed716fe24fd6659c30290aecd9bc1d17dc4f47939a1848a1b8ed3c6b",
             }),
         );
+        request.extensions = Some(extensions);
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap().data,
@@ -182,13 +190,15 @@ mod tests {
         );
 
         let mut request = Request::new("");
-        request.extensions.insert(
+        let mut extensions = std::collections::HashMap::<_, _>::new();
+        extensions.insert(
             "persistedQuery".to_string(),
             value!({
                 "version": 1,
                 "sha256Hash": "def",
             }),
         );
+        request.extensions = Some(extensions);
 
         assert_eq!(
             schema.execute(request).await.into_result().unwrap_err(),
