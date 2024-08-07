@@ -9,7 +9,7 @@ mod response;
 #[cfg(not(target_arch = "wasm32"))]
 mod subscription;
 
-pub use extract::{GraphQLBatchRequest, GraphQLRequest};
+pub use extract::{rejection, GraphQLBatchRequest, GraphQLRequest};
 pub use query::GraphQL;
 pub use response::GraphQLResponse;
 #[cfg(not(target_arch = "wasm32"))]
