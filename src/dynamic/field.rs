@@ -221,7 +221,7 @@ impl<'a> FieldValue<'a> {
     #[inline]
     pub fn try_to_value(&self) -> Result<&Value> {
         self.as_value()
-            .ok_or_else(|| Error::new("internal: not a Value"))
+            .ok_or_else(|| Error::new(format!("internal: \"{:?}\" not a Value", self)))
     }
 
     /// If the FieldValue is a list, returns the associated
@@ -238,7 +238,7 @@ impl<'a> FieldValue<'a> {
     #[inline]
     pub fn try_to_list(&self) -> Result<&[FieldValue]> {
         self.as_list()
-            .ok_or_else(|| Error::new("internal: not a list"))
+            .ok_or_else(|| Error::new(format!("internal: \"{:?}\" not a List", self)))
     }
 
     /// If the FieldValue is a any, returns the associated
@@ -257,7 +257,8 @@ impl<'a> FieldValue<'a> {
     pub fn try_downcast_ref<T: Any>(&self) -> Result<&T> {
         self.downcast_ref().ok_or_else(|| {
             Error::new(format!(
-                "internal: not type \"{}\"",
+                "internal: \"{:?}\" is not of the expected type \"{}\"",
+                self,
                 std::any::type_name::<T>()
             ))
         })
