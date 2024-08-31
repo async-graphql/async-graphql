@@ -79,7 +79,6 @@ pub async fn test_use_type_external_macro() {
     /// Wow
     // Simple declarative macros also work
     #[doc = external_doc!(desc1)]
-    ///
     /// More
     #[derive(Description, Default)]
     struct MyObj<'a>(&'a str);
@@ -108,7 +107,7 @@ pub async fn test_use_type_external_macro() {
             .await
             .data,
         value!({
-            "__type": { "description": "Wow\nextern 1\n\nextern 2\n\nMore" }
+            "__type": { "description": "Wow\nextern 1\n\nextern 2\nMore" }
         })
     );
 }
