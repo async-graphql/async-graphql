@@ -71,7 +71,7 @@ pub fn generate(
 
             if method.sig.asyncness.is_none() {
                 return Err(Error::new_spanned(
-                    &method,
+                    method,
                     "The subscription stream function must be asynchronous",
                 )
                 .into());

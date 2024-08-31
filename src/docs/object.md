@@ -76,8 +76,7 @@ All methods are converted to camelCase.
 
 # Valid field return types
 
-- Scalar values, such as `i32` and `bool`. `usize`, `isize`, `u128` and `i128` are not
-supported
+- Scalar values, such as `i32` and `bool`. `usize`, `isize`, `u128` and `i128` are not supported
 - `Vec<T>`, such as `Vec<i32>`
 - Slices, such as `&[i32]`
 - `Option<T>`, such as `Option<i32>`

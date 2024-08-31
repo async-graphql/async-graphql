@@ -164,7 +164,7 @@ pub fn generate(
                 let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(&method, "Must be asynchronous").into());
+                    return Err(Error::new_spanned(method, "Must be asynchronous").into());
                 }
 
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
@@ -282,7 +282,7 @@ pub fn generate(
                 ));
             } else if !method_args.skip {
                 if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(&method, "Must be asynchronous").into());
+                    return Err(Error::new_spanned(method, "Must be asynchronous").into());
                 }
                 let cfg_attrs = get_cfg_attrs(&method.attrs);
 
@@ -431,7 +431,7 @@ pub fn generate(
                         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                         .collect::<Vec<_>>();
                     let directives =
-                        gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
+                        gen_directive_calls(directives, TypeDirectiveLocation::ArgumentDefinition);
 
                     schema_args.push(quote! {
                             args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
