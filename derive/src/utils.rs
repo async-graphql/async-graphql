@@ -71,9 +71,7 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<TokenStream>> 
                     }) => {
                         let doc = doc.value();
                         let doc_str = doc.trim();
-                        if !combined_docs_literal.is_empty() {
-                            combined_docs_literal += "\n";
-                        }
+                        combined_docs_literal += "\n";
                         combined_docs_literal += doc_str;
                     }
                     Expr::Macro(include_macro) => {
@@ -100,7 +98,9 @@ pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<TokenStream>> 
     Ok(if full_docs.is_empty() {
         None
     } else {
-        Some(quote!(::std::concat!( #( #full_docs ),* )))
+        Some(quote!(::core::primitive::str::trim(
+            ::std::concat!( #( #full_docs ),* )
+        )))
     })
 }
 
