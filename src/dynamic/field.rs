@@ -21,10 +21,12 @@ pub(crate) enum FieldValueInner<'a> {
     /// Const value
     Value(Value),
     /// Borrowed any value
-    /// The first item is the [`std::any::type_name`] of the value used for debugging.
+    /// The first item is the [`std::any::type_name`] of the value used for
+    /// debugging.
     BorrowedAny(Cow<'static, str>, &'a (dyn Any + Send + Sync)),
     /// Owned any value
-    /// The first item is the [`std::any::type_name`] of the value used for debugging.
+    /// The first item is the [`std::any::type_name`] of the value used for
+    /// debugging.
     OwnedAny(Cow<'static, str>, Box<dyn Any + Send + Sync>),
     /// A list
     List(Vec<FieldValue<'a>>),
