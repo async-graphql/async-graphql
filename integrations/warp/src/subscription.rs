@@ -1,4 +1,4 @@
-use std::{future::Future, str::FromStr};
+use std::{future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
     http::{WebSocketProtocols, WsMessage},
@@ -167,6 +167,7 @@ pub struct GraphQLWebSocket<Sink, Stream, E, OnInit> {
     executor: E,
     data: Data,
     on_init: OnInit,
+    keepalive_timeout: Option<Duration>,
 }
 
 impl<S, E> GraphQLWebSocket<SplitSink<S, Message>, SplitStream<S>, E, DefaultOnConnInitType>
@@ -201,6 +202,7 @@ where
             executor,
             data: Data::default(),
             on_init: default_on_connection_init,
+            keepalive_timeout: None,
         }
     }
 }
@@ -241,6 +243,20 @@ where
             data: self.data,
             on_init: callback,
             protocol: self.protocol,
+            keepalive_timeout: self.keepalive_timeout,
+        }
+    }
+
+    /// Sets a timeout for receiving an acknowledgement of the keep-alive ping.
+    ///
+    /// If the ping is not acknowledged within the timeout, the connection will
+    /// be closed.
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+        Self {
+            keepalive_timeout: timeout.into(),
+            ..self
         }
     }
 
@@ -256,6 +272,7 @@ where
         let _ = async_graphql::http::WebSocket::new(self.executor.clone(), stream, self.protocol)
             .connection_data(self.data)
             .on_connection_init(self.on_init)
+            .keepalive_timeout(self.keepalive_timeout)
             .map(|msg| match msg {
                 WsMessage::Text(text) => ws::Message::text(text),
                 WsMessage::Close(code, status) => ws::Message::close_with(code, status),

@@ -6,8 +6,10 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
+    time::{Duration, Instant},
 };
 
+use futures_timer::Delay;
 use futures_util::{
     future::{BoxFuture, Ready},
     stream::Stream,
@@ -22,7 +24,7 @@ use crate::{Data, Error, Executor, Request, Response, Result};
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
 
 /// An enum representing the various forms of a WebSocket message.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum WsMessage {
     /// A text WebSocket message
     Text(String),
@@ -63,6 +65,41 @@ impl WsMessage {
     }
 }
 
+struct Timer {
+    interval: Duration,
+    delay: Delay,
+}
+
+impl Timer {
+    #[inline]
+    fn new(interval: Duration) -> Self {
+        Self {
+            interval,
+            delay: Delay::new(interval),
+        }
+    }
+
+    #[inline]
+    fn reset(&mut self) {
+        self.delay.reset(self.interval);
+    }
+}
+
+impl Stream for Timer {
+    type Item = ();
+
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = &mut *self;
+        match this.delay.poll_unpin(cx) {
+            Poll::Ready(_) => {
+                this.delay.reset(this.interval);
+                Poll::Ready(Some(()))
+            }
+            Poll::Pending => Poll::Pending,
+        }
+    }
+}
+
 pin_project! {
     /// A GraphQL connection over websocket.
     ///
@@ -80,6 +117,9 @@ pin_project! {
         #[pin]
         stream: S,
         protocol: Protocols,
+        last_msg_at: Instant,
+        keepalive_timer: Option<Timer>,
+        close: bool,
     }
 }
 
@@ -108,6 +148,9 @@ where
             streams: HashMap::new(),
             stream,
             protocol,
+            last_msg_at: Instant::now(),
+            keepalive_timer: None,
+            close: false,
         }
     }
 }
@@ -163,6 +206,22 @@ where
             streams: self.streams,
             stream: self.stream,
             protocol: self.protocol,
+            last_msg_at: self.last_msg_at,
+            keepalive_timer: self.keepalive_timer,
+            close: self.close,
+        }
+    }
+
+    /// Sets a timeout for receiving an acknowledgement of the keep-alive ping.
+    ///
+    /// If the ping is not acknowledged within the timeout, the connection will
+    /// be closed.
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+        Self {
+            keepalive_timer: timeout.into().map(Timer::new),
+            ..self
         }
     }
 }
@@ -179,6 +238,30 @@ where
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let mut this = self.project();
 
+        if *this.close {
+            return Poll::Ready(None);
+        }
+
+        if let Some(keepalive_timer) = this.keepalive_timer {
+            if let Poll::Ready(Some(())) = keepalive_timer.poll_next_unpin(cx) {
+                return match this.protocol {
+                    Protocols::SubscriptionsTransportWS => {
+                        *this.close = true;
+                        Poll::Ready(Some(WsMessage::Text(
+                            serde_json::to_string(&ServerMessage::ConnectionError {
+                                payload: Error::new("timeout"),
+                            })
+                            .unwrap(),
+                        )))
+                    }
+                    Protocols::GraphQLWS => {
+                        *this.close = true;
+                        Poll::Ready(Some(WsMessage::Close(3008, "timeout".to_string())))
+                    }
+                };
+            }
+        }
+
         if this.init_fut.is_none() {
             while let Poll::Ready(message) = Pin::new(&mut this.stream).poll_next(cx) {
                 let message = match message {
@@ -188,8 +271,16 @@ where
 
                 let message: ClientMessage = match message {
                     Ok(message) => message,
-                    Err(err) => return Poll::Ready(Some(WsMessage::Close(1002, err.to_string()))),
+                    Err(err) => {
+                        *this.close = true;
+                        return Poll::Ready(Some(WsMessage::Close(1002, err.to_string())));
+                    }
                 };
+
+                *this.last_msg_at = Instant::now();
+                if let Some(keepalive_timer) = this.keepalive_timer {
+                    keepalive_timer.reset();
+                }
 
                 match message {
                     ClientMessage::ConnectionInit { payload } => {
@@ -199,6 +290,7 @@ where
                             }));
                             break;
                         } else {
+                            *this.close = true;
                             match this.protocol {
                                 Protocols::SubscriptionsTransportWS => {
                                     return Poll::Ready(Some(WsMessage::Text(
@@ -229,6 +321,7 @@ where
                                 Box::pin(this.executor.execute_stream(request, Some(data))),
                             );
                         } else {
+                            *this.close = true;
                             return Poll::Ready(Some(WsMessage::Close(
                                 1011,
                                 "The handshake is not completed.".to_string(),
@@ -246,7 +339,10 @@ where
                     // Note: in the revised `graphql-ws` spec, there is no equivalent to the
                     // `CONNECTION_TERMINATE` `client -> server` message; rather, disconnection is
                     // handled by disconnecting the websocket
-                    ClientMessage::ConnectionTerminate => return Poll::Ready(None),
+                    ClientMessage::ConnectionTerminate => {
+                        *this.close = true;
+                        return Poll::Ready(None);
+                    }
                     // Pong must be sent in response from the receiving party as soon as possible.
                     ClientMessage::Ping { .. } => {
                         return Poll::Ready(Some(WsMessage::Text(
@@ -272,17 +368,22 @@ where
                             serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
                         )))
                     }
-                    Err(err) => match this.protocol {
-                        Protocols::SubscriptionsTransportWS => Poll::Ready(Some(WsMessage::Text(
-                            serde_json::to_string(&ServerMessage::ConnectionError {
-                                payload: Error::new(err.message),
-                            })
-                            .unwrap(),
-                        ))),
-                        Protocols::GraphQLWS => {
-                            Poll::Ready(Some(WsMessage::Close(1002, err.message)))
+                    Err(err) => {
+                        *this.close = true;
+                        match this.protocol {
+                            Protocols::SubscriptionsTransportWS => {
+                                Poll::Ready(Some(WsMessage::Text(
+                                    serde_json::to_string(&ServerMessage::ConnectionError {
+                                        payload: Error::new(err.message),
+                                    })
+                                    .unwrap(),
+                                )))
+                            }
+                            Protocols::GraphQLWS => {
+                                Poll::Ready(Some(WsMessage::Close(1002, err.message)))
+                            }
                         }
-                    },
+                    }
                 };
             }
         }

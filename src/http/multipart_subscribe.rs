@@ -1,5 +1,8 @@
+use std::time::Duration;
+
 use bytes::{BufMut, Bytes, BytesMut};
-use futures_util::{stream::BoxStream, Stream, StreamExt};
+use futures_timer::Delay;
+use futures_util::{stream::BoxStream, FutureExt, Stream, StreamExt};
 use mime::Mime;
 
 use crate::Response;
@@ -15,10 +18,10 @@ static HEARTBEAT: Bytes = Bytes::from_static(b"{}\r\n");
 /// Reference: <https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/>
 pub fn create_multipart_mixed_stream<'a>(
     input: impl Stream<Item = Response> + Send + Unpin + 'a,
-    heartbeat_timer: impl Stream<Item = ()> + Send + Unpin + 'a,
+    heartbeat_interval: Duration,
 ) -> BoxStream<'a, Bytes> {
     let mut input = input.fuse();
-    let mut heartbeat_timer = heartbeat_timer.fuse();
+    let mut heartbeat_timer = Delay::new(heartbeat_interval).fuse();
 
     async_stream::stream! {
         loop {
@@ -39,7 +42,8 @@ pub fn create_multipart_mixed_stream<'a>(
                         None => break,
                     }
                 }
-                _ = heartbeat_timer.next() => {
+                _ = heartbeat_timer => {
+                    heartbeat_timer = Delay::new(heartbeat_interval).fuse();
                     yield PART_HEADER.clone();
                     yield HEARTBEAT.clone();
                 }

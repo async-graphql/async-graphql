@@ -35,6 +35,7 @@ pub struct GraphQLSubscription<E, OnInit> {
     executor: E,
     data: Data,
     on_connection_init: OnInit,
+    keepalive_timeout: Option<Duration>,
 }
 
 impl<E> GraphQLSubscription<E, DefaultOnConnInitType> {
@@ -44,6 +45,7 @@ impl<E> GraphQLSubscription<E, DefaultOnConnInitType> {
             executor,
             data: Default::default(),
             on_connection_init: default_on_connection_init,
+            keepalive_timeout: None,
         }
     }
 }
@@ -79,6 +81,20 @@ where
             executor: self.executor,
             data: self.data,
             on_connection_init: callback,
+            keepalive_timeout: self.keepalive_timeout,
+        }
+    }
+
+    /// Sets a timeout for receiving an acknowledgement of the keep-alive ping.
+    ///
+    /// If the ping is not acknowledged within the timeout, the connection will
+    /// be closed.
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+        Self {
+            keepalive_timeout: timeout.into(),
+            ..self
         }
     }
 
@@ -105,6 +121,7 @@ where
             last_heartbeat: Instant::now(),
             messages: None,
             on_connection_init: Some(self.on_connection_init),
+            keepalive_timeout: self.keepalive_timeout,
             continuation: Vec::new(),
         };
 
@@ -121,6 +138,7 @@ struct GraphQLSubscriptionActor<E, OnInit> {
     last_heartbeat: Instant,
     messages: Option<async_channel::Sender<Vec<u8>>>,
     on_connection_init: Option<OnInit>,
+    keepalive_timeout: Option<Duration>,
     continuation: Vec<u8>,
 }
 
@@ -156,6 +174,7 @@ where
         WebSocket::new(self.executor.clone(), rx, self.protocol)
             .connection_data(self.data.take().unwrap())
             .on_connection_init(self.on_connection_init.take().unwrap())
+            .keepalive_timeout(self.keepalive_timeout)
             .into_actor(self)
             .map(|response, _act, ctx| match response {
                 WsMessage::Text(text) => ctx.text(text),
