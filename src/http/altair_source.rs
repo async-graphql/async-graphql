@@ -434,7 +434,6 @@ impl handlebars::HelperDef for ToJsonHelper {
                         "obj".to_string(),
                         "object".to_string(),
                     )
-                    .into()
                 })
             })?;
         param_idx += 1;

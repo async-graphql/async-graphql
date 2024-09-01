@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.8] 2024-09-01
+
+- chore: Make Extensions nullable [#1563](https://github.com/async-graphql/async-graphql/pull/1563)
+- expose `rejection` in `async_graphql_axum` [#1571](https://github.com/async-graphql/async-graphql/pull/1571)
+- Updated crate `time` to `3.36`, as it fixes a compilation error in rust `1.80` [#1572](https://github.com/async-graphql/async-graphql/pull/1572)
+- Impl `Debug` for `dynamic::FieldValue` & Improve error messages for its methods [#1582](https://github.com/async-graphql/async-graphql/pull/1582)
+- Support scraping `#[doc = ...]` attributes when generating descriptions [#1581](https://github.com/async-graphql/async-graphql/pull/1581)
+- add `Websocket::keepalive_timeout` method to sets a timeout for receiving an acknowledgement of the keep-alive ping.
+
 # [7.0.7] 2024-07-14
 
 - Support raw values from serde_json [#1554](https://github.com/async-graphql/async-graphql/pull/1554)

@@ -39,17 +39,10 @@ impl<E: Executor> Handler<(HttpRequest, GraphQLRequest)> for GraphQL<E> {
 
             if is_accept_multipart_mixed {
                 let stream = executor.execute_stream(graphql_req.0, None);
-                let interval = Box::pin(async_stream::stream! {
-                    let mut interval = actix_web::rt::time::interval(Duration::from_secs(30));
-                    loop {
-                        interval.tick().await;
-                        yield ();
-                    }
-                });
                 HttpResponse::build(StatusCode::OK)
                     .insert_header(("content-type", "multipart/mixed; boundary=graphql"))
                     .streaming(
-                        create_multipart_mixed_stream(stream, interval)
+                        create_multipart_mixed_stream(stream, Duration::from_secs(30))
                             .map(Ok::<_, actix_web::Error>),
                     )
             } else {

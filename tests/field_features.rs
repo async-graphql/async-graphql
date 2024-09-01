@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(unexpected_cfgs)]
 
 use async_graphql::*;
 use futures_util::stream::{Stream, StreamExt};

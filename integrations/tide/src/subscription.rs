@@ -1,4 +1,4 @@
-use std::{future::Future, str::FromStr};
+use std::{future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
     http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
@@ -13,6 +13,7 @@ use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 pub struct GraphQLSubscription<E, OnConnInit> {
     executor: E,
     on_connection_init: OnConnInit,
+    keepalive_timeout: Option<Duration>,
 }
 
 type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
@@ -30,6 +31,7 @@ where
         GraphQLSubscription {
             executor,
             on_connection_init: default_on_connection_init,
+            keepalive_timeout: None,
         }
     }
 }
@@ -57,6 +59,20 @@ where
         GraphQLSubscription {
             executor: self.executor,
             on_connection_init: callback,
+            keepalive_timeout: self.keepalive_timeout,
+        }
+    }
+
+    /// Sets a timeout for receiving an acknowledgement of the keep-alive ping.
+    ///
+    /// If the ping is not acknowledged within the timeout, the connection will
+    /// be closed.
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+        Self {
+            keepalive_timeout: timeout.into(),
+            ..self
         }
     }
 
@@ -90,7 +106,8 @@ where
                         .map(Message::into_data),
                     protocol,
                 )
-                .on_connection_init(on_connection_init);
+                .on_connection_init(on_connection_init)
+                .keepalive_timeout(self.keepalive_timeout);
 
                 while let Some(data) = stream.next().await {
                     match data {

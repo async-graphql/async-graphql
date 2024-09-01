@@ -102,10 +102,9 @@
 //!
 //! Licensed under either of
 //!
-//! * Apache License, Version 2.0,
-//! (./LICENSE-APACHE or <http://www.apache.org/licenses/LICENSE-2.0>)
-//! * MIT license (./LICENSE-MIT or <http://opensource.org/licenses/MIT>)
-//! at your option.
+//! * Apache License, Version 2.0, (./LICENSE-APACHE or <http://www.apache.org/licenses/LICENSE-2.0>)
+//! * MIT license (./LICENSE-MIT or <http://opensource.org/licenses/MIT>) at
+//!   your option.
 //!
 //! ## References
 //!
@@ -210,7 +209,7 @@ pub mod registry;
 
 pub use async_graphql_parser as parser;
 pub use async_graphql_value::{
-    from_value, to_value, value, ConstValue as Value, DeserializerError, Name, Number,
+    from_value, to_value, value, ConstValue as Value, DeserializerError, Extensions, Name, Number,
     SerializerError, Variables,
 };
 #[doc(hidden)]

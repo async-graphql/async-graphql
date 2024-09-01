@@ -62,14 +62,8 @@ where
             Ok(Response::builder()
                 .header("content-type", "multipart/mixed; boundary=graphql")
                 .body(Body::from_bytes_stream(
-                    create_multipart_mixed_stream(
-                        stream,
-                        tokio_stream::wrappers::IntervalStream::new(tokio::time::interval(
-                            Duration::from_secs(30),
-                        ))
-                        .map(|_| ()),
-                    )
-                    .map(Ok::<_, std::io::Error>),
+                    create_multipart_mixed_stream(stream, Duration::from_secs(30))
+                        .map(Ok::<_, std::io::Error>),
                 )))
         } else {
             let (req, mut body) = req.split();

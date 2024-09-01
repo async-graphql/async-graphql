@@ -446,8 +446,8 @@ mod tests {
 
     #[test]
     fn test_parse_overflowing_int() {
-        let query_ok = format!("mutation {{ add(big: {}) }} ", std::i32::MAX);
-        let query_overflow = format!("mutation {{ add(big: {}0000) }} ", std::i32::MAX);
+        let query_ok = format!("mutation {{ add(big: {}) }} ", i32::MAX);
+        let query_overflow = format!("mutation {{ add(big: {}0000) }} ", i32::MAX);
         assert!(parse_query(query_ok).is_ok());
         assert!(parse_query(query_overflow).is_ok());
     }

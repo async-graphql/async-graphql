@@ -1,4 +1,4 @@
-use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
     futures_util::task::{Context, Poll},
@@ -131,6 +131,7 @@ pub struct GraphQLWebSocket<Sink, Stream, E, OnConnInit> {
     data: Data,
     on_connection_init: OnConnInit,
     protocol: GraphQLProtocol,
+    keepalive_timeout: Option<Duration>,
 }
 
 impl<S, E> GraphQLWebSocket<SplitSink<S, Message>, SplitStream<S>, E, DefaultOnConnInitType>
@@ -165,6 +166,7 @@ where
             data: Data::default(),
             on_connection_init: default_on_connection_init,
             protocol,
+            keepalive_timeout: None,
         }
     }
 }
@@ -205,6 +207,20 @@ where
             data: self.data,
             on_connection_init: callback,
             protocol: self.protocol,
+            keepalive_timeout: self.keepalive_timeout,
+        }
+    }
+
+    /// Sets a timeout for receiving an acknowledgement of the keep-alive ping.
+    ///
+    /// If the ping is not acknowledged within the timeout, the connection will
+    /// be closed.
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+        Self {
+            keepalive_timeout: timeout.into(),
+            ..self
         }
     }
 
@@ -227,6 +243,7 @@ where
             async_graphql::http::WebSocket::new(self.executor.clone(), input, self.protocol.0)
                 .connection_data(self.data)
                 .on_connection_init(self.on_connection_init)
+                .keepalive_timeout(self.keepalive_timeout)
                 .map(|msg| match msg {
                     WsMessage::Text(text) => Message::Text(text),
                     WsMessage::Close(code, status) => Message::Close(Some(CloseFrame {
@@ -239,7 +256,9 @@ where
         futures_util::pin_mut!(stream, sink);
 
         while let Some(item) = stream.next().await {
-            let _ = sink.send(item).await;
+            if sink.send(item).await.is_err() {
+                break;
+            }
         }
     }
 }

@@ -1,6 +1,5 @@
 use std::{
     any::Any,
-    collections::HashMap,
     fmt::{self, Debug, Formatter},
 };
 
@@ -9,7 +8,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::{
     parser::{parse_query, types::ExecutableDocument},
     schema::IntrospectionMode,
-    Data, ParseRequestError, ServerError, UploadValue, Value, Variables,
+    Data, Extensions, ParseRequestError, ServerError, UploadValue, Value, Variables,
 };
 
 /// GraphQL request.
@@ -45,7 +44,7 @@ pub struct Request {
 
     /// The extensions config of the request.
     #[serde(default)]
-    pub extensions: HashMap<String, Value>,
+    pub extensions: Extensions,
 
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,

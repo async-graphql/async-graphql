@@ -251,7 +251,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
             let directives =
-                gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
+                gen_directive_calls(directives, TypeDirectiveLocation::ArgumentDefinition);
 
             schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
@@ -303,7 +303,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
-        let directives = gen_directive_calls(&directives, TypeDirectiveLocation::FieldDefinition);
+        let directives = gen_directive_calls(directives, TypeDirectiveLocation::FieldDefinition);
 
         schema_fields.push(quote! {
             fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {

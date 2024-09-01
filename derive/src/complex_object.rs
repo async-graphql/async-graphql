@@ -264,7 +264,7 @@ pub fn generate(
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
                 let directives =
-                    gen_directive_calls(&directives, TypeDirectiveLocation::ArgumentDefinition);
+                    gen_directive_calls(directives, TypeDirectiveLocation::ArgumentDefinition);
                 schema_args.push(quote! {
                         args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                             name: ::std::string::ToString::to_string(#name),

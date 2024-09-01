@@ -4,7 +4,10 @@ use std::{
     time::Duration,
 };
 
-use async_graphql::{http::WebSocketProtocols, *};
+use async_graphql::{
+    http::{WebSocketProtocols, WsMessage},
+    *,
+};
 use futures_channel::mpsc;
 use futures_util::{
     stream::{BoxStream, Stream, StreamExt},
@@ -726,4 +729,185 @@ pub async fn test_ping_pong() {
             .await
             .is_err()
     );
+}
+
+#[tokio::test]
+pub async fn test_connection_terminate() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(0..10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS);
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_terminate",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert!(stream.next().await.is_none());
+    assert!(stream.next().await.is_none());
+}
+
+#[tokio::test]
+pub async fn test_keepalive_timeout_1() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(0..10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS)
+        .keepalive_timeout(Duration::from_secs(3));
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    assert!(tokio::time::timeout(Duration::from_secs(2), stream.next())
+        .await
+        .is_err());
+
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(2), stream.next()).await,
+        Ok(Some(WsMessage::Close(3008, "timeout".to_string())))
+    );
+
+    assert!(stream.next().await.is_none());
+}
+
+#[tokio::test]
+pub async fn test_keepalive_timeout_2() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(0..10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS)
+        .keepalive_timeout(Duration::from_secs(3));
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    tokio::time::sleep(Duration::from_secs(2)).await;
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "ping",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "pong",
+        }),
+    );
+
+    assert!(tokio::time::timeout(Duration::from_secs(2), stream.next())
+        .await
+        .is_err());
+
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(2), stream.next()).await,
+        Ok(Some(WsMessage::Close(3008, "timeout".to_string())))
+    );
+
+    assert!(stream.next().await.is_none());
 }
