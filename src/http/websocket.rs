@@ -107,9 +107,11 @@ pin_project! {
     ///
     /// - [subscriptions-transport-ws](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md)
     /// - [graphql-ws](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md)
-    pub struct WebSocket<S, E, OnInit> {
+    pub struct WebSocket<S, E, OnInit, OnPing> {
         on_connection_init: Option<OnInit>,
+        on_ping: OnPing,
         init_fut: Option<BoxFuture<'static, Result<Data>>>,
+        ping_fut: Option<BoxFuture<'static, Result<Option<serde_json::Value>>>>,
         connection_data: Option<Data>,
         data: Option<Arc<Data>>,
         executor: E,
@@ -126,13 +128,27 @@ pin_project! {
 type MessageMapStream<S> =
     futures_util::stream::Map<S, fn(<S as Stream>::Item) -> serde_json::Result<ClientMessage>>;
 
-type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
+/// Default connection initializer type.
+pub type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<Result<Data>>;
 
-fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
+/// Default ping handler type.
+pub type DefaultOnPingType =
+    fn(Option<&Data>, Option<serde_json::Value>) -> Ready<Result<Option<serde_json::Value>>>;
+
+/// Default connection initializer function.
+pub fn default_on_connection_init(_: serde_json::Value) -> Ready<Result<Data>> {
     futures_util::future::ready(Ok(Data::default()))
 }
 
-impl<S, E> WebSocket<S, E, DefaultOnConnInitType>
+/// Default ping handler function.
+pub fn default_on_ping(
+    _: Option<&Data>,
+    _: Option<serde_json::Value>,
+) -> Ready<Result<Option<serde_json::Value>>> {
+    futures_util::future::ready(Ok(None))
+}
+
+impl<S, E> WebSocket<S, E, DefaultOnConnInitType, DefaultOnPingType>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
@@ -141,7 +157,9 @@ where
     pub fn from_message_stream(executor: E, stream: S, protocol: Protocols) -> Self {
         WebSocket {
             on_connection_init: Some(default_on_connection_init),
+            on_ping: default_on_ping,
             init_fut: None,
+            ping_fut: None,
             connection_data: None,
             data: None,
             executor,
@@ -155,7 +173,7 @@ where
     }
 }
 
-impl<S, E> WebSocket<MessageMapStream<S>, E, DefaultOnConnInitType>
+impl<S, E> WebSocket<MessageMapStream<S>, E, DefaultOnConnInitType, DefaultOnPingType>
 where
     E: Executor,
     S: Stream,
@@ -169,7 +187,7 @@ where
     }
 }
 
-impl<S, E, OnInit> WebSocket<S, E, OnInit>
+impl<S, E, OnInit, OnPing> WebSocket<S, E, OnInit, OnPing>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
@@ -192,14 +210,47 @@ where
     /// client in the [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init).
     /// From that point on the returned data will be accessible to all requests.
     #[must_use]
-    pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F>
+    pub fn on_connection_init<F, R>(self, callback: F) -> WebSocket<S, E, F, OnPing>
     where
         F: FnOnce(serde_json::Value) -> R + Send + 'static,
         R: Future<Output = Result<Data>> + Send + 'static,
     {
         WebSocket {
             on_connection_init: Some(callback),
+            on_ping: self.on_ping,
             init_fut: self.init_fut,
+            ping_fut: self.ping_fut,
+            connection_data: self.connection_data,
+            data: self.data,
+            executor: self.executor,
+            streams: self.streams,
+            stream: self.stream,
+            protocol: self.protocol,
+            last_msg_at: self.last_msg_at,
+            keepalive_timer: self.keepalive_timer,
+            close: self.close,
+        }
+    }
+
+    /// Specify a ping callback function.
+    ///
+    /// This function if present, will be called with the data sent by the
+    /// client in the [`Ping` message](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping).
+    ///
+    /// The function should return the data to be sent in the [`Pong` message](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong).
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    #[must_use]
+    pub fn on_ping<F, R>(self, callback: F) -> WebSocket<S, E, OnInit, F>
+    where
+        F: FnOnce(Option<&Data>, Option<serde_json::Value>) -> R + Send + Clone + 'static,
+        R: Future<Output = Result<Option<serde_json::Value>>> + Send + 'static,
+    {
+        WebSocket {
+            on_connection_init: self.on_connection_init,
+            on_ping: callback,
+            init_fut: self.init_fut,
+            ping_fut: self.ping_fut,
             connection_data: self.connection_data,
             data: self.data,
             executor: self.executor,
@@ -218,6 +269,7 @@ where
     /// be closed.
     ///
     /// NOTE: Only used for the `graphql-ws` protocol.
+    #[must_use]
     pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
         Self {
             keepalive_timer: timeout.into().map(Timer::new),
@@ -226,12 +278,14 @@ where
     }
 }
 
-impl<S, E, OnInit, InitFut> Stream for WebSocket<S, E, OnInit>
+impl<S, E, OnInit, InitFut, OnPing, PingFut> Stream for WebSocket<S, E, OnInit, OnPing>
 where
     E: Executor,
     S: Stream<Item = serde_json::Result<ClientMessage>>,
     OnInit: FnOnce(serde_json::Value) -> InitFut + Send + 'static,
     InitFut: Future<Output = Result<Data>> + Send + 'static,
+    OnPing: FnOnce(Option<&Data>, Option<serde_json::Value>) -> PingFut + Clone + Send + 'static,
+    PingFut: Future<Output = Result<Option<serde_json::Value>>> + Send + 'static,
 {
     type Item = WsMessage;
 
@@ -262,7 +316,7 @@ where
             }
         }
 
-        if this.init_fut.is_none() {
+        if this.init_fut.is_none() && this.ping_fut.is_none() {
             while let Poll::Ready(message) = Pin::new(&mut this.stream).poll_next(cx) {
                 let message = match message {
                     Some(message) => message,
@@ -344,10 +398,14 @@ where
                         return Poll::Ready(None);
                     }
                     // Pong must be sent in response from the receiving party as soon as possible.
-                    ClientMessage::Ping { .. } => {
-                        return Poll::Ready(Some(WsMessage::Text(
-                            serde_json::to_string(&ServerMessage::Pong { payload: None }).unwrap(),
-                        )));
+                    ClientMessage::Ping { payload } => {
+                        let on_ping = this.on_ping.clone();
+                        let data = this.data.clone();
+                        *this.ping_fut =
+                            Some(Box::pin(
+                                async move { on_ping(data.as_deref(), payload).await },
+                            ));
+                        break;
                     }
                     ClientMessage::Pong { .. } => {
                         // Do nothing...
@@ -357,35 +415,54 @@ where
         }
 
         if let Some(init_fut) = this.init_fut {
-            if let Poll::Ready(res) = init_fut.poll_unpin(cx) {
+            return init_fut.poll_unpin(cx).map(|res| {
                 *this.init_fut = None;
-                return match res {
+                match res {
                     Ok(data) => {
                         let mut ctx_data = this.connection_data.take().unwrap_or_default();
                         ctx_data.merge(data);
                         *this.data = Some(Arc::new(ctx_data));
-                        Poll::Ready(Some(WsMessage::Text(
+                        Some(WsMessage::Text(
                             serde_json::to_string(&ServerMessage::ConnectionAck).unwrap(),
-                        )))
+                        ))
                     }
                     Err(err) => {
                         *this.close = true;
                         match this.protocol {
-                            Protocols::SubscriptionsTransportWS => {
-                                Poll::Ready(Some(WsMessage::Text(
-                                    serde_json::to_string(&ServerMessage::ConnectionError {
-                                        payload: Error::new(err.message),
-                                    })
-                                    .unwrap(),
-                                )))
-                            }
-                            Protocols::GraphQLWS => {
-                                Poll::Ready(Some(WsMessage::Close(1002, err.message)))
-                            }
+                            Protocols::SubscriptionsTransportWS => Some(WsMessage::Text(
+                                serde_json::to_string(&ServerMessage::ConnectionError {
+                                    payload: Error::new(err.message),
+                                })
+                                .unwrap(),
+                            )),
+                            Protocols::GraphQLWS => Some(WsMessage::Close(1002, err.message)),
                         }
                     }
-                };
-            }
+                }
+            });
+        }
+
+        if let Some(ping_fut) = this.ping_fut {
+            return ping_fut.poll_unpin(cx).map(|res| {
+                *this.ping_fut = None;
+                match res {
+                    Ok(payload) => Some(WsMessage::Text(
+                        serde_json::to_string(&ServerMessage::Pong { payload }).unwrap(),
+                    )),
+                    Err(err) => {
+                        *this.close = true;
+                        match this.protocol {
+                            Protocols::SubscriptionsTransportWS => Some(WsMessage::Text(
+                                serde_json::to_string(&ServerMessage::ConnectionError {
+                                    payload: Error::new(err.message),
+                                })
+                                .unwrap(),
+                            )),
+                            Protocols::GraphQLWS => Some(WsMessage::Close(1002, err.message)),
+                        }
+                    }
+                }
+            });
         }
 
         for (id, stream) in &mut *this.streams {
