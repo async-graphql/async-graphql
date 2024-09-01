@@ -64,6 +64,7 @@ pub async fn test_complex_object() {
         }
     }
 
+    #[allow(clippy::duplicated_attributes)]
     #[derive(Interface)]
     #[graphql(
         field(name = "a", ty = "&i32"),

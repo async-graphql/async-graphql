@@ -48,7 +48,7 @@ impl<'a> Debug for FieldValue<'a> {
             | FieldValueInner::WithType { ty, .. } => write!(f, "{}", ty),
             FieldValueInner::List(list) => match list.first() {
                 Some(v) => {
-                    write!(f, "[{}, ...]", format!("{:?}", v))
+                    write!(f, "[{:?}, ...]", v)
                 }
                 None => {
                     write!(f, "[()]")
