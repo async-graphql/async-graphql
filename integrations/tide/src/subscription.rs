@@ -1,28 +1,26 @@
 use std::{future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
-    http::{WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS},
+    http::{
+        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
+        WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
+    },
     Data, Executor, Result,
 };
-use futures_util::{future, future::Ready, StreamExt};
+use futures_util::{future, StreamExt};
 use tide::Endpoint;
 use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
 
 /// A GraphQL subscription endpoint builder.
 #[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]
-pub struct GraphQLSubscription<E, OnConnInit> {
+pub struct GraphQLSubscription<E, OnConnInit, OnPing> {
     executor: E,
     on_connection_init: OnConnInit,
+    on_ping: OnPing,
     keepalive_timeout: Option<Duration>,
 }
 
-type DefaultOnConnInitType = fn(serde_json::Value) -> Ready<async_graphql::Result<Data>>;
-
-fn default_on_connection_init(_: serde_json::Value) -> Ready<async_graphql::Result<Data>> {
-    futures_util::future::ready(Ok(Data::default()))
-}
-
-impl<E> GraphQLSubscription<E, DefaultOnConnInitType>
+impl<E> GraphQLSubscription<E, DefaultOnConnInitType, DefaultOnPingType>
 where
     E: Executor,
 {
@@ -31,16 +29,23 @@ where
         GraphQLSubscription {
             executor,
             on_connection_init: default_on_connection_init,
+            on_ping: default_on_ping,
             keepalive_timeout: None,
         }
     }
 }
 
-impl<E, OnConnInit, OnConnInitFut> GraphQLSubscription<E, OnConnInit>
+impl<E, OnConnInit, OnConnInitFut, OnPing, OnPingFut> GraphQLSubscription<E, OnConnInit, OnPing>
 where
     E: Executor,
     OnConnInit: Fn(serde_json::Value) -> OnConnInitFut + Clone + Send + Sync + 'static,
     OnConnInitFut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+    OnPing: FnOnce(Option<&Data>, Option<serde_json::Value>) -> OnPingFut
+        + Clone
+        + Send
+        + Sync
+        + 'static,
+    OnPingFut: Future<Output = async_graphql::Result<Option<serde_json::Value>>> + Send + 'static,
 {
     /// Specify a callback function to be called when the connection is
     /// initialized.
@@ -48,17 +53,38 @@ where
     /// You can get something from the payload of [`GQL_CONNECTION_INIT` message](https://github.com/apollographql/subscriptions-transport-ws/blob/master/PROTOCOL.md#gql_connection_init) to create [`Data`].
     /// The data returned by this callback function will be merged with the data
     /// specified by [`with_data`].
-    pub fn on_connection_init<OnConnInit2, Fut>(
-        self,
-        callback: OnConnInit2,
-    ) -> GraphQLSubscription<E, OnConnInit2>
+    #[must_use]
+    pub fn on_connection_init<F, R>(self, callback: F) -> GraphQLSubscription<E, F, OnPing>
     where
-        OnConnInit2: Fn(serde_json::Value) -> Fut + Clone + Send + Sync + 'static,
-        Fut: Future<Output = async_graphql::Result<Data>> + Send + 'static,
+        F: Fn(serde_json::Value) -> R + Clone + Send + Sync + 'static,
+        R: Future<Output = async_graphql::Result<Data>> + Send + 'static,
     {
         GraphQLSubscription {
             executor: self.executor,
             on_connection_init: callback,
+            on_ping: self.on_ping,
+            keepalive_timeout: self.keepalive_timeout,
+        }
+    }
+
+    /// Specify a ping callback function.
+    ///
+    /// This function if present, will be called with the data sent by the
+    /// client in the [`Ping` message](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#ping).
+    ///
+    /// The function should return the data to be sent in the [`Pong` message](https://github.com/enisdenjo/graphql-ws/blob/master/PROTOCOL.md#pong).
+    ///
+    /// NOTE: Only used for the `graphql-ws` protocol.
+    #[must_use]
+    pub fn on_ping<F, R>(self, callback: F) -> GraphQLSubscription<E, OnConnInit, F>
+    where
+        F: FnOnce(Option<&Data>, Option<serde_json::Value>) -> R + Send + Sync + Clone + 'static,
+        R: Future<Output = Result<Option<serde_json::Value>>> + Send + 'static,
+    {
+        GraphQLSubscription {
+            executor: self.executor,
+            on_connection_init: self.on_connection_init,
+            on_ping: callback,
             keepalive_timeout: self.keepalive_timeout,
         }
     }
@@ -69,6 +95,7 @@ where
     /// be closed.
     ///
     /// NOTE: Only used for the `graphql-ws` protocol.
+    #[must_use]
     pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
         Self {
             keepalive_timeout: timeout.into(),
@@ -77,10 +104,14 @@ where
     }
 
     /// Consumes this builder to create a tide endpoint.
-    pub fn build<S: Send + Sync + Clone + 'static>(self) -> impl Endpoint<S> {
+    pub fn build<S>(self) -> impl Endpoint<S>
+    where
+        S: Send + Sync + Clone + 'static,
+    {
         tide_websockets::WebSocket::<S, _>::new(move |request, connection| {
             let executor = self.executor.clone();
             let on_connection_init = self.on_connection_init.clone();
+            let on_ping = self.on_ping.clone();
             async move {
                 let protocol = match request
                     .header("sec-websocket-protocol")
@@ -107,6 +138,7 @@ where
                     protocol,
                 )
                 .on_connection_init(on_connection_init)
+                .on_ping(on_ping)
                 .keepalive_timeout(self.keepalive_timeout);
 
                 while let Some(data) = stream.next().await {

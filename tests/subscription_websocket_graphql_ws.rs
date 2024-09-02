@@ -911,3 +911,75 @@ pub async fn test_keepalive_timeout_2() {
 
     assert!(stream.next().await.is_none());
 }
+
+#[tokio::test]
+pub async fn test_on_ping() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn values(&self) -> impl Stream<Item = i32> {
+            futures_util::stream::iter(0..10)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, Subscription);
+    let (mut tx, rx) = mpsc::unbounded();
+    let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS).on_ping(
+        |_, payload| async move {
+            assert_eq!(payload, Some(serde_json::json!({"a": 1, "b": "abc"})));
+            Ok(Some(serde_json::json!({ "a": "abc", "b": 1 })))
+        },
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "connection_init",
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "connection_ack",
+        }),
+    );
+
+    tx.send(
+        serde_json::to_string(&value!({
+            "type": "ping",
+            "payload": {
+                "a": 1,
+                "b": "abc"
+            }
+        }))
+        .unwrap(),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stream.next().await.unwrap().unwrap_text())
+            .unwrap(),
+        serde_json::json!({
+            "type": "pong",
+            "payload": {
+                "a": "abc",
+                "b": 1
+            }
+        }),
+    );
+}
