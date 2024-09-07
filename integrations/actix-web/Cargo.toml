@@ -33,6 +33,7 @@ cbor = ["serde_cbor"]
 default = []
 
 [dev-dependencies]
+async-graphql = { workspace = true, features = [ "playground"]}
 actix-rt = "2.9.0"
-async-mutex = "1.4.0"
+async-lock = "3.4.0"
 serde = { version = "1", features = ["derive"] }
