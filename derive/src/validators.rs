@@ -58,6 +58,8 @@ pub struct Validators {
     ip: bool,
     #[darling(default)]
     regex: Option<String>,
+    #[darling(default)]
+    uuid: Option<usize>,
     #[darling(default, multiple)]
     custom: Vec<Expr>,
     #[darling(default)]
@@ -156,6 +158,12 @@ impl Validators {
         if let Some(re) = &self.regex {
             elem_validators.push(quote! {
                 #crate_name::validators::regex(__raw_value, #re)
+            });
+        }
+
+        if let Some(version) = &self.uuid {
+            elem_validators.push(quote! {
+                #crate_name::validators::uuid(__raw_value, #version)
             });
         }
 
