@@ -28,6 +28,22 @@ impl ToTokens for Number {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum UuidVersionValidation {
+    None,
+    Value(Lit),
+}
+
+impl FromMeta for UuidVersionValidation {
+    fn from_word() -> darling::Result<Self> {
+        Ok(UuidVersionValidation::None)
+    }
+
+    fn from_value(value: &Lit) -> darling::Result<Self> {
+        Ok(UuidVersionValidation::Value(value.clone()))
+    }
+}
+
 #[derive(FromMeta, Default, Clone)]
 pub struct Validators {
     #[darling(default)]
@@ -58,6 +74,8 @@ pub struct Validators {
     ip: bool,
     #[darling(default)]
     regex: Option<String>,
+    #[darling(default)]
+    uuid: Option<UuidVersionValidation>,
     #[darling(default, multiple)]
     custom: Vec<Expr>,
     #[darling(default)]
@@ -157,6 +175,21 @@ impl Validators {
             elem_validators.push(quote! {
                 #crate_name::validators::regex(__raw_value, #re)
             });
+        }
+
+        if let Some(version_validation) = &self.uuid {
+            match version_validation {
+                UuidVersionValidation::None => {
+                    elem_validators.push(quote! {
+                        #crate_name::validators::uuid(__raw_value, None)
+                    });
+                }
+                UuidVersionValidation::Value(version) => {
+                    elem_validators.push(quote! {
+                        #crate_name::validators::uuid(__raw_value, Some(#version))
+                    });
+                }
+            }
         }
 
         if !list_validators.is_empty() {
