@@ -15,6 +15,7 @@
 - **url** is valid url.
 - **ip** is valid ip address.
 - **regex=RE** is match for the regex.
+- **uuid=V** the string or ID is a valid UUID with version `V`.
 
 ```rust
 # extern crate async_graphql;
