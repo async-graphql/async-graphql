@@ -59,7 +59,9 @@ pub struct Validators {
     #[darling(default)]
     regex: Option<String>,
     #[darling(default)]
-    uuid: Option<usize>,
+    uuid: bool,
+    #[darling(default)]
+    uuid_version: Option<usize>,
     #[darling(default, multiple)]
     custom: Vec<Expr>,
     #[darling(default)]
@@ -161,9 +163,15 @@ impl Validators {
             });
         }
 
-        if let Some(version) = &self.uuid {
+        if self.uuid {
             elem_validators.push(quote! {
-                #crate_name::validators::uuid(__raw_value, #version)
+                #crate_name::validators::uuid(__raw_value, None)
+            });
+        }
+
+        if let Some(version) = &self.uuid_version {
+            elem_validators.push(quote! {
+                #crate_name::validators::uuid(__raw_value, Some(#version))
             });
         }
 
