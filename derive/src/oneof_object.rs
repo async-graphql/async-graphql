@@ -61,7 +61,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
-        let desc = get_rustdoc(&object_args.attrs)?
+        let desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let ty = match variant.fields.style {
