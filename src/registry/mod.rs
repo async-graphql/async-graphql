@@ -912,7 +912,7 @@ impl Registry {
 
     pub fn create_input_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
     where
-        T: InputType + ?Sized,
+        T: InputType,
         F: FnMut(&mut Registry) -> MetaType,
     {
         self.create_type(&mut f, &T::type_name(), std::any::type_name::<T>(), type_id);
