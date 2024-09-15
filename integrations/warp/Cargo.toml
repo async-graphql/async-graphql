@@ -19,7 +19,6 @@ futures-util = { workspace = true, default-features = false, features = [
 ] }
 serde_json.workspace = true
 warp = { version = "0.3.6", default-features = false, features = ["websocket"] }
-http = "0.2"
 
 [dev-dependencies]
 async-stream = "0.3.5"
