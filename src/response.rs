@@ -9,7 +9,7 @@ use crate::{CacheControl, Result, ServerError, Value};
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Response {
     /// Data of query result
-    #[serde(default)]
+    #[serde(skip_serializing_if = "is_default", default)]
     pub data: Value,
 
     /// Extensions result
@@ -27,6 +27,10 @@ pub struct Response {
     /// HTTP headers
     #[serde(skip)]
     pub http_headers: http::HeaderMap,
+}
+
+fn is_default<T: Default + PartialEq>(v: &T) -> bool {
+    T::default().eq(v)
 }
 
 impl Response {
