@@ -318,6 +318,7 @@ pub async fn test_subscription_ws_transport_error() {
             "type": "next",
             "id": "1",
             "payload": {
+                "data": null,
                 "errors": [{
                     "message": "TestError",
                     "locations": [{"line": 1, "column": 25}],
