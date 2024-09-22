@@ -82,7 +82,7 @@ impl<'a> GraphiQLSource<'a> {
         let mut ws_connection_params = self.ws_connection_params.unwrap_or_default();
         ws_connection_params.insert(name, value);
         GraphiQLSource {
-          ws_connection_params: Some(ws_connection_params),
+            ws_connection_params: Some(ws_connection_params),
             ..self
         }
     }
