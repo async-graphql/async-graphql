@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [7.0.10] 2024-09-24
 
 - add `SchemeBuilder.limit_directives` method to set the maximum number of directives on a single field.
+- remove needless ?Sized [#1593](https://github.com/async-graphql/async-graphql/pull/1593)
+- fix: generate each variant description correctly. [#1589](https://github.com/async-graphql/async-graphql/pull/1589)
+- Make `From<T>` for [Error] set source [#1561](https://github.com/async-graphql/async-graphql/pull/1561)
+- feat(graphiql): add support for WS connection params [#1597](https://github.com/async-graphql/async-graphql/pull/1597)
 
 # [7.0.9] 2024-09-02
 
