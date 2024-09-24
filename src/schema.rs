@@ -50,6 +50,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     complexity: Option<usize>,
     depth: Option<usize>,
     recursive_depth: usize,
+    max_directives: Option<usize>,
     extensions: Vec<Box<dyn ExtensionFactory>>,
     custom_directives: HashMap<String, Box<dyn CustomDirectiveFactory>>,
 }
@@ -112,6 +113,13 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     #[must_use]
     pub fn limit_recursive_depth(mut self, depth: usize) -> Self {
         self.recursive_depth = depth;
+        self
+    }
+
+    /// Set the maximum number of directives on a single field. (default: no
+    /// limit)
+    pub fn limit_directives(mut self, max_directives: usize) -> Self {
+        self.max_directives = Some(max_directives);
         self
     }
 
@@ -265,6 +273,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
             complexity: self.complexity,
             depth: self.depth,
             recursive_depth: self.recursive_depth,
+            max_directives: self.max_directives,
             extensions: self.extensions,
             env: SchemaEnv(Arc::new(SchemaEnvInner {
                 registry: self.registry,
@@ -303,6 +312,7 @@ pub struct SchemaInner<Query, Mutation, Subscription> {
     pub(crate) complexity: Option<usize>,
     pub(crate) depth: Option<usize>,
     pub(crate) recursive_depth: usize,
+    pub(crate) max_directives: Option<usize>,
     pub(crate) extensions: Vec<Box<dyn ExtensionFactory>>,
     pub(crate) env: SchemaEnv,
 }
@@ -381,6 +391,7 @@ where
             complexity: None,
             depth: None,
             recursive_depth: 32,
+            max_directives: None,
             extensions: Default::default(),
             custom_directives: Default::default(),
         }
@@ -518,6 +529,7 @@ where
                     &self.0.env.registry,
                     self.0.validation_mode,
                     self.0.recursive_depth,
+                    self.0.max_directives,
                     self.0.complexity,
                     self.0.depth,
                 )
@@ -574,7 +586,8 @@ where
             async_stream::stream! {
                 let (env, cache_control) = match prepare_request(
                         extensions, request, session_data, &env.registry,
-                        schema.0.validation_mode, schema.0.recursive_depth, schema.0.complexity, schema.0.depth
+                        schema.0.validation_mode, schema.0.recursive_depth,
+                        schema.0.max_directives, schema.0.complexity, schema.0.depth
                 ).await {
                     Ok(res) => res,
                     Err(errors) => {
@@ -656,6 +669,53 @@ where
         Schema::execute_stream_with_session_data(&self, request, session_data.unwrap_or_default())
             .boxed()
     }
+}
+
+fn check_max_directives(doc: &ExecutableDocument, max_directives: usize) -> ServerResult<()> {
+    fn check_selection_set(
+        doc: &ExecutableDocument,
+        selection_set: &Positioned<SelectionSet>,
+        limit_directives: usize,
+    ) -> ServerResult<()> {
+        for selection in &selection_set.node.items {
+            match &selection.node {
+                Selection::Field(field) => {
+                    if field.node.directives.len() > limit_directives {
+                        return Err(ServerError::new(
+                            format!(
+                                "The number of directives on the field `{}` cannot be greater than `{}`",
+                                field.node.name.node, limit_directives
+                            ),
+                            Some(field.pos),
+                        ));
+                    }
+                    check_selection_set(doc, &field.node.selection_set, limit_directives)?;
+                }
+                Selection::FragmentSpread(fragment_spread) => {
+                    if let Some(fragment) =
+                        doc.fragments.get(&fragment_spread.node.fragment_name.node)
+                    {
+                        check_selection_set(doc, &fragment.node.selection_set, limit_directives)?;
+                    }
+                }
+                Selection::InlineFragment(inline_fragment) => {
+                    check_selection_set(
+                        doc,
+                        &inline_fragment.node.selection_set,
+                        limit_directives,
+                    )?;
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    for (_, operation) in doc.operations.iter() {
+        check_selection_set(doc, &operation.node.selection_set, max_directives)?;
+    }
+
+    Ok(())
 }
 
 fn check_recursive_depth(doc: &ExecutableDocument, max_depth: usize) -> ServerResult<()> {
@@ -776,6 +836,7 @@ pub(crate) async fn prepare_request(
     registry: &Registry,
     validation_mode: ValidationMode,
     recursive_depth: usize,
+    max_directives: Option<usize>,
     complexity: Option<usize>,
     depth: Option<usize>,
 ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
@@ -792,6 +853,9 @@ pub(crate) async fn prepare_request(
                 None => parse_query(query)?,
             };
             check_recursive_depth(&doc, recursive_depth)?;
+            if let Some(max_directives) = max_directives {
+                check_max_directives(&doc, max_directives)?;
+            }
             Ok(doc)
         };
         futures_util::pin_mut!(fut_parse);
@@ -808,24 +872,13 @@ pub(crate) async fn prepare_request(
                 &document,
                 Some(&request.variables),
                 validation_mode,
+                complexity,
+                depth,
             )
         };
         futures_util::pin_mut!(validation_fut);
         extensions.validation(&mut validation_fut).await?
     };
-
-    // check limit
-    if let Some(limit_complexity) = complexity {
-        if validation_result.complexity > limit_complexity {
-            return Err(vec![ServerError::new("Query is too complex.", None)]);
-        }
-    }
-
-    if let Some(limit_depth) = depth {
-        if validation_result.depth > limit_depth {
-            return Err(vec![ServerError::new("Query is nested too deep.", None)]);
-        }
-    }
 
     let operation = if let Some(operation_name) = &request.operation_name {
         match document.operations {

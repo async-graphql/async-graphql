@@ -39,19 +39,21 @@ pub enum ValidationMode {
     Fast,
 }
 
-pub fn check_rules(
+pub(crate) fn check_rules(
     registry: &Registry,
     doc: &ExecutableDocument,
     variables: Option<&Variables>,
     mode: ValidationMode,
+    limit_complexity: Option<usize>,
+    limit_depth: Option<usize>,
 ) -> Result<ValidationResult, Vec<ServerError>> {
-    let mut ctx = VisitorContext::new(registry, doc, variables);
     let mut cache_control = CacheControl::default();
     let mut complexity = 0;
     let mut depth = 0;
 
-    match mode {
+    let errors = match mode {
         ValidationMode::Strict => {
+            let mut ctx = VisitorContext::new(registry, doc, variables);
             let mut visitor = VisitorNil
                 .with(rules::ArgumentsOfCorrectType::default())
                 .with(rules::DefaultValuesOfCorrectType)
@@ -84,8 +86,10 @@ pub fn check_rules(
                 .with(visitors::ComplexityCalculate::new(&mut complexity))
                 .with(visitors::DepthCalculate::new(&mut depth));
             visit(&mut visitor, &mut ctx, doc);
+            ctx.errors
         }
         ValidationMode::Fast => {
+            let mut ctx = VisitorContext::new(registry, doc, variables);
             let mut visitor = VisitorNil
                 .with(rules::NoFragmentCycles::default())
                 .with(rules::UploadFile)
@@ -95,11 +99,25 @@ pub fn check_rules(
                 .with(visitors::ComplexityCalculate::new(&mut complexity))
                 .with(visitors::DepthCalculate::new(&mut depth));
             visit(&mut visitor, &mut ctx, doc);
+            ctx.errors
+        }
+    };
+
+    // check limit
+    if let Some(limit_complexity) = limit_complexity {
+        if complexity > limit_complexity {
+            return Err(vec![ServerError::new("Query is too complex.", None)]);
         }
     }
 
-    if !ctx.errors.is_empty() {
-        return Err(ctx.errors.into_iter().map(Into::into).collect());
+    if let Some(limit_depth) = limit_depth {
+        if depth > limit_depth {
+            return Err(vec![ServerError::new("Query is nested too deep.", None)]);
+        }
+    }
+
+    if !errors.is_empty() {
+        return Err(errors.into_iter().map(Into::into).collect());
     }
 
     Ok(ValidationResult {
