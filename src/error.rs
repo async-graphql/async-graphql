@@ -319,11 +319,11 @@ impl Error {
     }
 }
 
-impl<T: Display + Send + Sync> From<T> for Error {
+impl<T: Display + Send + Sync + 'static> From<T> for Error {
     fn from(e: T) -> Self {
         Self {
             message: e.to_string(),
-            source: None,
+            source: Some(Arc::new(e)),
             extensions: None,
         }
     }

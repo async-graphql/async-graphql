@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-warp"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.9"
+version = "7.0.10"
 
 [dependencies]
 async-graphql.workspace = true
@@ -19,7 +19,6 @@ futures-util = { workspace = true, default-features = false, features = [
 ] }
 serde_json.workspace = true
 warp = { version = "0.3.6", default-features = false, features = ["websocket"] }
-http = "0.2"
 
 [dev-dependencies]
 async-stream = "0.3.5"

@@ -2,8 +2,11 @@ use std::{io, io::ErrorKind, str::FromStr};
 
 use async_graphql::{http::MultipartOptions, BatchRequest, Executor};
 use futures_util::TryStreamExt;
-use http::{HeaderName, HeaderValue};
-use warp::{reply::Response as WarpResponse, Buf, Filter, Rejection, Reply};
+use warp::{
+    http::{HeaderName, HeaderValue},
+    reply::Response as WarpResponse,
+    Buf, Filter, Rejection, Reply,
+};
 
 use crate::GraphQLBadRequest;
 

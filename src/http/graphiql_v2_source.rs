@@ -32,6 +32,7 @@ pub enum Credentials {
 ///     .endpoint("/")
 ///     .subscription_endpoint("/ws")
 ///     .header("Authorization", "Bearer [token]")
+///     .ws_connection_param("token", "[token]")
 ///     .credentials(Credentials::Include)
 ///     .finish();
 /// ```
@@ -40,6 +41,7 @@ pub struct GraphiQLSource<'a> {
     endpoint: &'a str,
     subscription_endpoint: Option<&'a str>,
     headers: Option<HashMap<&'a str, &'a str>>,
+    ws_connection_params: Option<HashMap<&'a str, &'a str>>,
     title: Option<&'a str>,
     credentials: Credentials,
     plugins: &'a [GraphiQLPlugin<'a>],
@@ -71,6 +73,16 @@ impl<'a> GraphiQLSource<'a> {
         headers.insert(name, value);
         GraphiQLSource {
             headers: Some(headers),
+            ..self
+        }
+    }
+
+    /// Sets a WS connection param to be sent during GraphiQL WS connections.
+    pub fn ws_connection_param(self, name: &'a str, value: &'a str) -> GraphiQLSource<'a> {
+        let mut ws_connection_params = self.ws_connection_params.unwrap_or_default();
+        ws_connection_params.insert(name, value);
+        GraphiQLSource {
+            ws_connection_params: Some(ws_connection_params),
             ..self
         }
     }
@@ -277,6 +289,7 @@ mod tests {
             .endpoint("/")
             .subscription_endpoint("/ws")
             .header("Authorization", "Bearer [token]")
+            .ws_connection_param("token", "[token]")
             .title("Awesome GraphiQL IDE Test")
             .credentials(Credentials::Include)
             .plugins(&[graphiql_plugin_explorer()])
@@ -353,6 +366,9 @@ mod tests {
             subscriptionUrl: createUrl('/ws', true),
             headers: {
               'Authorization': 'Bearer [token]',
+            },
+            wsConnectionParams: {
+              'token': '[token]',
             },
           }),
           defaultEditorToolsVisibility: true,
