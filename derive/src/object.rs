@@ -887,8 +887,8 @@ fn generate_fields_enum(
         }
 
         impl __FieldIdent {
-            fn from_name(name: &#crate_name::Name) -> ::std::option::Option<__FieldIdent> {
-                match name.as_str() {
+            fn from_name(__name: &#crate_name::Name) -> ::std::option::Option<__FieldIdent> {
+                match __name.as_str() {
                     #(#matches)*
                     _ => ::std::option::Option::None
                 }
