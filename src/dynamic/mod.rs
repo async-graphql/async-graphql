@@ -52,6 +52,7 @@ mod type_ref;
 mod union;
 mod value_accessor;
 
+pub use directive::Directive;
 pub use error::SchemaError;
 pub use field::{Field, FieldFuture, FieldValue, ResolverContext};
 pub use indexmap;
@@ -68,4 +69,3 @@ pub use subscription::{Subscription, SubscriptionField, SubscriptionFieldFuture}
 pub use type_ref::TypeRef;
 pub use union::Union;
 pub use value_accessor::{ListAccessor, ObjectAccessor, ValueAccessor};
-pub use directive::Directive;

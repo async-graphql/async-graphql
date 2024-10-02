@@ -8,13 +8,12 @@ use std::{
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
+use super::Directive;
 use crate::{
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
     Context, Error, Result, Value,
 };
-
-use super::Directive;
 
 /// A value returned from the resolver function
 pub struct FieldValue<'a>(pub(crate) FieldValueInner<'a>);

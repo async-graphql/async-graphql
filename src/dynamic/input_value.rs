@@ -1,6 +1,5 @@
-use crate::{dynamic::TypeRef, registry::MetaInputValue, Value};
-
 use super::{directive::to_meta_directive_invocation, Directive};
+use crate::{dynamic::TypeRef, registry::MetaInputValue, Value};
 
 /// A GraphQL input value type
 #[derive(Debug)]

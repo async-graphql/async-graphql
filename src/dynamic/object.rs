@@ -1,11 +1,10 @@
 use indexmap::{IndexMap, IndexSet};
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::{Field, SchemaError},
     registry::{MetaField, MetaType, Registry},
 };
-
-use super::{directive::to_meta_directive_invocation, Directive};
 
 /// A GraphQL object type
 ///

@@ -1,11 +1,10 @@
 use indexmap::IndexMap;
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::InputValue,
     registry::{MetaInputValue, MetaType, Registry},
 };
-
-use super::{directive::to_meta_directive_invocation, Directive};
 
 /// A GraphQL input object type
 ///

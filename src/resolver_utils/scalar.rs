@@ -169,7 +169,7 @@ macro_rules! scalar_internal {
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
-                        directive_invocations: ::std::vec::Vec::new()
+                        directive_invocations: ::std::vec::Vec::new(),
                     }
                 })
             }
@@ -208,7 +208,7 @@ macro_rules! scalar_internal {
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
-                        directive_invocations: ::std::vec::Vec::new()
+                        directive_invocations: ::std::vec::Vec::new(),
                     }
                 })
             }

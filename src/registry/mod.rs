@@ -272,7 +272,7 @@ impl MetaTypeId {
                 inaccessible: false,
                 tags: vec![],
                 specified_by_url: None,
-                directive_invocations: vec![]
+                directive_invocations: vec![],
             },
             MetaTypeId::Object => MetaType::Object {
                 name: "".to_string(),

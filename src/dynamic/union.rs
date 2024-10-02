@@ -1,11 +1,10 @@
 use indexmap::IndexSet;
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::SchemaError,
     registry::{MetaType, Registry},
 };
-
-use super::{directive::to_meta_directive_invocation, Directive};
 
 /// A GraphQL union type
 ///
@@ -132,7 +131,7 @@ impl Union {
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),
                 rust_typename: None,
-                directive_invocations: to_meta_directive_invocation(self.directives.clone())
+                directive_invocations: to_meta_directive_invocation(self.directives.clone()),
             },
         );
         Ok(())
