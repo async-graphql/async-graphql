@@ -2,8 +2,10 @@ use indexmap::IndexMap;
 
 use crate::{
     dynamic::InputValue,
-    registry::{MetaDirectiveInvocation, MetaInputValue, MetaType, Registry},
+    registry::{MetaInputValue, MetaType, Registry},
 };
+
+use super::{directive::to_meta_directive_invocation, Directive};
 
 /// A GraphQL input object type
 ///
@@ -57,7 +59,7 @@ pub struct InputObject {
     pub(crate) oneof: bool,
     inaccessible: bool,
     tags: Vec<String>,
-    directive_invocations: Vec<MetaDirectiveInvocation>,
+    directives: Vec<Directive>,
 }
 
 impl InputObject {
@@ -71,13 +73,14 @@ impl InputObject {
             oneof: false,
             inaccessible: false,
             tags: Vec::new(),
-            directive_invocations: Vec::new(),
+            directives: Vec::new(),
         }
     }
 
     impl_set_description!();
     impl_set_inaccessible!();
     impl_set_tags!();
+    impl_directive!();
 
     /// Add a field
     #[inline]
@@ -120,7 +123,7 @@ impl InputObject {
                     inaccessible: self.inaccessible,
                     tags: self.tags.clone(),
                     is_secret: false,
-                    directive_invocations: field.directive_invocations.clone(),
+                    directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                 },
             );
         }
@@ -136,7 +139,7 @@ impl InputObject {
                 tags: self.tags.clone(),
                 rust_typename: None,
                 oneof: self.oneof,
-                directive_invocations: self.directive_invocations.clone(),
+                directive_invocations: to_meta_directive_invocation(self.directives.clone()),
             },
         );
 

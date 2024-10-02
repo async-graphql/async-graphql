@@ -161,3 +161,15 @@ macro_rules! impl_set_override_from {
         }
     };
 }
+
+macro_rules! impl_directive {
+    () => {
+        /// Attach directive to the entity
+        #[inline]
+        pub fn directive(mut self, directive: Directive) -> Self {
+            self.directives.push(directive);
+
+            self
+        }
+    };
+}

@@ -34,6 +34,7 @@ mod macros;
 
 mod base;
 mod check;
+mod directive;
 mod r#enum;
 mod error;
 mod field;
@@ -67,3 +68,4 @@ pub use subscription::{Subscription, SubscriptionField, SubscriptionFieldFuture}
 pub use type_ref::TypeRef;
 pub use union::Union;
 pub use value_accessor::{ListAccessor, ObjectAccessor, ValueAccessor};
+pub use directive::Directive;

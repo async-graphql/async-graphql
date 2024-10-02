@@ -68,6 +68,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
+                    directive_invocations: ::std::vec::Vec::new(),
                 })
             }
 
@@ -99,6 +100,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
+                    directive_invocations: ::std::vec::Vec::new()
                 })
             }
 
