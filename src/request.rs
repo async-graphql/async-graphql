@@ -1,5 +1,6 @@
 use std::{
     any::Any,
+    collections::HashMap,
     fmt::{self, Debug, Formatter},
 };
 
@@ -16,7 +17,6 @@ use crate::{
 /// This can be deserialized from a structure of the query string, the operation
 /// name and the variables. The names are all in `camelCase` (e.g.
 /// `operationName`).
-#[non_exhaustive]
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Request {
@@ -46,6 +46,10 @@ pub struct Request {
     #[serde(default)]
     pub extensions: Extensions,
 
+    /// Extra fields that are not part of the GraphQL spec.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+
     #[serde(skip)]
     pub(crate) parsed_query: Option<ExecutableDocument>,
 
@@ -65,6 +69,7 @@ impl Request {
             uploads: Vec::default(),
             data: Data::default(),
             extensions: Default::default(),
+            extra: Default::default(),
             parsed_query: None,
             introspection_mode: IntrospectionMode::Enabled,
         }
