@@ -1,5 +1,6 @@
 use indexmap::IndexSet;
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::SchemaError,
     registry::{MetaType, Registry},
@@ -84,6 +85,7 @@ pub struct Union {
     pub(crate) possible_types: IndexSet<String>,
     inaccessible: bool,
     tags: Vec<String>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl Union {
@@ -96,12 +98,14 @@ impl Union {
             possible_types: Default::default(),
             inaccessible: false,
             tags: Vec::new(),
+            directives: Vec::new(),
         }
     }
 
     impl_set_description!();
     impl_set_inaccessible!();
     impl_set_tags!();
+    impl_directive!();
 
     /// Add a possible type to the union that must be an object
     #[inline]
@@ -127,6 +131,7 @@ impl Union {
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),
                 rust_typename: None,
+                directive_invocations: to_meta_directive_invocation(self.directives.clone()),
             },
         );
         Ok(())

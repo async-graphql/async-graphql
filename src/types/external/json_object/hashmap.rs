@@ -39,6 +39,7 @@ where
             inaccessible: false,
             tags: Default::default(),
             specified_by_url: None,
+            directive_invocations: Default::default(),
         })
     }
 
@@ -96,6 +97,7 @@ where
             inaccessible: false,
             tags: Default::default(),
             specified_by_url: None,
+            directive_invocations: Default::default(),
         })
     }
 

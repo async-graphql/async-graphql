@@ -167,6 +167,7 @@ impl InputType for Upload {
             specified_by_url: Some(
                 "https://github.com/jaydenseric/graphql-multipart-request-spec".to_string(),
             ),
+            directive_invocations: Default::default(),
         })
     }
 
