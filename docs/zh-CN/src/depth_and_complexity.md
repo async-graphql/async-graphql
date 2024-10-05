@@ -86,7 +86,7 @@ let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
 # #[Object]
 # impl Query { async fn version(&self) -> &str { "1.0" } }
 let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    .limit_complexity(5) // 限制最大深度为 5
+    .limit_complexity(5) // 限制复杂度为 5
     .finish();
 ```
 
