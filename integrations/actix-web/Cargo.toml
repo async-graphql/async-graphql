@@ -16,9 +16,7 @@ async-graphql.workspace = true
 
 actix = "0.13.3"
 actix-http = "3.6.0"
-actix-web = { version = "4.5.1", default-features = false, features = [
-    "http2",
-] }
+actix-web = { version = "4.5.1", default-features = false }
 actix-web-actors = "4.3.0"
 async-channel = "2.2.0"
 futures-channel = "0.3.30"
@@ -30,10 +28,11 @@ async-stream = "0.3.5"
 
 [features]
 cbor = ["serde_cbor"]
-default = []
+http2 = ["actix-web/http2"]
+default = ["http2"]
 
 [dev-dependencies]
-async-graphql = { workspace = true, features = [ "playground"]}
+async-graphql = { workspace = true, features = ["playground"] }
 actix-rt = "2.9.0"
 async-lock = "3.4.0"
 serde = { version = "1", features = ["derive"] }

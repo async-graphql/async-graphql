@@ -122,7 +122,9 @@ impl FromRequest for GraphQLBatchRequest {
                             PayloadError::UnknownLength => {
                                 io::Error::new(ErrorKind::Other, "a payload length is unknown")
                             }
+                            #[cfg(feature = "http2")]
                             PayloadError::Http2Payload(e) if e.is_io() => e.into_io().unwrap(),
+                            #[cfg(feature = "http2")]
                             PayloadError::Http2Payload(e) => io::Error::new(ErrorKind::Other, e),
                             _ => io::Error::new(ErrorKind::Other, e),
                         })
