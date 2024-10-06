@@ -14,6 +14,8 @@ mod minimum;
 mod multiple_of;
 mod regex;
 mod url;
+#[cfg(feature = "uuid-validator")]
+mod uuid;
 
 pub use chars_max_length::chars_max_length;
 pub use chars_min_length::chars_min_length;
@@ -29,6 +31,8 @@ pub use min_length::min_length;
 pub use min_password_strength::min_password_strength;
 pub use minimum::minimum;
 pub use multiple_of::multiple_of;
+#[cfg(feature = "uuid-validator")]
+pub use uuid::uuid;
 
 pub use self::{regex::regex, url::url};
 use crate::{InputType, InputValueError};
