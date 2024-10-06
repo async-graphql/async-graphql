@@ -352,10 +352,6 @@ where
     R: Future<Output = Result<T, E>>,
     E: Into<Error>,
 {
-    if first.is_some() && last.is_some() {
-        return Err("The \"first\" and \"last\" parameters cannot exist at the same time".into());
-    }
-
     let first = match first {
         Some(first) if first < 0 => {
             return Err("The \"first\" parameter must be a non-negative number".into());
