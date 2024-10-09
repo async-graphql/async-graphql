@@ -191,7 +191,7 @@ pub async fn test_find_entity_with_context() {
     impl Query {
         #[graphql(entity)]
         async fn find_user_by_id(&self, ctx: &Context<'_>, id: ID) -> FieldResult<MyObj> {
-            let loader = ctx.data_unchecked::<DataLoader<MyLoader>>();
+            let loader = ctx.data::<DataLoader<MyLoader>>().unwrap();
             loader
                 .load_one(id)
                 .await

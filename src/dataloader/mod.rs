@@ -27,7 +27,7 @@
 //! #[Object]
 //! impl Query {
 //!     async fn value(&self, ctx: &Context<'_>, n: i32) -> Option<String> {
-//!         ctx.data_unchecked::<DataLoader<MyLoader>>().load_one(n).await.unwrap()
+//!         ctx.data::<DataLoader<MyLoader>>().unwrap().load_one(n).await.unwrap()
 //!     }
 //! }
 //!
