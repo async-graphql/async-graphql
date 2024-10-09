@@ -260,7 +260,7 @@ async fn test_optional_output_with_try() {
     #[Object]
     impl Query {
         async fn obj(&self, ctx: &Context<'_>) -> Option<u32> {
-            let x = ctx.data_unchecked::<B>();
+            let x = ctx.data::<B>().unwrap();
 
             if x.some? {
                 Some(300)

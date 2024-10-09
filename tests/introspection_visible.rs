@@ -210,7 +210,7 @@ pub async fn test_visible_fn() {
         pub struct IsAdmin(pub bool);
 
         pub fn is_admin(ctx: &Context<'_>) -> bool {
-            ctx.data_unchecked::<IsAdmin>().0
+            ctx.data::<IsAdmin>().unwrap().0
         }
     }
 
