@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 
-use secrecy::{ExposeSecret, Secret, Zeroize};
+use secrecy::{ExposeSecret, SecretBox, SecretString};
+use secrecy::zeroize::Zeroize;
 
 use crate::{registry, InputType, InputValueError, InputValueResult, Value};
 
-impl<T: InputType + Zeroize> InputType for Secret<T> {
+impl<T: InputType + Zeroize> InputType for SecretBox<T> {
     type RawValueType = T::RawValueType;
 
     fn type_name() -> Cow<'static, str> {
@@ -21,7 +22,7 @@ impl<T: InputType + Zeroize> InputType for Secret<T> {
 
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         T::parse(value)
-            .map(Secret::new)
+            .map(|value| SecretBox::new(Box::new(value)))
             .map_err(InputValueError::propagate)
     }
 
