@@ -295,9 +295,7 @@ where
         futures_util::pin_mut!(stream, sink);
 
         while let Some(item) = stream.next().await {
-            if sink.send(item).await.is_err() {
-                break;
-            }
+            _ = sink.send(item).await;
         }
     }
 }
