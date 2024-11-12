@@ -117,6 +117,8 @@ impl FromMeta for GenericParamList {
 #[derive(FromMeta)]
 pub struct ConcreteType {
     pub name: String,
+    #[darling(default)]
+    pub input_name: Option<String>,
     pub params: PathList,
     #[darling(default)]
     pub bounds: GenericParamList,

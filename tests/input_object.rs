@@ -450,8 +450,64 @@ pub async fn test_both_input_output_generic() {
         "MyObjectString"
     );
     assert_eq!(
-        <MyObject<String> as InputType>::type_name(),
+        <MyObject<String> as OutputType>::type_name(),
         "MyObjectString"
+    );
+}
+
+#[tokio::test]
+pub async fn test_both_input_output_generic_with_nesting() {
+    #[derive(Clone, Copy, PartialEq, Eq, Enum, serde::Serialize)]
+    enum MyEnum {
+        Option1,
+        Option2,
+    }
+
+    #[derive(SimpleObject, InputObject)]
+    #[graphql(concrete(name = "MyObjectU32", params(u32)))]
+    #[graphql(concrete(
+        name = "MyObjectMyEnum",
+        input_name = "MyObjectMyEnumInput",
+        params(MyEnum)
+    ))]
+    #[allow(dead_code)]
+    struct MyObject<T: InputType + OutputType> {
+        a: T,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self, input: MyObject<MyEnum>) -> MyObject<MyEnum> {
+            MyObject::<MyEnum> { a: input.a }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute("{ obj(input: {a: OPTION_1}) { a } }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "obj": {
+                "a": "OPTION_1",
+            }
+        })
+    );
+
+    assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
+    assert_eq!(<MyObject<u32> as OutputType>::type_name(), "MyObjectU32");
+    assert_eq!(
+        <MyObject<MyEnum> as InputType>::type_name(),
+        "MyObjectMyEnumInput"
+    );
+    assert_eq!(
+        <MyObject<MyEnum> as OutputType>::type_name(),
+        "MyObjectMyEnum"
     );
 }
 
