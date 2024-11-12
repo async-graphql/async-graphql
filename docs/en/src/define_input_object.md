@@ -95,7 +95,7 @@ pub struct YetAnotherInput {
 
 You can pass multiple generic types to `params()`, separated by a comma.
 
-If you also want to also implement `OutputType`, then you will need to explicitly declare the input and output type names of the concrete types like so:
+If you also want to implement `OutputType`, then you will need to explicitly declare the input and output type names of the concrete types like so:
 
 ```rust
 #[derive(SimpleObject, InputObject)]
