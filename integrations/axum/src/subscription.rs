@@ -268,13 +268,6 @@ where
             .stream
             .take_while(|res| future::ready(res.is_ok()))
             .map(Result::unwrap)
-            .filter_map(|msg| {
-                if let Message::Text(_) | Message::Binary(_) = msg {
-                    future::ready(Some(msg))
-                } else {
-                    future::ready(None)
-                }
-            })
             .map(Message::into_data);
 
         let stream =
