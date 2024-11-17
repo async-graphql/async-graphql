@@ -268,13 +268,6 @@ where
             .stream
             .take_while(|res| future::ready(res.is_ok()))
             .map(Result::unwrap)
-            .filter_map(|msg| {
-                if let Message::Text(_) | Message::Binary(_) = msg {
-                    future::ready(Some(msg))
-                } else {
-                    future::ready(None)
-                }
-            })
             .map(Message::into_data);
 
         let stream =
@@ -295,9 +288,7 @@ where
         futures_util::pin_mut!(stream, sink);
 
         while let Some(item) = stream.next().await {
-            if sink.send(item).await.is_err() {
-                break;
-            }
+            _ = sink.send(item).await;
         }
     }
 }
