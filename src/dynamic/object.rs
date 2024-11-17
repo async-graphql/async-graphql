@@ -1,5 +1,6 @@
 use indexmap::{IndexMap, IndexSet};
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::{Field, SchemaError},
     registry::{MetaField, MetaType, Registry},
@@ -48,6 +49,7 @@ pub struct Object {
     inaccessible: bool,
     interface_object: bool,
     tags: Vec<String>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl Object {
@@ -66,6 +68,7 @@ impl Object {
             inaccessible: false,
             interface_object: false,
             tags: Vec::new(),
+            directives: Vec::new(),
         }
     }
 
@@ -75,6 +78,7 @@ impl Object {
     impl_set_inaccessible!();
     impl_set_interface_object!();
     impl_set_tags!();
+    impl_directive!();
 
     /// Add an field to the object
     #[inline]
@@ -184,7 +188,7 @@ impl Object {
                     tags: field.tags.clone(),
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
-                    directive_invocations: vec![],
+                    directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                 },
             );
         }
@@ -210,7 +214,7 @@ impl Object {
                 tags: self.tags.clone(),
                 is_subscription: false,
                 rust_typename: None,
-                directive_invocations: vec![],
+                directive_invocations: to_meta_directive_invocation(self.directives.clone()),
             },
         );
 

@@ -315,6 +315,7 @@ impl Registry {
                 inaccessible,
                 tags,
                 specified_by_url,
+                directive_invocations,
                 ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
@@ -346,6 +347,11 @@ impl Registry {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
                     }
+
+                    for directive in directive_invocations {
+                        write!(sdl, " {}", directive.sdl()).ok();
+                    }
+
                     writeln!(sdl).ok();
                 }
             }
@@ -604,6 +610,7 @@ impl Registry {
                 description,
                 inaccessible,
                 tags,
+                directive_invocations,
                 ..
             } => {
                 if let Some(description) = description {
@@ -619,6 +626,11 @@ impl Registry {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
                 }
+
+                for directive in directive_invocations {
+                    write!(sdl, " {}", directive.sdl()).ok();
+                }
+
                 write!(sdl, " =").ok();
 
                 for (idx, ty) in possible_types.iter().enumerate() {

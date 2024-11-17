@@ -8,6 +8,7 @@ use std::{
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
+use super::Directive;
 use crate::{
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
@@ -337,6 +338,7 @@ pub struct Field {
     pub(crate) inaccessible: bool,
     pub(crate) tags: Vec<String>,
     pub(crate) override_from: Option<String>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl Debug for Field {
@@ -375,6 +377,7 @@ impl Field {
             inaccessible: false,
             tags: Vec::new(),
             override_from: None,
+            directives: Vec::new(),
         }
     }
 
@@ -387,6 +390,7 @@ impl Field {
     impl_set_inaccessible!();
     impl_set_tags!();
     impl_set_override_from!();
+    impl_directive!();
 
     /// Add an argument to the field
     #[inline]

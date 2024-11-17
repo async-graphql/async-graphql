@@ -60,6 +60,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 inaccessible: #inaccessible,
                 tags: ::std::vec![ #(#tags),* ],
                 specified_by_url: #specified_by_url,
+                directive_invocations: ::std::vec::Vec::new(),
             })
         }
     } else {

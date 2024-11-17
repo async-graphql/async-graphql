@@ -242,6 +242,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                             inaccessible: #inaccessible,
                             tags: ::std::vec![ #(#tags),* ],
                             rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                            directive_invocations: ::std::vec::Vec::new(),
                         }
                     })
                 }
@@ -391,6 +392,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                                 inaccessible: #inaccessible,
                                 tags: ::std::vec![ #(#tags),* ],
                                 rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
+                                directive_invocations: ::std::vec::Vec::new()
                             }
                         })
                     }
