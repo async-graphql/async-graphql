@@ -34,7 +34,7 @@ pub trait InputType: Send + Sync + Sized {
     ///
     /// `i32::RawValueType` is `i32`
     /// `Option<i32>::RawValueType` is `i32`.
-    type RawValueType;
+    type RawValueType: ?Sized;
 
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
