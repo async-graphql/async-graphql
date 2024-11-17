@@ -118,15 +118,41 @@ pub(super) async fn receive_batch_multipart(
 
                         #[cfg(feature = "tempfile")]
                         let content = {
-                            use std::io::{Seek, Write};
-
                             let mut field = field;
-                            let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
-                            while let Some(chunk) = field.chunk().await? {
-                                file.write(&chunk).map_err(ParseRequestError::Io)?;
+
+                            #[cfg(feature = "unblock")]
+                            {
+                                use std::io::SeekFrom;
+
+                                use blocking::Unblock;
+                                use futures_util::{AsyncSeekExt, AsyncWriteExt};
+
+                                let mut file = Unblock::new(
+                                    tempfile::tempfile().map_err(ParseRequestError::Io)?,
+                                );
+                                while let Some(chunk) = field.chunk().await? {
+                                    file.write_all(&chunk)
+                                        .await
+                                        .map_err(ParseRequestError::Io)?;
+                                }
+                                file.seek(SeekFrom::Start(0))
+                                    .await
+                                    .map_err(ParseRequestError::Io)?;
+                                file.into_inner().await
                             }
-                            file.rewind()?;
-                            file
+
+                            #[cfg(not(feature = "unblock"))]
+                            {
+                                use std::io::{Seek, Write};
+
+                                let mut file =
+                                    tempfile::tempfile().map_err(ParseRequestError::Io)?;
+                                while let Some(chunk) = field.chunk().await? {
+                                    file.write_all(&chunk).map_err(ParseRequestError::Io)?;
+                                }
+                                file.rewind()?;
+                                file
+                            }
                         };
 
                         #[cfg(not(feature = "tempfile"))]
