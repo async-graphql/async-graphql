@@ -252,7 +252,7 @@ mod tests {
             |ctx| {
                 FieldFuture::new(async move {
                     Ok(Some(FieldValue::borrowed_any(
-                        ctx.data_unchecked::<MyObjData>(),
+                        ctx.data::<MyObjData>().unwrap(),
                     )))
                 })
             },

@@ -25,7 +25,7 @@ pub async fn test_extension_ctx() {
     #[Object]
     impl Query {
         async fn value(&self, ctx: &Context<'_>) -> i32 {
-            *ctx.data_unchecked::<MyData>().0.lock().await
+            *ctx.data::<MyData>().unwrap().0.lock().await
         }
     }
 
@@ -34,7 +34,7 @@ pub async fn test_extension_ctx() {
     #[Subscription]
     impl Subscription {
         async fn value(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
-            let data = *ctx.data_unchecked::<MyData>().0.lock().await;
+            let data = *ctx.data::<MyData>().unwrap().0.lock().await;
             futures_util::stream::once(async move { data })
         }
     }
@@ -451,7 +451,7 @@ pub async fn subscription_execute_with_data() {
     #[Object]
     impl Inner {
         async fn value(&self, ctx: &Context<'_>) -> i32 {
-            if let Some(logs) = ctx.data_opt::<Logs>() {
+            if let Some(logs) = ctx.data::<Logs>().ok() {
                 logs.lock().await.push(LogElement::InnerAccess(self.0));
             }
             self.0
@@ -464,7 +464,7 @@ pub async fn subscription_execute_with_data() {
     #[Object]
     impl Outer {
         async fn inner(&self, ctx: &Context<'_>) -> Inner {
-            if let Some(logs) = ctx.data_opt::<Logs>() {
+            if let Some(logs) = ctx.data::<Logs>().ok() {
                 logs.lock().await.push(LogElement::OuterAccess(self.0 .0));
             }
             self.0
