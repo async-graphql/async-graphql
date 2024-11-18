@@ -341,7 +341,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         });
 
         for concrete in &object_args.concretes {
-            let gql_typename = &concrete.name;
+            let gql_typename = concrete.input_name.as_ref().unwrap_or(&concrete.name);
             let params = &concrete.params.0;
             let concrete_type = quote! { #ident<#(#params),*> };
 
