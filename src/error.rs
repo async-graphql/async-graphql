@@ -319,8 +319,20 @@ impl Error {
     }
 }
 
+#[cfg(not(feature = "custom-error-conversion"))]
 impl<T: Display + Send + Sync + 'static> From<T> for Error {
     fn from(e: T) -> Self {
+        Self {
+            message: e.to_string(),
+            source: Some(Arc::new(e)),
+            extensions: None,
+        }
+    }
+}
+
+#[cfg(feature = "custom-error-conversion")]
+impl From<&'static str> for Error {
+    fn from(e: &'static str) -> Self {
         Self {
             message: e.to_string(),
             source: Some(Arc::new(e)),
