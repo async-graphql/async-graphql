@@ -173,6 +173,13 @@ pub async fn test_failure2() {
         Error1,
     }
 
+    #[cfg(feature = "custom-error-conversion")]
+    impl From<MyError> for Error {
+        fn from(e: MyError) -> Self {
+            Self::new_with_source(e)
+        }
+    }
+
     struct Query;
 
     #[Object]
