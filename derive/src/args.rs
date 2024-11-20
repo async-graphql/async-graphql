@@ -5,7 +5,7 @@ use darling::{
     util::{Ignored, SpannedValue},
     FromDeriveInput, FromField, FromMeta, FromVariant,
 };
-use inflector::Inflector;
+use cruet::Inflector;
 use quote::format_ident;
 use syn::{
     Attribute, Expr, GenericParam, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type,

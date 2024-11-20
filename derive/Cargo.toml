@@ -17,7 +17,7 @@ proc-macro = true
 [dependencies]
 async-graphql-parser.workspace = true
 
-Inflector = "0.11.4"
+cruet = "0.14.0"
 darling = "0.20.10"
 proc-macro-crate = "3.1.0"
 proc-macro2 = "1.0.79"
@@ -25,7 +25,7 @@ quote = "1.0.35"
 syn = { version = "2.0", features = [
   "extra-traits",
   "visit-mut",
-  "visit",
+  "visit"
 ] }
 thiserror.workspace = true
 strum = { version = "0.26.2", features = ["derive"] }
