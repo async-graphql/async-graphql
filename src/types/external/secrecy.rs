@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 
-use secrecy::{ExposeSecret, SecretBox, SecretString};
-use secrecy::zeroize::Zeroize;
+use secrecy::{zeroize::Zeroize, ExposeSecret, SecretBox, SecretString};
 
 use crate::{registry, InputType, InputValueError, InputValueResult, Value};
 
