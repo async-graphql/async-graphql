@@ -3,6 +3,7 @@ use std::{
     sync::Arc,
 };
 
+use super::{directive::to_meta_directive_invocation, Directive};
 use crate::{
     dynamic::SchemaError,
     registry::{MetaType, Registry, ScalarValidatorFn},
@@ -49,6 +50,7 @@ pub struct Scalar {
     pub(crate) validator: Option<ScalarValidatorFn>,
     inaccessible: bool,
     tags: Vec<String>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl Debug for Scalar {
@@ -74,12 +76,14 @@ impl Scalar {
             validator: None,
             inaccessible: false,
             tags: Vec::new(),
+            directives: Vec::new(),
         }
     }
 
     impl_set_description!();
     impl_set_inaccessible!();
     impl_set_tags!();
+    impl_directive!();
 
     /// Set the validator
     #[inline]
@@ -124,6 +128,7 @@ impl Scalar {
                 inaccessible: self.inaccessible,
                 tags: self.tags.clone(),
                 specified_by_url: self.specified_by_url.clone(),
+                directive_invocations: to_meta_directive_invocation(self.directives.clone()),
             },
         );
         Ok(())

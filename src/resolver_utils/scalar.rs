@@ -61,7 +61,7 @@ pub trait ScalarType: Sized + Send {
 /// #[derive(Serialize, Deserialize)]
 /// struct MyValue {
 ///     a: i32,
-///     b: HashMap<String, i32>,     
+///     b: HashMap<String, i32>,
 /// }
 ///
 /// scalar!(MyValue);
@@ -169,6 +169,7 @@ macro_rules! scalar_internal {
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
+                        directive_invocations: ::std::vec::Vec::new(),
                     }
                 })
             }
@@ -207,6 +208,7 @@ macro_rules! scalar_internal {
                         inaccessible: false,
                         tags: ::std::default::Default::default(),
                         specified_by_url: $specified_by_url,
+                        directive_invocations: ::std::vec::Vec::new(),
                     }
                 })
             }

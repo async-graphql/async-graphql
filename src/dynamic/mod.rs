@@ -34,6 +34,7 @@ mod macros;
 
 mod base;
 mod check;
+mod directive;
 mod r#enum;
 mod error;
 mod field;
@@ -51,6 +52,7 @@ mod type_ref;
 mod union;
 mod value_accessor;
 
+pub use directive::Directive;
 pub use error::SchemaError;
 pub use field::{Field, FieldFuture, FieldValue, ResolverContext};
 pub use indexmap;

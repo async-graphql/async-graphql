@@ -1,0 +1,47 @@
+
+
+
+input InputType @a @b {
+	a: String! @input_a(test: 5)
+}
+
+
+type OutputType implements TestInterface @type {
+	id: String! @test
+	name: String!
+	body: String
+}
+
+type OutputType2 {
+	a: [Int!]!
+}
+
+type Query {
+	interface(x: TestEnum @validate): TestInterface!
+	output_type(input: InputType!): OutputType
+	enum(input: [TestEnum]!): TestEnum @pin
+	union: TestUnion!
+	scalar: TestScalar
+}
+
+
+enum TestEnum @oneOf {
+	A
+	B @default
+	C
+}
+
+interface TestInterface @test(a: 5, b: true, c: "str") {
+	id: String! @id
+	name: String!
+}
+
+scalar TestScalar @json
+
+union TestUnion @wrap = OutputType | OutputType2
+
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+schema {
+	query: Query
+}

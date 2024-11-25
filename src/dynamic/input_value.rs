@@ -1,8 +1,5 @@
-use crate::{
-    dynamic::TypeRef,
-    registry::{MetaDirectiveInvocation, MetaInputValue},
-    Value,
-};
+use super::{directive::to_meta_directive_invocation, Directive};
+use crate::{dynamic::TypeRef, registry::MetaInputValue, Value};
 
 /// A GraphQL input value type
 #[derive(Debug)]
@@ -13,7 +10,7 @@ pub struct InputValue {
     pub(crate) default_value: Option<Value>,
     pub(crate) inaccessible: bool,
     pub(crate) tags: Vec<String>,
-    pub(crate) directive_invocations: Vec<MetaDirectiveInvocation>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl InputValue {
@@ -27,13 +24,14 @@ impl InputValue {
             default_value: None,
             inaccessible: false,
             tags: Vec::new(),
-            directive_invocations: vec![],
+            directives: vec![],
         }
     }
 
     impl_set_description!();
     impl_set_inaccessible!();
     impl_set_tags!();
+    impl_directive!();
 
     /// Set the default value
     #[inline]
@@ -57,7 +55,7 @@ impl InputValue {
             inaccessible: self.inaccessible,
             tags: self.tags.clone(),
             is_secret: false,
-            directive_invocations: self.directive_invocations.clone(),
+            directive_invocations: to_meta_directive_invocation(self.directives.clone()),
         }
     }
 }
