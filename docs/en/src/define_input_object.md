@@ -95,6 +95,23 @@ pub struct YetAnotherInput {
 
 You can pass multiple generic types to `params()`, separated by a comma.
 
+If you also want to implement `OutputType`, then you will need to explicitly declare the input and output type names of the concrete types like so:
+
+```rust
+# extern crate async_graphql;
+# use async_graphql::*;
+#[derive(SimpleObject, InputObject)]
+#[graphql(concrete(
+    name = "SomeGenericTypeOut",
+    input_name = "SomeGenericTypeIn",
+    params(i32),
+))]
+pub struct SomeGenericType<T: InputType + OutputType> {
+    field1: Option<T>,
+    field2: String
+}
+```
+
 ## Redacting sensitive data
 
 If any part of your input is considered sensitive and you wish to redact it, you can mark it with `secret` directive. For example:
