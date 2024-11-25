@@ -104,7 +104,7 @@ If you also want to implement `OutputType`, then you will need to explicitly dec
 #[graphql(concrete(
     name = "SomeGenericTypeOut",
     input_name = "SomeGenericTypeIn",
-    params(SomeInputAndOutputType),
+    params(i32),
 ))]
 pub struct SomeGenericType<T: InputType + OutputType> {
     field1: Option<T>,
