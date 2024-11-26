@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [7.0.12] 2024-11-25
 
 - update MSRV to `1.81.0`
+- Add specified complexity for fields in `SimpleObject`.
 
 # [7.0.11] 2024-09-26
 

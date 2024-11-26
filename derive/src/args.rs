@@ -234,6 +234,7 @@ pub struct SimpleObjectField {
     pub secret: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub complexity: Option<Expr>,
 }
 
 #[derive(FromDeriveInput)]

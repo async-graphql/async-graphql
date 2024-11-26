@@ -11,7 +11,7 @@ use crate::{
     },
     utils::{
         gen_deprecation, gen_directive_calls, generate_guards, get_crate_name, get_rustdoc,
-        visible_fn, GeneratorResult,
+        parse_complexity_expr, visible_fn, GeneratorResult,
     },
 };
 
@@ -196,6 +196,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let visible = visible_fn(&field.visible);
         let directives =
             gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
+
+        let complexity = if let Some(complexity) = &field.complexity {
+            let (_, expr) = parse_complexity_expr(complexity.clone())?;
+            quote! {
+                ::std::option::Option::Some(|__ctx, __variables_definition, __field, child_complexity| {
+                    ::std::result::Result::Ok(#expr)
+                })
+            }
+        } else {
+            quote! { ::std::option::Option::None }
+        };
+
         if !field.flatten {
             schema_fields.push(quote! {
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -213,7 +225,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     tags: ::std::vec![ #(#tags),* ],
                     override_from: #override_from,
                     visible: #visible,
-                    compute_complexity: ::std::option::Option::None,
+                    compute_complexity: #complexity,
                     directive_invocations: ::std::vec![ #(#directives),* ],
                 });
             });
