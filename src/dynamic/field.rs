@@ -123,18 +123,18 @@ impl<'a> FieldValue<'a> {
 
     /// Create a FieldValue from unsized any value
     #[inline]
-    pub fn boxed_any<T: Any + Send + Sync>(obj: Box<T>) -> Self {
+    pub fn boxed_any(obj: Box<dyn Any + Send + Sync>) -> Self {
         Self(FieldValueInner::OwnedAny(
-            std::any::type_name::<T>().into(),
+            "Any".into(),
             obj,
         ))
     }
 
     /// Create a FieldValue from owned any value
     #[inline]
-    pub fn borrowed_any<T: Any + Send + Sync>(obj: &'a T) -> Self {
+    pub fn borrowed_any(obj: &'a  ( dyn Any + Send + Sync)) -> Self {
         Self(FieldValueInner::BorrowedAny(
-            std::any::type_name::<T>().into(),
+            "Any".into(),
             obj,
         ))
     }
