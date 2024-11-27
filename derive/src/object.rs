@@ -180,7 +180,7 @@ pub fn generate(
                     }
                 };
 
-                let entity_type = ty.value_type();
+                let entity_type = ty.value_type(object_args.internal);
                 let mut key_pat = Vec::new();
                 let mut key_getter = Vec::new();
                 let mut use_keys = Vec::new();
@@ -300,7 +300,7 @@ pub fn generate(
                             .into())
                         }
                     };
-                    let ty = ty.value_type();
+                    let ty = ty.value_type(object_args.internal);
                     let ident = &method.sig.ident;
 
                     schema_fields.push(quote! {
@@ -467,7 +467,7 @@ pub fn generate(
                         .into())
                     }
                 };
-                let schema_ty = ty.value_type();
+                let schema_ty = ty.value_type(object_args.internal);
                 let visible = visible_fn(&method_args.visible);
 
                 let complexity = if let Some(complexity) = &method_args.complexity {

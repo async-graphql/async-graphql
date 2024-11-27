@@ -211,7 +211,17 @@ impl<'a> Fields<'a> {
                             if extensions.is_empty() && field.node.directives.is_empty() {
                                 Ok((
                                     field_name,
-                                    root.resolve_field(&ctx_field).await?.unwrap_or_default(),
+                                    match root.resolve_field(&ctx_field).await {
+                                        Ok(value) => value.unwrap_or_default(),
+                                        Err(err) => {
+                                            if cfg!(feature = "nullable-result") {
+                                                ctx_field.add_error(err);
+                                                Value::Null
+                                            } else {
+                                                return Err(err);
+                                            }
+                                        }
+                                    },
                                 ))
                             } else {
                                 let type_name = T::type_name();
