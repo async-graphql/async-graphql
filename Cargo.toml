@@ -32,6 +32,7 @@ graphiql = ["handlebars"]
 altair = ["handlebars", "schemars"]
 playground = []
 raw_value = ["async-graphql-value/raw_value"]
+uuid-validator = ["uuid"]
 
 [[bench]]
 harness = false
