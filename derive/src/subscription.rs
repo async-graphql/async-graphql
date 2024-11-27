@@ -181,7 +181,10 @@ pub fn generate(
                     .into())
                 }
             };
-            let res_ty = ty.value_type();
+            let res_ty = match ty {
+                OutputType::Value(ty) => ty,
+                OutputType::Result(ty) => ty,
+            };
             let stream_ty = if let Type::ImplTrait(TypeImplTrait { bounds, .. }) = &res_ty {
                 let mut r = None;
                 for b in bounds {
@@ -192,6 +195,14 @@ pub fn generate(
                 quote! { #r }
             } else {
                 quote! { #res_ty }
+            };
+            let output_ty = match ty {
+                OutputType::Value(_) => {
+                    quote! { <#stream_ty as #crate_name::futures_util::stream::Stream>::Item }
+                }
+                OutputType::Result(_) => {
+                    quote! { #crate_name::Result<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item> }
+                }
             };
 
             if let OutputType::Value(inner_ty) = &ty {
@@ -265,7 +276,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::create_type_info(registry),
+                    ty: <#output_ty as #crate_name::OutputType>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: ::std::default::Default::default(),
                     external: false,
@@ -341,7 +352,7 @@ pub fn generate(
                                     let ri = #crate_name::extensions::ResolveInfo {
                                         path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                         parent_type: &parent_type,
-                                        return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
+                                        return_type: &<#output_ty as #crate_name::OutputType>::qualified_type_name(),
                                         name: field.node.name.node.as_str(),
                                         alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                         is_for_introspection: false,

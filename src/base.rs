@@ -129,8 +129,18 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
         T::type_name()
     }
 
+    #[cfg(feature = "nullable-result")]
+    fn qualified_type_name() -> String {
+        T::type_name().to_string()
+    }
+
     fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
+        let ty = T::create_type_info(registry);
+        if cfg!(feature = "nullable-result") {
+            T::type_name().to_string()
+        } else {
+            ty
+        }
     }
 
     async fn resolve(
@@ -140,13 +150,23 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
     ) -> ServerResult<Value> {
         match self {
             Ok(value) => value.resolve(ctx, field).await,
-            Err(err) => Err(ctx.set_error_path(err.clone().into().into_server_error(field.pos))),
+            Err(err) => {
+                let err = ctx.set_error_path(err.clone().into().into_server_error(field.pos));
+                if cfg!(feature = "nullable-result") {
+                    ctx.add_error(err);
+                    Ok(Value::Null)
+                } else {
+                    Err(err)
+                }
+            }
         }
     }
 }
 
 /// A GraphQL object.
 pub trait ObjectType: ContainerType {}
+
+impl<T: ObjectType> ObjectType for Result<T> {}
 
 impl<T: ObjectType + ?Sized> ObjectType for &T {}
 
