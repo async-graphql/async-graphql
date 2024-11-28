@@ -215,6 +215,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         override_from,
         directives,
         requires_scopes,
+        semantic_non_null,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -368,6 +369,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let deprecation = gen_deprecation(deprecation, &crate_name);
+        let has_semantic_non_null = semantic_non_null.unwrap_or(interface_args.semantic_non_null);
 
         let oty = OutputType::parse(ty)?;
         let ty = match oty {
@@ -448,6 +450,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         }
         if has_requires_scopes {
             field_sets.push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+        }
+        if has_semantic_non_null {
+            field_sets.push(quote!(field.semantic_nullability = <#schema_ty as #crate_name::OutputType>::semantic_nullability();));
         }
 
         schema_fields.push(quote! {

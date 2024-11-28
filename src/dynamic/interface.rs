@@ -3,7 +3,7 @@ use indexmap::{IndexMap, IndexSet};
 use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::{InputValue, SchemaError, TypeRef},
-    registry::{Deprecation, MetaField, MetaType, Registry},
+    registry::{Deprecation, MetaField, MetaType, Registry, SemanticNullability},
 };
 
 /// A GraphQL interface field type
@@ -98,6 +98,7 @@ pub struct InterfaceField {
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
     pub(crate) requires_scopes: Vec<String>,
+    pub(crate) semantic_nullability: SemanticNullability,
 }
 
 impl InterfaceField {
@@ -118,6 +119,7 @@ impl InterfaceField {
             override_from: None,
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            semantic_nullability: SemanticNullability::None,
         }
     }
 
@@ -130,6 +132,7 @@ impl InterfaceField {
     impl_set_inaccessible!();
     impl_set_tags!();
     impl_set_override_from!();
+    impl_set_semantic_nullability!();
     impl_directive!();
 
     /// Add an argument to the field
@@ -253,6 +256,7 @@ impl Interface {
                     compute_complexity: None,
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                     requires_scopes: field.requires_scopes.clone(),
+                    semantic_nullability: field.semantic_nullability,
                 },
             );
         }

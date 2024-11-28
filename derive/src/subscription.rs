@@ -298,6 +298,9 @@ pub fn generate(
                 &field.directives,
                 TypeDirectiveLocation::FieldDefinition,
             );
+            let has_semantic_non_null = field
+                .semantic_non_null
+                .unwrap_or(subscription_args.semantic_non_null);
 
             let mut field_sets = Vec::new();
             if has_field_desc {
@@ -315,6 +318,9 @@ pub fn generate(
             if has_directives {
                 field_sets
                     .push(quote!(field.directive_invocations = ::std::vec![ #(#directives),* ];));
+            }
+            if has_semantic_non_null {
+                field_sets.push(quote!(field.semantic_nullability = <#output_ty as #crate_name::OutputType>::semantic_nullability();));
             }
 
             schema_fields.push(quote! {

@@ -14,7 +14,7 @@ use crate::{
     },
     extensions::ResolveInfo,
     parser::types::Selection,
-    registry::{Deprecation, MetaField, MetaType, Registry},
+    registry::{Deprecation, MetaField, MetaType, Registry, SemanticNullability},
     subscription::BoxFieldStream,
 };
 
@@ -52,6 +52,7 @@ pub struct SubscriptionField {
     pub(crate) ty: TypeRef,
     pub(crate) resolver_fn: BoxResolverFn,
     pub(crate) deprecation: Deprecation,
+    pub(crate) semantic_nullability: SemanticNullability,
 }
 
 impl SubscriptionField {
@@ -69,11 +70,13 @@ impl SubscriptionField {
             ty: ty.into(),
             resolver_fn: Arc::new(resolver_fn),
             deprecation: Deprecation::NoDeprecated,
+            semantic_nullability: SemanticNullability::None,
         }
     }
 
     impl_set_description!();
     impl_set_deprecation!();
+    impl_set_semantic_nullability!();
 
     /// Add an argument to the subscription field
     #[inline]
@@ -164,6 +167,7 @@ impl Subscription {
                     compute_complexity: None,
                     directive_invocations: vec![],
                     requires_scopes: vec![],
+                    semantic_nullability: field.semantic_nullability,
                 },
             );
         }
