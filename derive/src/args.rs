@@ -235,6 +235,8 @@ pub struct SimpleObjectField {
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
     pub complexity: Option<Expr>,
+    #[darling(default)]
+    pub semantic_non_null: Option<bool>,
 }
 
 #[derive(FromDeriveInput)]
@@ -286,6 +288,8 @@ pub struct SimpleObject {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub semantic_non_null: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -334,6 +338,8 @@ pub struct Object {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub semantic_non_null: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -360,6 +366,7 @@ pub struct ObjectField {
     pub flatten: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub semantic_non_null: Option<bool>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -649,6 +656,8 @@ pub struct InterfaceField {
     pub override_from: Option<String>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub semantic_non_null: Option<bool>,
 }
 
 #[derive(FromVariant)]
@@ -687,6 +696,8 @@ pub struct Interface {
     pub tags: Vec<String>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub semantic_non_null: bool,
     // for OneofObject
     #[darling(default)]
     pub input_name: Option<String>,
@@ -723,6 +734,7 @@ pub struct Subscription {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub semantic_non_null: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -750,6 +762,7 @@ pub struct SubscriptionField {
     pub complexity: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub semantic_non_null: Option<bool>,
 }
 
 #[derive(FromField)]
@@ -949,6 +962,7 @@ pub struct ComplexObject {
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub guard: Option<Expr>,
+    pub semantic_non_null: bool,
 }
 
 #[derive(FromMeta, Default)]
@@ -972,6 +986,7 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    pub semantic_non_null: Option<bool>,
 }
 
 #[derive(FromMeta, Default)]
