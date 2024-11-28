@@ -266,6 +266,15 @@ pub fn generate(
             let directives =
                 gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
 
+            let semantic_nullability = if field
+                .semantic_non_null
+                .unwrap_or(subscription_args.semantic_non_null)
+            {
+                quote! { <#output_ty as #crate_name::OutputType>::semantic_nullability() }
+            } else {
+                quote! { #crate_name::registry::SemanticNullability::None }
+            };
+
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -288,7 +297,8 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    semantic_nullability: #semantic_nullability,
                 });
             });
 

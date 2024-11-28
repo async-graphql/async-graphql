@@ -1,5 +1,6 @@
 use std::{borrow::Cow, sync::Arc};
 
+use super::wrap_semantic_nullability_in_list;
 use crate::{
     parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
     InputValueError, InputValueResult, OutputType, Positioned, ServerResult, Value,
@@ -13,6 +14,10 @@ impl<'a, T: OutputType + 'a> OutputType for &'a [T] {
 
     fn qualified_type_name() -> String {
         format!("[{}]!", T::qualified_type_name())
+    }
+
+    fn semantic_nullability() -> registry::SemanticNullability {
+        wrap_semantic_nullability_in_list(T::semantic_nullability())
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
@@ -39,6 +44,10 @@ macro_rules! impl_output_slice_for_smart_ptr {
 
             fn qualified_type_name() -> String {
                 format!("[{}]!", T::qualified_type_name())
+            }
+
+            fn semantic_nullability() -> registry::SemanticNullability {
+                wrap_semantic_nullability_in_list(T::semantic_nullability())
             }
 
             fn create_type_info(registry: &mut registry::Registry) -> String {

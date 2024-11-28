@@ -192,6 +192,15 @@ impl Deprecation {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum SemanticNullability {
+    #[default]
+    None,
+    OutNonNull,
+    InNonNull,
+    BothNonNull,
+}
+
 /// Field metadata
 #[derive(Clone)]
 pub struct MetaField {
@@ -238,6 +247,8 @@ pub struct MetaField {
     pub compute_complexity: Option<ComputeComplexityFn>,
     /// Custom directive invocations
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
+    /// Semantic nullability
+    pub semantic_nullability: SemanticNullability,
 }
 
 #[derive(Clone)]
@@ -914,6 +925,42 @@ impl Registry {
             composable: None,
         });
 
+        self.add_directive(MetaDirective {
+            name: "semanticNonNull".into(),
+            description: Some(
+                r#"Indicates that a position is semantically non null: it is only null if there is a matching error in the `errors` array.
+In all other cases, the position is non-null.
+
+Tools doing code generation may use this information to generate the position as non-null if field errors are handled out of band:
+
+`levels` are zero indexed.
+Passing a negative level or a level greater than the list dimension is an error."#.to_string()
+            ),
+            locations: vec![__DirectiveLocation::FIELD_DEFINITION],
+            args: {
+                let mut args = IndexMap::new();
+                args.insert(
+                    "levels".into(),
+                    MetaInputValue {
+                        name: "levels".into(),
+                        description: None,
+                        ty: "[Int!]!".into(),
+                        deprecation: Deprecation::NoDeprecated,
+                        default_value: Some(r#"[0]"#.into()),
+                        visible: None,
+                        inaccessible: false,
+                        tags: Default::default(),
+                        is_secret: false,
+                        directive_invocations: vec![],
+                    },
+                );
+                args
+            },
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
+
         // create system scalars
         <bool as InputType>::create_type_info(self);
         <i32 as InputType>::create_type_info(self);
@@ -1126,6 +1173,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     directive_invocations: vec![],
+                    semantic_nullability: SemanticNullability::None,
                 },
             );
         }
@@ -1183,6 +1231,7 @@ impl Registry {
                         override_from: None,
                         compute_complexity: None,
                         directive_invocations: vec![],
+                        semantic_nullability: SemanticNullability::None,
                     },
                 );
             }
@@ -1212,6 +1261,7 @@ impl Registry {
                     compute_complexity: None,
                     override_from: None,
                     directive_invocations: vec![],
+                    semantic_nullability: SemanticNullability::None,
                 },
             );
 
@@ -1252,6 +1302,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     directive_invocations: vec![],
+                    semantic_nullability: SemanticNullability::None,
                 },
             );
         }
@@ -1286,6 +1337,7 @@ impl Registry {
                             override_from: None,
                             compute_complexity: None,
                             directive_invocations: vec![],
+                            semantic_nullability: SemanticNullability::None,
                         },
                     );
                     fields
