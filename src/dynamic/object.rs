@@ -189,6 +189,7 @@ impl Object {
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
+                    semantic_nullability: field.semantic_nullability,
                 },
             );
         }
