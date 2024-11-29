@@ -8,7 +8,7 @@ use async_graphql_value::ConstValue;
 
 use crate::{
     parser::types::Field,
-    registry::{self, Registry},
+    registry::{self, Registry, SemanticNullability},
     ContainerType, Context, ContextSelectionSet, Error, InputValueError, InputValueResult,
     Positioned, Result, ServerResult, Value,
 };
@@ -81,6 +81,11 @@ pub trait OutputType: Send + Sync {
         Self::type_name()
     }
 
+    /// Semantic nullability
+    fn semantic_nullability() -> SemanticNullability {
+        SemanticNullability::None
+    }
+
     /// Create type information in the registry and return qualified typename.
     fn create_type_info(registry: &mut registry::Registry) -> String;
 
@@ -95,6 +100,10 @@ pub trait OutputType: Send + Sync {
 impl<T: OutputType + ?Sized> OutputType for &T {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
+    }
+
+    fn semantic_nullability() -> SemanticNullability {
+        T::semantic_nullability()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
@@ -116,8 +125,28 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
         T::type_name()
     }
 
+    #[cfg(feature = "optional-result")]
+    fn qualified_type_name() -> String {
+        T::type_name().to_string()
+    }
+
+    #[cfg(feature = "optional-result")]
+    fn semantic_nullability() -> SemanticNullability {
+        match T::semantic_nullability() {
+            SemanticNullability::None => SemanticNullability::OutNonNull,
+            SemanticNullability::OutNonNull => SemanticNullability::OutNonNull,
+            SemanticNullability::InNonNull => SemanticNullability::BothNonNull,
+            SemanticNullability::BothNonNull => SemanticNullability::BothNonNull,
+        }
+    }
+
     fn create_type_info(registry: &mut Registry) -> String {
-        T::create_type_info(registry)
+        let ty = T::create_type_info(registry);
+        if cfg!(feature = "optional-result") {
+            T::type_name().to_string()
+        } else {
+            ty
+        }
     }
 
     async fn resolve(
@@ -127,13 +156,23 @@ impl<T: OutputType + Sync, E: Into<Error> + Send + Sync + Clone> OutputType for 
     ) -> ServerResult<Value> {
         match self {
             Ok(value) => value.resolve(ctx, field).await,
-            Err(err) => Err(ctx.set_error_path(err.clone().into().into_server_error(field.pos))),
+            Err(err) => {
+                let err = ctx.set_error_path(err.clone().into().into_server_error(field.pos));
+                if cfg!(feature = "optional-result") {
+                    ctx.add_error(err);
+                    Ok(Value::Null)
+                } else {
+                    Err(err)
+                }
+            }
         }
     }
 }
 
 /// A GraphQL object.
 pub trait ObjectType: ContainerType {}
+
+impl<T: ObjectType> ObjectType for Result<T> {}
 
 impl<T: ObjectType + ?Sized> ObjectType for &T {}
 
@@ -156,6 +195,10 @@ pub trait OneofObjectType: InputObjectType {}
 impl<T: OutputType + ?Sized> OutputType for Box<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
+    }
+
+    fn semantic_nullability() -> SemanticNullability {
+        T::semantic_nullability()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
@@ -203,6 +246,10 @@ impl<T: OutputType + ?Sized> OutputType for Arc<T> {
         T::type_name()
     }
 
+    fn semantic_nullability() -> SemanticNullability {
+        T::semantic_nullability()
+    }
+
     fn create_type_info(registry: &mut Registry) -> String {
         T::create_type_info(registry)
     }
@@ -246,6 +293,10 @@ impl<T: InputType> InputType for Arc<T> {
 impl<T: OutputType + ?Sized> OutputType for Weak<T> {
     fn type_name() -> Cow<'static, str> {
         <Option<Arc<T>> as OutputType>::type_name()
+    }
+
+    fn semantic_nullability() -> SemanticNullability {
+        T::semantic_nullability()
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
