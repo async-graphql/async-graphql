@@ -38,7 +38,11 @@ pub async fn test_error_extensions() {
     assert_eq!(
         serde_json::to_value(&schema.execute("{ extendErr }").await).unwrap(),
         serde_json::json!({
-            "data": null,
+            "data": (if cfg!(feature = "nullable-result"){
+                serde_json::json!({ "extendErr": null })
+            } else {
+                serde_json::Value::Null
+            }),
             "errors": [{
                 "message": "my error",
                 "locations": [{
@@ -58,7 +62,11 @@ pub async fn test_error_extensions() {
     assert_eq!(
         serde_json::to_value(&schema.execute("{ extendResult }").await).unwrap(),
         serde_json::json!({
-            "data": null,
+            "data": (if cfg!(feature = "nullable-result"){
+                serde_json::json!({ "extendResult": null })
+            } else {
+                serde_json::Value::Null
+            }),
             "errors": [{
                 "message": "my error",
                 "locations": [{
