@@ -40,7 +40,7 @@ pub(crate) enum FieldValueInner<'a> {
     },
 }
 
-impl<'a> Debug for FieldValue<'a> {
+impl Debug for FieldValue<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             FieldValueInner::Value(v) => write!(f, "{}", v),
@@ -59,14 +59,14 @@ impl<'a> Debug for FieldValue<'a> {
     }
 }
 
-impl<'a> From<()> for FieldValue<'a> {
+impl From<()> for FieldValue<'_> {
     #[inline]
     fn from(_: ()) -> Self {
         Self(FieldValueInner::Value(Value::Null))
     }
 }
 
-impl<'a> From<Value> for FieldValue<'a> {
+impl From<Value> for FieldValue<'_> {
     #[inline]
     fn from(value: Value) -> Self {
         Self(FieldValueInner::Value(value))
