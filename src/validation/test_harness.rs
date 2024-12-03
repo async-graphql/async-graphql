@@ -383,7 +383,7 @@ where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    let schema = &*TEST_HARNESS.get_or_init(|| Schema::new(Query, Mutation, Subscription));
+    let schema = TEST_HARNESS.get_or_init(|| Schema::new(Query, Mutation, Subscription));
     let registry = &schema.0.env.registry;
     let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();

@@ -37,7 +37,7 @@ async fn quickstart() -> Result<()> {
     let client = test_utils::client();
 
     let resp = client
-        .post(&format!("http://{}", listen_addr))
+        .post(format!("http://{}", listen_addr))
         .json(&json!({"query":"{ add(a: 10, b: 20) }"}))
         .send()
         .await?;
@@ -49,7 +49,7 @@ async fn quickstart() -> Result<()> {
     assert_eq!(string, json!({"data": {"add": 30}}).to_string());
 
     let resp = client
-        .get(&format!("http://{}", listen_addr))
+        .get(format!("http://{}", listen_addr))
         .query(&[("query", "{ add(a: 10, b: 20) }")])
         .send()
         .await?;
@@ -105,7 +105,7 @@ async fn hello() -> Result<()> {
     let client = test_utils::client();
 
     let resp = client
-        .post(&format!("http://{}", listen_addr))
+        .post(format!("http://{}", listen_addr))
         .json(&json!({"query":"{ hello }"}))
         .header("Name", "Foo")
         .send()
@@ -118,7 +118,7 @@ async fn hello() -> Result<()> {
     assert_eq!(string, json!({"data":{"hello":"Hello, Foo!"}}).to_string());
 
     let resp = client
-        .post(&format!("http://{}", listen_addr))
+        .post(format!("http://{}", listen_addr))
         .json(&json!({"query":"{ hello }"}))
         .header(header::CONTENT_TYPE, "application/json")
         .send()
@@ -200,7 +200,7 @@ async fn upload() -> Result<()> {
         .part("0", reqwest::multipart::Part::stream("test").file_name("test.txt").mime_str("text/plain")?);
 
     let resp = client
-        .post(&format!("http://{}", listen_addr))
+        .post(format!("http://{}", listen_addr))
         .multipart(form)
         .send()
         .await?;

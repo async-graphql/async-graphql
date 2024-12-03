@@ -14,7 +14,7 @@ pub struct ComplexityCalculate<'ctx, 'a> {
     pub variable_definition: Option<&'ctx [Positioned<VariableDefinition>]>,
 }
 
-impl<'ctx, 'a> ComplexityCalculate<'ctx, 'a> {
+impl<'a> ComplexityCalculate<'_, 'a> {
     pub fn new(complexity: &'a mut usize) -> Self {
         Self {
             complexity,
@@ -24,7 +24,7 @@ impl<'ctx, 'a> ComplexityCalculate<'ctx, 'a> {
     }
 }
 
-impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
+impl<'ctx> Visitor<'ctx> for ComplexityCalculate<'ctx, '_> {
     fn mode(&self) -> VisitMode {
         VisitMode::Inline
     }
@@ -273,13 +273,13 @@ mod tests {
         fragment A on MyObj {
             a b ... A2 #2
         }
-        
+
         fragment A2 on MyObj {
             obj { # 1
                 a # 1
             }
         }
-        
+
         query {
             obj { # 1
                 ... A
@@ -330,7 +330,7 @@ mod tests {
         fragment A on MyObj {
             a b
         }
-        
+
         query {
             objs(count: 10) {
                 ... A
@@ -388,13 +388,13 @@ mod tests {
         fragment A on MyObj {
             a b ... A2 #2
         }
-        
+
         fragment A2 on MyObj {
             obj { # 1
                 a # 1
             }
         }
-        
+
         subscription query {
             obj { # 1
                 ... A
@@ -445,7 +445,7 @@ mod tests {
         fragment A on MyObj {
             a b
         }
-        
+
         subscription query {
             objs(count: 10) {
                 ... A
