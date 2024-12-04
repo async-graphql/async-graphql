@@ -69,9 +69,9 @@ impl<'a> Iterator for OperationsIter<'a> {
     }
 }
 
-impl<'a> std::iter::FusedIterator for OperationsIter<'a> {}
+impl std::iter::FusedIterator for OperationsIter<'_> {}
 
-impl<'a> ExactSizeIterator for OperationsIter<'a> {
+impl ExactSizeIterator for OperationsIter<'_> {
     fn len(&self) -> usize {
         match &self.0 {
             OperationsIterInner::Single(opt) => usize::from(opt.is_some()),

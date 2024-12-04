@@ -53,12 +53,10 @@ pub async fn test_fieldresult() {
         ]
     );
 
+    let resp = schema.execute("{ optError }").await;
+    assert_eq!(resp.data, value!({ "optError": null }));
     assert_eq!(
-        schema
-            .execute("{ optError }")
-            .await
-            .into_result()
-            .unwrap_err(),
+        resp.errors,
         vec![ServerError {
             message: "TestError".to_string(),
             source: None,
@@ -68,12 +66,17 @@ pub async fn test_fieldresult() {
         }]
     );
 
+    let resp = schema.execute("{ vecError }").await;
     assert_eq!(
-        schema
-            .execute("{ vecError }")
-            .await
-            .into_result()
-            .unwrap_err(),
+        resp.data,
+        if cfg!(feature = "nullable-result") {
+            value!({ "vecError": [1, null] })
+        } else {
+            Value::Null
+        }
+    );
+    assert_eq!(
+        resp.errors,
         vec![ServerError {
             message: "TestError".to_string(),
             source: None,
@@ -185,6 +188,14 @@ pub async fn test_error_propagation() {
     let resp = schema.execute("{ parent { child { name } } }").await;
 
     assert_eq!(
+        resp.data,
+        if cfg!(feature = "nullable-result") {
+            value!({ "parent": { "child": { "name": null } } })
+        } else {
+            Value::Null
+        }
+    );
+    assert_eq!(
         resp.errors,
         vec![ServerError {
             message: "myerror".to_string(),
@@ -205,11 +216,11 @@ pub async fn test_error_propagation() {
     let resp = schema.execute("{ parent { childOpt { name } } }").await;
     assert_eq!(
         resp.data,
-        value!({
-            "parent": {
-                "childOpt": null,
-            }
-        })
+        if cfg!(feature = "nullable-result") {
+            value!({ "parent": { "childOpt": { "name": null } } })
+        } else {
+            value!({ "parent": { "childOpt": null } })
+        }
     );
     assert_eq!(
         resp.errors,
@@ -230,7 +241,14 @@ pub async fn test_error_propagation() {
     );
 
     let resp = schema.execute("{ parentOpt { child { name } } }").await;
-    assert_eq!(resp.data, value!({ "parentOpt": null }));
+    assert_eq!(
+        resp.data,
+        if cfg!(feature = "nullable-result") {
+            value!({ "parentOpt": { "child": { "name": null } } })
+        } else {
+            value!({ "parentOpt": null })
+        }
+    );
     assert_eq!(
         resp.errors,
         vec![ServerError {
@@ -252,13 +270,7 @@ pub async fn test_error_propagation() {
     let resp = schema.execute("{ parentOpt { child { nameOpt } } }").await;
     assert_eq!(
         resp.data,
-        value!({
-            "parentOpt": {
-                "child": {
-                    "nameOpt": null,
-                }
-            },
-        })
+        value!({ "parentOpt": { "child": { "nameOpt": null } } })
     );
     assert_eq!(
         resp.errors,

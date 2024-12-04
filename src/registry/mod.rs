@@ -34,7 +34,7 @@ pub enum MetaTypeName<'a> {
     Named(&'a str),
 }
 
-impl<'a> Display for MetaTypeName<'a> {
+impl Display for MetaTypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             MetaTypeName::Named(name) => write!(f, "{}", name),
@@ -44,7 +44,7 @@ impl<'a> Display for MetaTypeName<'a> {
     }
 }
 
-impl<'a> MetaTypeName<'a> {
+impl MetaTypeName<'_> {
     #[inline]
     pub fn create(type_name: &str) -> MetaTypeName {
         if let Some(type_name) = type_name.strip_suffix('!') {
