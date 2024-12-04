@@ -115,7 +115,7 @@ pub struct QueryPathNode<'a> {
     pub segment: QueryPathSegment<'a>,
 }
 
-impl<'a> serde::Serialize for QueryPathNode<'a> {
+impl serde::Serialize for QueryPathNode<'_> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let mut seq = serializer.serialize_seq(None)?;
         self.try_for_each(|segment| seq.serialize_element(segment))?;
@@ -123,7 +123,7 @@ impl<'a> serde::Serialize for QueryPathNode<'a> {
     }
 }
 
-impl<'a> Display for QueryPathNode<'a> {
+impl Display for QueryPathNode<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let mut first = true;
         self.try_for_each(|segment| {
@@ -224,7 +224,7 @@ impl<'a> Iterator for Parents<'a> {
     }
 }
 
-impl<'a> std::iter::FusedIterator for Parents<'a> {}
+impl std::iter::FusedIterator for Parents<'_> {}
 
 /// Query context.
 ///
@@ -823,11 +823,11 @@ impl<'a> SelectionField<'a> {
     }
 }
 
-impl<'a> Debug for SelectionField<'a> {
+impl Debug for SelectionField<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         struct DebugSelectionSet<'a>(Vec<SelectionField<'a>>);
 
-        impl<'a> Debug for DebugSelectionSet<'a> {
+        impl Debug for DebugSelectionSet<'_> {
             fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
                 f.debug_list().entries(&self.0).finish()
             }
