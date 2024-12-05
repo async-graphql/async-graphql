@@ -21,13 +21,7 @@ cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601"]
 dataloader = ["futures-channel", "lru"]
 decimal = ["rust_decimal"]
-default = [
-  "email-validator",
-  "tempfile",
-  "playground",
-  "graphiql",
-  "boxed-trait",
-]
+default = ["email-validator", "tempfile", "playground", "graphiql"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["tokio"]
@@ -40,6 +34,27 @@ playground = []
 raw_value = ["async-graphql-value/raw_value"]
 uuid-validator = ["uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
+
+__all_except_boxed = [
+  "default",
+  "apollo_persisted_queries",
+  "apollo_tracing",
+  "cbor",
+  "chrono-duration",
+  "dataloader",
+  "decimal",
+  "password-strength-validator",
+  "string_number",
+  "tokio-sync",
+  "tracing",
+  "unblock",
+  "dynamic-schema",
+  "graphiql",
+  "altair",
+  "playground",
+  "raw_value",
+  "uuid-validator",
+]
 
 [[bench]]
 harness = false

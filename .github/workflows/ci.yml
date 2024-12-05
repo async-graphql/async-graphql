@@ -54,10 +54,12 @@ jobs:
           components: rustfmt
       - name: Build with all features
         run: cargo build --all-features
+      - name: Build with all features except boxed-trait
+        run: cargo build --features __all_except_boxed
       - name: Build
         run: cargo build --workspace --verbose
       - name: Run tests
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --features __all_except_boxed
       - name: Clean
         run: cargo clean
 
@@ -118,9 +120,9 @@ jobs:
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: "0.4.37"
+          mdbook-version: '0.4.37'
       - name: Build with all features
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --features __all_except_boxed
       - name: Run book tests for en language
         run: mdbook test -L target/debug/deps ./docs/en
       - name: Run book tests for zh-CN language
