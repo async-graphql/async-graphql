@@ -13,6 +13,7 @@ use crate::{
 #[doc(hidden)]
 pub struct MergedObject<A, B>(pub A, pub B);
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<A, B> ContainerType for MergedObject<A, B>
 where
     A: ContainerType,
@@ -35,6 +36,7 @@ where
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<A, B> OutputType for MergedObject<A, B>
 where
     A: OutputType,
