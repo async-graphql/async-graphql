@@ -26,14 +26,19 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt
+      - name: Extract metadata
+        id: meta
+        run: |
+          FEATURES=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "async-graphql") | .features | keys | map(select(. != "boxed-trait")) | join(",")')
+          echo "features=$FEATURES" >> "$GITHUB_OUTPUT"
       - name: Build with all features
         run: cargo build --all-features
       - name: Build with all features except boxed-trait
-        run: cargo build --features __all_except_boxed
+        run: cargo build --features ${{ steps.meta.outputs.features }}
       - name: Build
         run: cargo build --workspace --verbose
       - name: Run tests
-        run: cargo test --workspace --features __all_except_boxed
+        run: cargo test --workspace --features ${{ steps.meta.outputs.features }}
       - name: Clean
         run: cargo clean
 
@@ -54,14 +59,19 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt
+      - name: Extract metadata
+        id: meta
+        run: |
+          FEATURES=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "async-graphql") | .features | keys | map(select(. != "boxed-trait")) | join(",")')
+          echo "features=$FEATURES" >> "$GITHUB_OUTPUT"
       - name: Build with all features
         run: cargo build --all-features
       - name: Build with all features except boxed-trait
-        run: cargo build --features __all_except_boxed
+        run: cargo build --features ${{ steps.meta.outputs.features }}
       - name: Build
         run: cargo build --workspace --verbose
       - name: Run tests
-        run: cargo test --workspace --features __all_except_boxed
+        run: cargo test --workspace --features ${{ steps.meta.outputs.features }}
       - name: Clean
         run: cargo clean
 
@@ -124,7 +134,7 @@ jobs:
         with:
           mdbook-version: '0.4.37'
       - name: Build with all features
-        run: cargo build --workspace --features __all_except_boxed
+        run: cargo build --workspace --all-features
       - name: Run book tests for en language
         run: mdbook test -L target/debug/deps ./docs/en
       - name: Run book tests for zh-CN language

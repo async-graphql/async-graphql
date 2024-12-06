@@ -35,27 +35,6 @@ raw_value = ["async-graphql-value/raw_value"]
 uuid-validator = ["uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 
-__all_except_boxed = [
-  "default",
-  "apollo_persisted_queries",
-  "apollo_tracing",
-  "cbor",
-  "chrono-duration",
-  "dataloader",
-  "decimal",
-  "password-strength-validator",
-  "string_number",
-  "tokio-sync",
-  "tracing",
-  "unblock",
-  "dynamic-schema",
-  "graphiql",
-  "altair",
-  "playground",
-  "raw_value",
-  "uuid-validator",
-]
-
 [[bench]]
 harness = false
 name = "static_schema"
