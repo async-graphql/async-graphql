@@ -158,6 +158,7 @@ pub async fn test_federation() {
 pub async fn test_find_entity_with_context() {
     struct MyLoader;
 
+    #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
     impl Loader<ID> for MyLoader {
         type Value = MyObj;
         type Error = Infallible;

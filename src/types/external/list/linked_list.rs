@@ -46,6 +46,7 @@ impl<T: InputType> InputType for LinkedList<T> {
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType> OutputType for LinkedList<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("[{}]", T::qualified_type_name()))

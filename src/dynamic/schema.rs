@@ -483,6 +483,7 @@ impl Schema {
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl Executor for Schema {
     async fn execute(&self, request: Request) -> Response {
         Schema::execute(self, request).await

@@ -30,6 +30,7 @@ use crate::{
 #[derive(Default, Copy, Clone)]
 pub struct EmptyMutation;
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl ContainerType for EmptyMutation {
     fn is_empty() -> bool {
         true
@@ -40,6 +41,7 @@ impl ContainerType for EmptyMutation {
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl OutputType for EmptyMutation {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("EmptyMutation")

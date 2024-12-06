@@ -74,6 +74,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: Serialize + Send + Sync> OutputType for Json<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")
@@ -136,6 +137,7 @@ impl InputType for serde_json::Value {
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl OutputType for serde_json::Value {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")
