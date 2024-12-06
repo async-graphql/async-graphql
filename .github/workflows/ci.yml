@@ -133,8 +133,13 @@ jobs:
         uses: peaceiris/actions-mdbook@v1
         with:
           mdbook-version: '0.4.37'
+      - name: Extract metadata
+        id: meta
+        run: |
+          FEATURES=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "async-graphql") | .features | keys | map(select(. != "boxed-trait")) | join(",")')
+          echo "features=$FEATURES" >> "$GITHUB_OUTPUT"
       - name: Build with all features
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --features ${{ steps.meta.outputs.features }}
       - name: Run book tests for en language
         run: mdbook test -L target/debug/deps ./docs/en
       - name: Run book tests for zh-CN language
