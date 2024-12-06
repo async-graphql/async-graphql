@@ -15,7 +15,7 @@ type Query {
 
 type TestComplexObject @type_directive_object(description: "This is OBJECT in (Complex / Simple)Object") {
 	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in (Complex / Simple)Object")
-	test(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg2")): String!
+	test(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in ComplexObject.arg2")): String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in ComplexObject")
 }
 
 enum TestEnum @type_directive_enum(description: "This is ENUM in Enum") {

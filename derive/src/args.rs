@@ -972,6 +972,8 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]

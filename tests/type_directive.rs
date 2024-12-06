@@ -140,6 +140,7 @@ fn test_type_directive_2() {
 
     #[ComplexObject]
     impl TestComplexObject {
+        #[graphql(directive = type_directive_field_definition::apply("This is FIELD_DEFINITION in ComplexObject".to_string()))]
         async fn test(
             &self,
             #[graphql(directive = type_directive_argument_definition::apply("This is ARGUMENT_DEFINITION in ComplexObject.arg1".to_string()))]
