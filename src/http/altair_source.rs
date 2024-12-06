@@ -254,7 +254,7 @@ pub enum AltairAuthorizationProviderInput {
     },
     /// OAuth2 access token authorization
     #[serde(rename = "oauth2")]
-    OAuth2{
+    OAuth2 {
         /// Access token response
         access_token_response: String,
     },
