@@ -119,6 +119,9 @@ pub struct AltairWindowOptions {
     /// Initial post-request script to be added
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initial_post_request_script: Option<String>,
+    /// Initial authorization type and data
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initial_authorization: Option<AltairAuthorizationProviderInput>,
     /// Initial headers object to be added
     /// ```js
     /// {
@@ -221,6 +224,40 @@ pub struct AltairInitialEnvironmentState {
     /// Environment variables
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub variables: HashMap<String, String>,
+}
+
+/// Altair authorization provider input
+#[derive(Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "type", content = "data")]
+pub enum AltairAuthorizationProviderInput {
+    /// Api key authorization
+    #[serde(rename = "api-key")]
+    ApiKey {
+        /// Header name
+        header_name: String,
+        /// Header value
+        header_value: String,
+    },
+    /// Basic authorization
+    #[serde(rename = "basic")]
+    Basic {
+        /// Password
+        password: String,
+        /// Username
+        username: String,
+    },
+    /// Bearer token authorization
+    #[serde(rename = "bearer")]
+    Bearer {
+        /// Token
+        token: String,
+    },
+    /// OAuth2 access token authorization
+    #[serde(rename = "oauth2")]
+    OAuth2 {
+        /// Access token response
+        access_token_response: String,
+    },
 }
 
 /// Altair application settings state
