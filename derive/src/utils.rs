@@ -362,3 +362,13 @@ pub fn gen_directive_calls(
         })
         .collect::<Vec<_>>()
 }
+
+pub fn gen_boxed_trait(crate_name: &TokenStream) -> TokenStream {
+    if cfg!(feature = "boxed-trait") {
+        quote! {
+            #[#crate_name::async_trait::async_trait]
+        }
+    } else {
+        quote! {}
+    }
+}

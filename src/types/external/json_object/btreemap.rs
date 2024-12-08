@@ -71,6 +71,7 @@ where
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<K, V> OutputType for BTreeMap<K, V>
 where
     K: ToString + Ord + Send + Sync,

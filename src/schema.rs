@@ -651,6 +651,7 @@ where
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<Query, Mutation, Subscription> Executor for Schema<Query, Mutation, Subscription>
 where
     Query: ObjectType + 'static,

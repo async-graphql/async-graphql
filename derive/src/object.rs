@@ -12,10 +12,10 @@ use crate::{
     args::{self, RenameRuleExt, RenameTarget, Resolvability, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
-        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
-        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
-        GeneratorResult,
+        extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
+        generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
+        get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
+        visible_fn, GeneratorResult,
     },
     validators::Validators,
 };
@@ -25,6 +25,7 @@ pub fn generate(
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(object_args.internal);
+    let boxed_trait = gen_boxed_trait(&crate_name);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();
     let extends = object_args.extends;
@@ -647,6 +648,7 @@ pub fn generate(
 
                 #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
                 #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
+                #boxed_trait
                 impl #impl_generics #crate_name::resolver_utils::ContainerType for #self_ty #where_clause {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         #resolve_field_resolver_match
@@ -672,6 +674,7 @@ pub fn generate(
                 }
 
                 #[allow(clippy::all, clippy::pedantic)]
+                #boxed_trait
                 impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         #gql_typename
@@ -802,6 +805,7 @@ pub fn generate(
             };
 
             codes.push(quote! {
+                #boxed_trait
                 impl #def_bounds #crate_name::resolver_utils::ContainerType for #concrete_type {
                     async fn resolve_field(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
                         self.__internal_resolve_field(ctx).await
@@ -812,6 +816,7 @@ pub fn generate(
                     }
                 }
 
+                #boxed_trait
                 impl #def_bounds #crate_name::OutputType for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
