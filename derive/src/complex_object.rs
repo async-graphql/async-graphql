@@ -175,6 +175,10 @@ pub fn generate(
             let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
             let external = method_args.external;
             let shareable = method_args.shareable;
+            let directives = gen_directive_calls(
+                &method_args.directives,
+                TypeDirectiveLocation::FieldDefinition,
+            );
             let override_from = match &method_args.override_from {
                 Some(from) => {
                     quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
@@ -392,7 +396,7 @@ pub fn generate(
                     override_from: #override_from,
                     visible: #visible,
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![],
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                 }));
             });
 
