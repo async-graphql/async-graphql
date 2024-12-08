@@ -22,6 +22,7 @@ All methods are converted to camelCase.
 | serial               | Resolve each field sequentially.                                                                                                                                                    | bool                                       | Y        |
 | concretes            | Specify how the concrete type of the generic SimpleObject should be implemented.                                                                                                    | ConcreteType                               | Y        |
 | guard                | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                             | string                                     | Y        |
+| directives           | Directives                                                                                                                                                                          | expr                                       | Y        |
 
 # Field attributes
 
@@ -65,6 +66,7 @@ All methods are converted to camelCase.
 | secret       | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool        | Y        |
 | key          | Is entity key(for Federation)                                                                                                                   | bool        | Y        |
 | process_with | Upon successful parsing, invokes specified function. Its signature must be `fn(&mut T)`.                                                        | code path   | Y        |
+| directives   | Directives                                                                                                                                      | expr        | Y        |
 
 # Derived argument attributes
 

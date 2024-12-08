@@ -10,16 +10,18 @@ Define a GraphQL oneof input object
 | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                  | bool         | Y        |
 | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                          | string       | Y        |
 | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented.                                                                                                 | ConcreteType | Y        |
+| directives    | Directives                                                                                                                                                                       | expr         | Y        |
 
 # Field attributes
 
-| Attribute | description                                                                                                                                     | Type   | Optional |
-|-----------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
-| name      | Field name                                                                                                                                      | string | Y        |
-| validator | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object | Y        |
-| visible   | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
-| visible   | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
-| secret    | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool   | Y        |
+| Attribute  | description                                                                                                                                     | Type   | Optional |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------|--------|----------|
+| name       | Field name                                                                                                                                      | string | Y        |
+| validator  | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object | Y        |
+| visible    | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).* | bool   | Y        |
+| visible    | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                         | string | Y        |
+| secret     | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool   | Y        |
+| directives | Directives                                                                                                                                      | expr   | Y        |
 
 # Examples
 

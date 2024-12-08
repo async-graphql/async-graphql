@@ -20,6 +20,7 @@ The filter function should be synchronous.
 | visible              | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                             | string | Y        |
 | use_type_description | Specifies that the description of the type is on the type declaration. [`Description`]()(derive.Description.html)                                                                   | bool   | Y        |
 | guard                | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                             | string | Y        |
+| directives           | Directives                                                                                                                                                                          | expr   | Y        |
 
 # Field attributes
 
@@ -34,6 +35,7 @@ The filter function should be synchronous.
 | complexity  | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                     | bool   | Y        |
 | complexity  | Custom field complexity.                                                                                                                        | string | Y        |
 | secret      | Mark this field as a secret, it will not output the actual value in the log.                                                                    | bool   | Y        |
+| directives  | Directives                                                                                                                                      | expr   | Y        |
 
 # Field argument attributes
 

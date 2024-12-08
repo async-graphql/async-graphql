@@ -21,6 +21,7 @@ Similar to `Object`, but defined on a structure that automatically generates get
 | concretes     | Specify how the concrete type of the generic SimpleObject should be implemented. *[See also the Book](https://async-graphql.github.io/async-graphql/en/define_simple_object.html#generic-simpleobjects) | ConcreteType                               | Y        |
 | serial        | Resolve each field sequentially.                                                                                                                                                                        | bool                                       | Y        |
 | guard         | Field of guard *[See also the Book](https://async-graphql.github.io/async-graphql/en/field_guard.html)*                                                                                                 | string                                     | Y        |
+| directives    | Directives                                                                                                                                                                                              | expr                                       | Y        |
 
 # Field attributes
 
@@ -45,6 +46,8 @@ Similar to `Object`, but defined on a structure that automatically generates get
 | visible       | If `false`, it will not be displayed in introspection. *[See also the Book](https://async-graphql.github.io/async-graphql/en/visibility.html).*                                                                                          | bool                                       | Y        |
 | visible       | Call the specified function. If the return value is `false`, it will not be displayed in introspection.                                                                                                                                  | string                                     | Y        |
 | flatten       | Similar to serde (flatten)                                                                                                                                                                                                               | boolean                                    | Y        |
+| directives    | Directives                                                                                                                                                                                                                               | expr                                       | Y        |
+| complexity    | Custom field complexity. *[See also the Book](https://async-graphql.github.io/async-graphql/en/depth_and_complexity.html).*                                                                                                              | bool                                       | Y        |
 
 # Derived attributes
 
