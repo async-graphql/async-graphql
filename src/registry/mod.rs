@@ -34,7 +34,7 @@ pub enum MetaTypeName<'a> {
     Named(&'a str),
 }
 
-impl<'a> Display for MetaTypeName<'a> {
+impl Display for MetaTypeName<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             MetaTypeName::Named(name) => write!(f, "{}", name),
@@ -44,7 +44,7 @@ impl<'a> Display for MetaTypeName<'a> {
     }
 }
 
-impl<'a> MetaTypeName<'a> {
+impl MetaTypeName<'_> {
     #[inline]
     pub fn create(type_name: &str) -> MetaTypeName {
         if let Some(type_name) = type_name.strip_suffix('!') {
@@ -272,6 +272,7 @@ impl MetaTypeId {
                 inaccessible: false,
                 tags: vec![],
                 specified_by_url: None,
+                directive_invocations: vec![],
             },
             MetaTypeId::Object => MetaType::Object {
                 name: "".to_string(),
@@ -311,6 +312,7 @@ impl MetaTypeId {
                 inaccessible: false,
                 tags: vec![],
                 rust_typename: Some(rust_typename),
+                directive_invocations: vec![],
             },
             MetaTypeId::Enum => MetaType::Enum {
                 name: "".to_string(),
@@ -383,6 +385,8 @@ pub enum MetaType {
         /// human-readable specification of the data format, serialization and
         /// coercion rules for this scalar.
         specified_by_url: Option<String>,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Object
     ///
@@ -518,6 +522,8 @@ pub enum MetaType {
         tags: Vec<String>,
         /// The Rust typename corresponding to the union
         rust_typename: Option<&'static str>,
+        /// custom directive invocations
+        directive_invocations: Vec<MetaDirectiveInvocation>,
     },
     /// Enum
     ///
@@ -1129,6 +1135,7 @@ impl Registry {
                     inaccessible: false,
                     tags: Default::default(),
                     rust_typename: Some("async_graphql::federation::Entity"),
+                    directive_invocations: vec![],
                 },
             );
 

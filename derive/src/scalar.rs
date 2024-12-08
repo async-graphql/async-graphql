@@ -4,7 +4,10 @@ use syn::ItemImpl;
 
 use crate::{
     args::{self, RenameTarget},
-    utils::{get_crate_name, get_rustdoc, get_type_path_and_name, visible_fn, GeneratorResult},
+    utils::{
+        gen_boxed_trait, get_crate_name, get_rustdoc, get_type_path_and_name, visible_fn,
+        GeneratorResult,
+    },
 };
 
 pub fn generate(
@@ -12,6 +15,7 @@ pub fn generate(
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_name(scalar_args.internal);
+    let boxed_trait = gen_boxed_trait(&crate_name);
     let self_name = get_type_path_and_name(item_impl.self_ty.as_ref())?.1;
     let gql_typename = if !scalar_args.name_type {
         let name = scalar_args
@@ -68,6 +72,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
+                    directive_invocations: ::std::vec::Vec::new(),
                 })
             }
 
@@ -85,6 +90,7 @@ pub fn generate(
         }
 
         #[allow(clippy::all, clippy::pedantic)]
+        #boxed_trait
         impl #generic #crate_name::OutputType for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #gql_typename
@@ -99,6 +105,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
+                    directive_invocations: ::std::vec::Vec::new()
                 })
             }
 

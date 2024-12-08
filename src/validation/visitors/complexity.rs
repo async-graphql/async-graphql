@@ -14,7 +14,7 @@ pub struct ComplexityCalculate<'ctx, 'a> {
     pub variable_definition: Option<&'ctx [Positioned<VariableDefinition>]>,
 }
 
-impl<'ctx, 'a> ComplexityCalculate<'ctx, 'a> {
+impl<'a> ComplexityCalculate<'_, 'a> {
     pub fn new(complexity: &'a mut usize) -> Self {
         Self {
             complexity,
@@ -24,7 +24,7 @@ impl<'ctx, 'a> ComplexityCalculate<'ctx, 'a> {
     }
 }
 
-impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
+impl<'ctx> Visitor<'ctx> for ComplexityCalculate<'ctx, '_> {
     fn mode(&self) -> VisitMode {
         VisitMode::Inline
     }
@@ -81,6 +81,7 @@ impl<'ctx, 'a> Visitor<'ctx> for ComplexityCalculate<'ctx, 'a> {
 #[cfg(test)]
 #[allow(clippy::diverging_sub_expression)]
 mod tests {
+    use async_graphql_derive::SimpleObject;
     use futures_util::stream::BoxStream;
 
     use super::*;
@@ -89,6 +90,17 @@ mod tests {
     };
 
     struct Query;
+
+    #[derive(SimpleObject)]
+    #[graphql(internal)]
+    struct MySimpleObj {
+        #[graphql(complexity = 0)]
+        a: i32,
+        #[graphql(complexity = 0)]
+        b: String,
+        #[graphql(complexity = 5)]
+        c: i32,
+    }
 
     #[derive(Copy, Clone)]
     struct MyObj;
@@ -113,6 +125,19 @@ mod tests {
     #[allow(unreachable_code)]
     impl Query {
         async fn value(&self) -> i32 {
+            todo!()
+        }
+
+        async fn simple_obj(&self) -> MySimpleObj {
+            todo!()
+        }
+
+        #[graphql(complexity = "count * child_complexity + 2")]
+        #[allow(unused_variables)]
+        async fn simple_objs(
+            &self,
+            #[graphql(default_with = "5")] count: usize,
+        ) -> Vec<MySimpleObj> {
             todo!()
         }
 
@@ -164,20 +189,45 @@ mod tests {
         }
     }
 
-    fn check_complex(query: &str, expect_complex: usize) {
+    #[track_caller]
+    fn check_complexity(query: &str, expect_complexity: usize) {
         let registry =
             Schema::<Query, EmptyMutation, Subscription>::create_registry(Default::default());
         let doc = parse_query(query).unwrap();
         let mut ctx = VisitorContext::new(&registry, &doc, None);
-        let mut complex = 0;
-        let mut complex_calculate = ComplexityCalculate::new(&mut complex);
-        visit(&mut complex_calculate, &mut ctx, &doc);
-        assert_eq!(complex, expect_complex);
+        let mut complexity = 0;
+        let mut complexity_calculate = ComplexityCalculate::new(&mut complexity);
+        visit(&mut complexity_calculate, &mut ctx, &doc);
+        assert_eq!(complexity, expect_complexity);
+    }
+
+    #[test]
+    fn simple_object() {
+        check_complexity(
+            r#"{
+                simpleObj { a b }
+            }"#,
+            1,
+        );
+
+        check_complexity(
+            r#"{
+                simpleObj { a b c }
+            }"#,
+            6,
+        );
+
+        check_complexity(
+            r#"{
+                simpleObjs(count: 7) { a b c }
+            }"#,
+            7 * 5 + 2,
+        );
     }
 
     #[test]
     fn complex_object() {
-        check_complex(
+        check_complexity(
             r#"
         {
             value #1
@@ -185,7 +235,7 @@ mod tests {
             1,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             value #1
@@ -194,7 +244,7 @@ mod tests {
             4,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             value obj { #2
@@ -204,7 +254,7 @@ mod tests {
             4,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             value obj { #2
@@ -218,18 +268,18 @@ mod tests {
             9,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         fragment A on MyObj {
             a b ... A2 #2
         }
-        
+
         fragment A2 on MyObj {
             obj { # 1
                 a # 1
             }
         }
-        
+
         query {
             obj { # 1
                 ... A
@@ -238,7 +288,7 @@ mod tests {
             5,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             obj { # 1
@@ -255,7 +305,7 @@ mod tests {
             5,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             objs(count: 10) {
@@ -265,7 +315,7 @@ mod tests {
             20,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         {
             objs {
@@ -275,12 +325,12 @@ mod tests {
             10,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         fragment A on MyObj {
             a b
         }
-        
+
         query {
             objs(count: 10) {
                 ... A
@@ -292,7 +342,7 @@ mod tests {
 
     #[test]
     fn complex_subscription() {
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             value #1
@@ -300,7 +350,7 @@ mod tests {
             1,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             value #1
@@ -309,7 +359,7 @@ mod tests {
             4,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             value obj { #2
@@ -319,7 +369,7 @@ mod tests {
             4,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             value obj { #2
@@ -333,18 +383,18 @@ mod tests {
             9,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         fragment A on MyObj {
             a b ... A2 #2
         }
-        
+
         fragment A2 on MyObj {
             obj { # 1
                 a # 1
             }
         }
-        
+
         subscription query {
             obj { # 1
                 ... A
@@ -353,7 +403,7 @@ mod tests {
             5,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             obj { # 1
@@ -370,7 +420,7 @@ mod tests {
             5,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             objs(count: 10) {
@@ -380,7 +430,7 @@ mod tests {
             20,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         subscription {
             objs {
@@ -390,12 +440,12 @@ mod tests {
             10,
         );
 
-        check_complex(
+        check_complexity(
             r#"
         fragment A on MyObj {
             a b
         }
-        
+
         subscription query {
             objs(count: 10) {
                 ... A
@@ -404,7 +454,7 @@ mod tests {
             20,
         );
 
-        check_complex(
+        check_complexity(
             r#"
             query {
                 obj2 { a b }

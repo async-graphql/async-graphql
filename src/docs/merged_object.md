@@ -15,6 +15,7 @@ Define a merged object with multiple object types.
 | serial        | Resolve each field sequentially.                                                                                                                            | bool                                       | Y        |
 | inaccessible  | Indicate that an object is not accessible from a supergraph when using Apollo Federation                                                                    | bool                                       | Y        |
 | tag           | Arbitrary string metadata that will be propagated to the supergraph when using Apollo Federation. This attribute is repeatable                              | string                                     | Y        |
+| directives    | Directives                                                                                                                                                  | expr                                       | Y        |
 
 # Examples
 

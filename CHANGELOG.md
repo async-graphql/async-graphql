@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.12] 2024-12-08
+
+- update MSRV to `1.81.0`
+- Add specified complexity for fields in `SimpleObject`.
+- feat: expose SDL export utilities in ExtensionContext [#1606](https://github.com/async-graphql/async-graphql/pull/1606)
+- feat(dynamic-schema): specify type directives in schema [#1607](https://github.com/async-graphql/async-graphql/pull/1607)
+- Make http2 optional for actix [#1612](https://github.com/async-graphql/async-graphql/pull/1612)
+- chore: use std OnceLock instead LazyLock [#1613](https://github.com/async-graphql/async-graphql/pull/1613)
+- Add UUID validator [#1588](https://github.com/async-graphql/async-graphql/pull/1588)
+- Update secrecy and support new types [#1627](https://github.com/async-graphql/async-graphql/pull/1627)
+- fix [#1626](https://github.com/async-graphql/async-graphql/issues/1626)
+- Allow non-native concrete types in generic structs deriving SimpleObject + InputObject [#1629](https://github.com/async-graphql/async-graphql/pull/1629)
+- chore: update opentelemetry to 0.27 [#1614](https://github.com/async-graphql/async-graphql/pull/1614)
+- connection: Allow 'first' and 'last' parameters to exist at the same time [#1602](https://github.com/async-graphql/async-graphql/pull/1602)
+- feat(dynamic-schema): specify type directives in schema [#1607](https://github.com/async-graphql/async-graphql/pull/1607)
+- Make boxed_any and borrowed_any for FieldValue work with trait objects again [#1636](https://github.com/async-graphql/async-graphql/pull/1636)
+- Add new altair option [#1642](https://github.com/async-graphql/async-graphql/pull/1642)
+- Fix Clippy for latest stable [#1639](https://github.com/async-graphql/async-graphql/pull/1639)
+- Add `boxed-trait` feature [#1641](https://github.com/async-graphql/async-graphql/pull/1641)
+- Support directive in complex object [#1644](https://github.com/async-graphql/async-graphql/pull/1644)
+
 # [7.0.11] 2024-09-26
 
 - fix [#1598](https://github.com/async-graphql/async-graphql/issues/1598)

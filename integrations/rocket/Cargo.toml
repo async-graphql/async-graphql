@@ -1,5 +1,5 @@
 [package]
-authors = ["Daniel Wiesenberg <daniel@simplificAR.io>"]
+authors = ["Daniel Wiesenberg <daniel@wsnbrg.de>"]
 categories = ["network-programming", "asynchronous"]
 description = "async-graphql for Rocket.rs"
 documentation = "https://docs.rs/async-graphql/"
@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql", "rocket"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-rocket"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.11"
+version = "7.0.12"
 
 [dependencies]
 async-graphql.workspace = true

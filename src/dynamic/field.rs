@@ -8,6 +8,7 @@ use std::{
 use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
+use super::Directive;
 use crate::{
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
@@ -39,7 +40,7 @@ pub(crate) enum FieldValueInner<'a> {
     },
 }
 
-impl<'a> Debug for FieldValue<'a> {
+impl Debug for FieldValue<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.0 {
             FieldValueInner::Value(v) => write!(f, "{}", v),
@@ -58,14 +59,14 @@ impl<'a> Debug for FieldValue<'a> {
     }
 }
 
-impl<'a> From<()> for FieldValue<'a> {
+impl From<()> for FieldValue<'_> {
     #[inline]
     fn from(_: ()) -> Self {
         Self(FieldValueInner::Value(Value::Null))
     }
 }
 
-impl<'a> From<Value> for FieldValue<'a> {
+impl From<Value> for FieldValue<'_> {
     #[inline]
     fn from(value: Value) -> Self {
         Self(FieldValueInner::Value(value))
@@ -122,20 +123,14 @@ impl<'a> FieldValue<'a> {
 
     /// Create a FieldValue from unsized any value
     #[inline]
-    pub fn boxed_any<T: Any + Send + Sync>(obj: Box<T>) -> Self {
-        Self(FieldValueInner::OwnedAny(
-            std::any::type_name::<T>().into(),
-            obj,
-        ))
+    pub fn boxed_any(obj: Box<dyn Any + Send + Sync>) -> Self {
+        Self(FieldValueInner::OwnedAny("Any".into(), obj))
     }
 
     /// Create a FieldValue from owned any value
     #[inline]
-    pub fn borrowed_any<T: Any + Send + Sync>(obj: &'a T) -> Self {
-        Self(FieldValueInner::BorrowedAny(
-            std::any::type_name::<T>().into(),
-            obj,
-        ))
+    pub fn borrowed_any(obj: &'a (dyn Any + Send + Sync)) -> Self {
+        Self(FieldValueInner::BorrowedAny("Any".into(), obj))
     }
 
     /// Create a FieldValue from list
@@ -337,6 +332,7 @@ pub struct Field {
     pub(crate) inaccessible: bool,
     pub(crate) tags: Vec<String>,
     pub(crate) override_from: Option<String>,
+    pub(crate) directives: Vec<Directive>,
 }
 
 impl Debug for Field {
@@ -375,6 +371,7 @@ impl Field {
             inaccessible: false,
             tags: Vec::new(),
             override_from: None,
+            directives: Vec::new(),
         }
     }
 
@@ -387,6 +384,7 @@ impl Field {
     impl_set_inaccessible!();
     impl_set_tags!();
     impl_set_override_from!();
+    impl_directive!();
 
     /// Add an argument to the field
     #[inline]

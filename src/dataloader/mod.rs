@@ -12,6 +12,7 @@
 //! /// This loader simply converts the integer key into a string value.
 //! struct MyLoader;
 //!
+//! #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 //! impl Loader<i32> for MyLoader {
 //!     type Value = String;
 //!     type Error = Infallible;
@@ -57,11 +58,12 @@
 
 mod cache;
 
+#[cfg(not(feature = "boxed-trait"))]
+use std::future::Future;
 use std::{
     any::{Any, TypeId},
     borrow::Cow,
     collections::{HashMap, HashSet},
-    future::Future,
     hash::Hash,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -114,6 +116,7 @@ impl<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> Requests<K, T> 
 }
 
 /// Trait for batch loading.
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 'static {
     /// type of value.
     type Value: Send + Sync + Clone + 'static;
@@ -122,6 +125,11 @@ pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 's
     type Error: Send + Clone + 'static;
 
     /// Load the data set specified by the `keys`.
+    #[cfg(feature = "boxed-trait")]
+    async fn load(&self, keys: &[K]) -> Result<HashMap<K, Self::Value>, Self::Error>;
+
+    /// Load the data set specified by the `keys`.
+    #[cfg(not(feature = "boxed-trait"))]
     fn load(
         &self,
         keys: &[K],
@@ -494,6 +502,7 @@ mod tests {
 
     struct MyLoader;
 
+    #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
     impl Loader<i32> for MyLoader {
         type Value = i32;
         type Error = ();
@@ -504,6 +513,7 @@ mod tests {
         }
     }
 
+    #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
     impl Loader<i64> for MyLoader {
         type Value = i64;
         type Error = ();
@@ -681,6 +691,7 @@ mod tests {
     async fn test_dataloader_dead_lock() {
         struct MyDelayLoader;
 
+        #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
         impl Loader<i32> for MyDelayLoader {
             type Value = i32;
             type Error = ();

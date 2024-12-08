@@ -124,7 +124,7 @@ I strongly recommend limiting the [complexity and depth](https://async-graphql.g
 - Apollo Tracing extension
 - Apollo Federation(v2)
 
-> **Note**: Minimum supported Rust version: 1.75.0 or later
+> **Note**: Minimum supported Rust version: 1.81.0 or later
 
 ## Examples
 
@@ -156,6 +156,7 @@ This crate offers the following features. Most are not activated by default, exc
 |:-------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | **`apollo_tracing`**           | Enable the [Apollo tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.ApolloTracing.html).                                                               |
 | **`apollo_persisted_queries`** | Enable the [Apollo persisted queries extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).                   |
+| **`boxed-trait`**              | Enables [`async-trait`](https://crates.io/crates/async-trait) for all traits.                                                                                                                 |
 | **`bson`**                     | Integrate with the [`bson` crate](https://crates.io/crates/bson).                                                                                                                             |
 | **`bigdecimal`**               | Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal).                                                                                                                 |
 | **`cbor`**                     | Support for [serde_cbor](https://crates.io/crates/serde_cbor).                                                                                                                                |

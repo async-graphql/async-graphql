@@ -15,7 +15,7 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: 1.81.0
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Install cargo-llvm-cov

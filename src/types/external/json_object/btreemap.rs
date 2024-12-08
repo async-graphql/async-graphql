@@ -32,6 +32,7 @@ where
             inaccessible: false,
             tags: Default::default(),
             specified_by_url: None,
+            directive_invocations: Default::default(),
         })
     }
 
@@ -70,6 +71,7 @@ where
     }
 }
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<K, V> OutputType for BTreeMap<K, V>
 where
     K: ToString + Ord + Send + Sync,
@@ -88,6 +90,7 @@ where
             inaccessible: false,
             tags: Default::default(),
             specified_by_url: None,
+            directive_invocations: Default::default(),
         })
     }
 

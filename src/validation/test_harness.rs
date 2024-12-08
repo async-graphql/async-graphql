@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 #![allow(unreachable_code)]
 
-use once_cell::sync::Lazy;
+use std::sync::OnceLock;
 
 use crate::{
     futures_util::stream::Stream,
@@ -373,8 +373,7 @@ impl Subscription {
     }
 }
 
-static TEST_HARNESS: Lazy<Schema<Query, Mutation, Subscription>> =
-    Lazy::new(|| Schema::new(Query, Mutation, Subscription));
+static TEST_HARNESS: OnceLock<Schema<Query, Mutation, Subscription>> = OnceLock::new();
 
 pub(crate) fn validate<'a, V, F>(
     doc: &'a ExecutableDocument,
@@ -384,7 +383,7 @@ where
     V: Visitor<'a> + 'a,
     F: Fn() -> V,
 {
-    let schema = &*TEST_HARNESS;
+    let schema = TEST_HARNESS.get_or_init(|| Schema::new(Query, Mutation, Subscription));
     let registry = &schema.0.env.registry;
     let mut ctx = VisitorContext::new(registry, doc, None);
     let mut visitor = factory();

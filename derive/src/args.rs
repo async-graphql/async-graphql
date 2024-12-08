@@ -117,6 +117,8 @@ impl FromMeta for GenericParamList {
 #[derive(FromMeta)]
 pub struct ConcreteType {
     pub name: String,
+    #[darling(default)]
+    pub input_name: Option<String>,
     pub params: PathList,
     #[darling(default)]
     pub bounds: GenericParamList,
@@ -232,6 +234,7 @@ pub struct SimpleObjectField {
     pub secret: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub complexity: Option<Expr>,
 }
 
 #[derive(FromDeriveInput)]
@@ -969,6 +972,8 @@ pub struct ComplexObjectField {
     #[darling(multiple)]
     pub derived: Vec<DerivedField>,
     pub flatten: bool,
+    #[darling(default, multiple, rename = "directive")]
+    pub directives: Vec<Expr>,
 }
 
 #[derive(FromMeta, Default)]

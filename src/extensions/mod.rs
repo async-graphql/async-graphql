@@ -31,8 +31,8 @@ pub use self::opentelemetry::OpenTelemetry;
 pub use self::tracing::Tracing;
 use crate::{
     parser::types::{ExecutableDocument, Field},
-    Data, DataContext, Error, QueryPathNode, Request, Response, Result, SchemaEnv, ServerError,
-    ServerResult, ValidationResult, Value, Variables,
+    Data, DataContext, Error, QueryPathNode, Request, Response, Result, SDLExportOptions,
+    SchemaEnv, ServerError, ServerResult, ValidationResult, Value, Variables,
 };
 
 /// Context for extension
@@ -70,6 +70,16 @@ impl<'a> ExtensionContext<'a> {
             .registry
             .stringify_exec_doc(variables, doc)
             .unwrap_or_default()
+    }
+
+    /// Returns SDL(Schema Definition Language) of this schema.
+    pub fn sdl(&self) -> String {
+        self.schema_env.registry.export_sdl(Default::default())
+    }
+
+    /// Returns SDL(Schema Definition Language) of this schema with options.
+    pub fn sdl_with_options(&self, options: SDLExportOptions) -> String {
+        self.schema_env.registry.export_sdl(options)
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
@@ -176,7 +186,7 @@ pub struct NextSubscribe<'a> {
     chain: &'a [Arc<dyn Extension>],
 }
 
-impl<'a> NextSubscribe<'a> {
+impl NextSubscribe<'_> {
     /// Call the [Extension::subscribe] function of next extension.
     pub fn run<'s>(
         self,
