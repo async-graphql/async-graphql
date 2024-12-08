@@ -186,7 +186,7 @@ pub struct NextSubscribe<'a> {
     chain: &'a [Arc<dyn Extension>],
 }
 
-impl<'a> NextSubscribe<'a> {
+impl NextSubscribe<'_> {
     /// Call the [Extension::subscribe] function of next extension.
     pub fn run<'s>(
         self,

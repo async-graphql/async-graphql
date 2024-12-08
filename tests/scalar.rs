@@ -11,15 +11,15 @@ mod test_mod {
     }
 }
 
+scalar!(
+    test_mod::MyValue,
+    "MV",
+    "DESC",
+    "https://tools.ietf.org/html/rfc4122"
+);
+
 #[tokio::test]
 pub async fn test_scalar_macro() {
-    scalar!(
-        test_mod::MyValue,
-        "MV",
-        "DESC",
-        "https://tools.ietf.org/html/rfc4122"
-    );
-
     struct Query;
 
     #[Object]
