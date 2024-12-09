@@ -27,10 +27,15 @@ impl<'a> __Field<'a> {
         self.field.description.as_deref()
     }
 
-    async fn args(&self, ctx: &Context<'_>) -> Vec<__InputValue<'a>> {
+    async fn args(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = false)] include_deprecated: bool,
+    ) -> Vec<__InputValue<'a>> {
         self.field
             .args
             .values()
+            .filter(|input_value| include_deprecated || !input_value.deprecation.is_deprecated())
             .filter(|input_value| is_visible(ctx, &input_value.visible))
             .map(|input_value| __InputValue {
                 registry: self.registry,

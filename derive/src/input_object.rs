@@ -6,8 +6,8 @@ use syn::{ext::IdentExt, Error};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        gen_directive_calls, generate_default, get_crate_name, get_rustdoc, visible_fn,
-        GeneratorResult,
+        gen_deprecation, gen_directive_calls, generate_default, get_crate_name, get_rustdoc,
+        visible_fn, GeneratorResult,
     },
 };
 
@@ -189,12 +189,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         });
 
         fields.push(ident);
+
         let visible = visible_fn(&field.visible);
+        let deprecation = gen_deprecation(&field.deprecation, &crate_name);
+
         schema_fields.push(quote! {
             fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                 name: ::std::string::ToString::to_string(#name),
                 description: #desc,
                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                deprecation: #deprecation,
                 default_value: #schema_default,
                 visible: #visible,
                 inaccessible: #inaccessible,

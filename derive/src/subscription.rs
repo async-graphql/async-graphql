@@ -94,6 +94,7 @@ pub fn generate(
                     process_with,
                     visible: arg_visible,
                     secret,
+                    deprecation,
                 },
             ) in &args
             {
@@ -120,11 +121,14 @@ pub fn generate(
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
 
                 let visible = visible_fn(arg_visible);
+                let deprecation = gen_deprecation(deprecation, &crate_name);
+
                 schema_args.push(quote! {
                     args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
                             name: ::std::string::ToString::to_string(#name),
                             description: #desc,
                             ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                            deprecation: #deprecation,
                             default_value: #schema_default,
                             visible: #visible,
                             inaccessible: false,

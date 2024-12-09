@@ -401,6 +401,7 @@ pub fn generate(
                         inaccessible,
                         tags,
                         directives,
+                        deprecation,
                         ..
                     },
                 ) in &args
@@ -431,6 +432,7 @@ pub fn generate(
                         .iter()
                         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                         .collect::<Vec<_>>();
+                    let deprecation = gen_deprecation(deprecation, &crate_name);
                     let directives =
                         gen_directive_calls(directives, TypeDirectiveLocation::ArgumentDefinition);
 
@@ -439,6 +441,7 @@ pub fn generate(
                                 name: ::std::string::ToString::to_string(#name),
                                 description: #desc,
                                 ty: <#ty as #crate_name::InputType>::create_type_info(registry),
+                                deprecation: #deprecation,
                                 default_value: #schema_default,
                                 visible: #visible,
                                 inaccessible: #inaccessible,

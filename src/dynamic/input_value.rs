@@ -1,5 +1,9 @@
 use super::{directive::to_meta_directive_invocation, Directive};
-use crate::{dynamic::TypeRef, registry::MetaInputValue, Value};
+use crate::{
+    dynamic::TypeRef,
+    registry::{Deprecation, MetaInputValue},
+    Value,
+};
 
 /// A GraphQL input value type
 #[derive(Debug)]
@@ -11,6 +15,7 @@ pub struct InputValue {
     pub(crate) inaccessible: bool,
     pub(crate) tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
+    pub(crate) deprecation: Deprecation,
 }
 
 impl InputValue {
@@ -25,6 +30,7 @@ impl InputValue {
             inaccessible: false,
             tags: Vec::new(),
             directives: vec![],
+            deprecation: Deprecation::NoDeprecated,
         }
     }
 
@@ -32,6 +38,7 @@ impl InputValue {
     impl_set_inaccessible!();
     impl_set_tags!();
     impl_directive!();
+    impl_set_deprecation!();
 
     /// Set the default value
     #[inline]
@@ -47,6 +54,7 @@ impl InputValue {
             name: self.name.clone(),
             description: self.description.clone(),
             ty: self.ty.to_string(),
+            deprecation: self.deprecation.clone(),
             default_value: self
                 .default_value
                 .as_ref()

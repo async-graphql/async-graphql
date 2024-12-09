@@ -142,6 +142,8 @@ pub struct MetaInputValue {
     pub description: Option<String>,
     /// The type of the input value
     pub ty: String,
+    /// Field deprecation
+    pub deprecation: Deprecation,
     /// The default value of the input value
     pub default_value: Option<String>,
     /// A function that uses to check if the input value should be exported to
@@ -788,6 +790,7 @@ impl Registry {
                     name: "if".to_string(),
                     description: Some("Skipped when true.".to_string()),
                     ty: "Boolean!".to_string(),
+                    deprecation: Deprecation::NoDeprecated,
                     default_value: None,
                     visible: None,
                     inaccessible: false,
@@ -816,6 +819,7 @@ impl Registry {
                     name: "if".to_string(),
                     description: Some("Included when true.".to_string()),
                     ty: "Boolean!".to_string(),
+                    deprecation: Deprecation::NoDeprecated,
                     default_value: None,
                     visible: None,
                     inaccessible: false,
@@ -852,6 +856,7 @@ impl Registry {
                                 .into(),
                         ),
                         ty: "String".into(),
+                        deprecation: Deprecation::NoDeprecated,
                         default_value: Some(r#""No longer supported""#.into()),
                         visible: None,
                         inaccessible: false,
@@ -879,6 +884,7 @@ impl Registry {
                         name: "url".into(),
                         description: Some("URL that specifies the behavior of this scalar.".into()),
                         ty: "String!".into(),
+                        deprecation: Deprecation::NoDeprecated,
                         default_value: None,
                         visible: None,
                         inaccessible: false,
@@ -1153,6 +1159,7 @@ impl Registry {
                                     name: "representations".to_string(),
                                     description: None,
                                     ty: "[_Any!]!".to_string(),
+                                    deprecation: Deprecation::NoDeprecated,
                                     default_value: None,
                                     visible: None,
                                     inaccessible: false,
@@ -1221,6 +1228,7 @@ impl Registry {
                                 name: "name".to_string(),
                                 description: None,
                                 ty: "String!".to_string(),
+                                deprecation: Deprecation::NoDeprecated,
                                 default_value: None,
                                 visible: None,
                                 inaccessible: false,

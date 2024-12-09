@@ -306,6 +306,7 @@ pub struct Argument {
     pub secret: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    pub deprecation: Deprecation,
 }
 
 #[derive(FromMeta, Default)]
@@ -502,6 +503,8 @@ pub struct InputObjectField {
     pub shareable: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub deprecation: Deprecation,
 }
 
 #[derive(FromDeriveInput)]
@@ -562,6 +565,8 @@ pub struct OneofObjectField {
     pub secret: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub deprecation: Deprecation,
 }
 
 #[derive(FromDeriveInput)]
@@ -617,6 +622,8 @@ pub struct InterfaceFieldArgument {
     pub secret: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default)]
+    pub deprecation: Deprecation,
 }
 
 #[derive(FromMeta)]
@@ -737,6 +744,7 @@ pub struct SubscriptionFieldArgument {
     pub process_with: Option<Expr>,
     pub visible: Option<Visible>,
     pub secret: bool,
+    pub deprecation: Deprecation,
 }
 
 #[derive(FromMeta, Default)]

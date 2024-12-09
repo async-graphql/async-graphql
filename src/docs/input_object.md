@@ -21,6 +21,8 @@ Define a GraphQL input object
 | Attribute    | description                                                                                                                                     | Type        | Optional |
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-------------|----------|
 | name         | Field name                                                                                                                                      | string      | Y        |
+| deprecation  | Field deprecation                                                                                                                               | bool        | Y        |
+| deprecation  | Field deprecation reason                                                                                                                        | string      | Y        |
 | default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
 | default      | Argument default value                                                                                                                          | literal     | Y        |
 | default_with | Expression to generate default value                                                                                                            | code string | Y        |
