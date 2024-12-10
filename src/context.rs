@@ -43,10 +43,12 @@ pub trait DataContext<'a> {
     /// # Panics
     ///
     /// It will panic if the specified data type does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().unwrap()` instead.")]
     fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D;
 
     /// Gets the global data defined in the `Context` or `Schema` or `None` if
     /// the specified type data does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().ok()` instead.")]
     fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D>;
 }
 
@@ -303,11 +305,11 @@ impl<'a, T> DataContext<'a> for ContextBase<'a, T> {
     }
 
     fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
-        ContextBase::data_unchecked::<D>(self)
+        ContextBase::data::<D>(self).unwrap()
     }
 
     fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
-        ContextBase::data_opt::<D>(self)
+        ContextBase::data::<D>(self).ok()
     }
 }
 
@@ -378,27 +380,6 @@ impl<'a, T> ContextBase<'a, T> {
     ///
     /// Returns a `Error` if the specified type data does not exist.
     pub fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
-        self.data_opt::<D>().ok_or_else(|| {
-            Error::new(format!(
-                "Data `{}` does not exist.",
-                std::any::type_name::<D>()
-            ))
-        })
-    }
-
-    /// Gets the global data defined in the `Context` or `Schema`.
-    ///
-    /// # Panics
-    ///
-    /// It will panic if the specified data type does not exist.
-    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
-        self.data_opt::<D>()
-            .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
-    }
-
-    /// Gets the global data defined in the `Context` or `Schema` or `None` if
-    /// the specified type data does not exist.
-    pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
         self.execute_data
             .as_ref()
             .and_then(|execute_data| execute_data.get(&TypeId::of::<D>()))
@@ -406,6 +387,29 @@ impl<'a, T> ContextBase<'a, T> {
             .or_else(|| self.query_env.session_data.0.get(&TypeId::of::<D>()))
             .or_else(|| self.schema_env.data.0.get(&TypeId::of::<D>()))
             .and_then(|d| d.downcast_ref::<D>())
+            .ok_or_else(|| {
+                Error::new(format!(
+                    "Data `{}` does not exist.",
+                    std::any::type_name::<D>()
+                ))
+            })
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema`.
+    ///
+    /// # Panics
+    ///
+    /// It will panic if the specified data type does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().unwrap()` instead.")]
+    pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
+        self.data::<D>().unwrap()
+    }
+
+    /// Gets the global data defined in the `Context` or `Schema` or `None` if
+    /// the specified type data does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().ok()` instead.")]
+    pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
+        self.data::<D>().ok()
     }
 
     /// Returns whether the HTTP header `key` is currently set on the response
