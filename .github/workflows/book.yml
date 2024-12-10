@@ -25,11 +25,10 @@ jobs:
           mv docs/zh-CN/gh-pages gh-pages/zh-CN
           mv docs/index.html gh-pages
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           allow_empty_commit: true
           keep_files: false
-        env:
-          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: gh-pages
+          publish_dir: gh-pages
+          publish_branch: gh-pages
