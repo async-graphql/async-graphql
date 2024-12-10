@@ -117,6 +117,7 @@ impl InputObject {
                     name: field.name.clone(),
                     description: field.description.clone(),
                     ty: field.ty.to_string(),
+                    deprecation: field.deprecation.clone(),
                     default_value: field.default_value.as_ref().map(ToString::to_string),
                     visible: None,
                     inaccessible: self.inaccessible,

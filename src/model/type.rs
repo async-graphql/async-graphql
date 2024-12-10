@@ -192,13 +192,20 @@ impl<'a> __Type<'a> {
         }
     }
 
-    async fn input_fields(&self, ctx: &Context<'_>) -> Option<Vec<__InputValue<'a>>> {
+    async fn input_fields(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = false)] include_deprecated: bool,
+    ) -> Option<Vec<__InputValue<'a>>> {
         if let TypeDetail::Named(registry::MetaType::InputObject { input_fields, .. }) =
             &self.detail
         {
             Some(
                 input_fields
                     .values()
+                    .filter(|input_value| {
+                        include_deprecated || !input_value.deprecation.is_deprecated()
+                    })
                     .filter(|input_value| is_visible(ctx, &input_value.visible))
                     .map(|input_value| __InputValue {
                         registry: self.registry,

@@ -46,6 +46,8 @@ Define a GraphQL interface
 | name         | Argument name                                                                                                                                   | string      | N        |
 | ty           | Argument type                                                                                                                                   | string      | N        |
 | desc         | Argument description                                                                                                                            | string      | Y        |
+| deprecation  | Argument deprecation                                                                                                                            | bool        | Y        |
+| deprecation  | Argument deprecation reason                                                                                                                     | string      | Y        |
 | default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
 | default      | Argument default value                                                                                                                          | literal     | Y        |
 | default_with | Expression to generate default value                                                                                                            | code string | Y        |

@@ -33,4 +33,14 @@ impl<'a> __InputValue<'a> {
     async fn default_value(&self) -> Option<&str> {
         self.input_value.default_value.as_deref()
     }
+
+    #[inline]
+    async fn is_deprecated(&self) -> bool {
+        self.input_value.deprecation.is_deprecated()
+    }
+
+    #[inline]
+    async fn deprecation_reason(&self) -> Option<&str> {
+        self.input_value.deprecation.reason()
+    }
 }

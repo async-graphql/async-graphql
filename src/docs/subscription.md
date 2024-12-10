@@ -43,6 +43,8 @@ The filter function should be synchronous.
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-------------|----------|
 | name         | Argument name                                                                                                                                   | string      | Y        |
 | desc         | Argument description                                                                                                                            | string      | Y        |
+| deprecation  | Argument deprecation                                                                                                                            | bool        | Y        |
+| deprecation  | Argument deprecation reason                                                                                                                     | string      | Y        |
 | default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
 | default      | Argument default value                                                                                                                          | literal     | Y        |
 | default_with | Expression to generate default value                                                                                                            | code string | Y        |

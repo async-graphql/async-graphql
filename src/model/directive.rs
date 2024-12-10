@@ -135,10 +135,14 @@ impl<'a> __Directive<'a> {
         &self.directive.locations
     }
 
-    async fn args(&self) -> Vec<__InputValue<'a>> {
+    async fn args(
+        &self,
+        #[graphql(default = false)] include_deprecated: bool,
+    ) -> Vec<__InputValue<'a>> {
         self.directive
             .args
             .values()
+            .filter(|input_value| include_deprecated || !input_value.deprecation.is_deprecated())
             .map(|input_value| __InputValue {
                 registry: self.registry,
                 visible_types: self.visible_types,

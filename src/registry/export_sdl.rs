@@ -219,7 +219,7 @@ impl Registry {
             }
 
             if let Some(description) = &field.description {
-                export_description(sdl, options, 1, description);
+                write_description(sdl, options, 1, description);
             }
 
             if !field.args.is_empty() {
@@ -239,7 +239,7 @@ impl Registry {
 
                     if let Some(description) = &arg.description {
                         writeln!(sdl).ok();
-                        export_description(sdl, options, 2, description);
+                        write_description(sdl, options, 2, description);
                     }
 
                     if need_multiline {
@@ -248,7 +248,7 @@ impl Registry {
                         sdl.push(' ');
                     }
 
-                    sdl.push_str(&export_input_value(arg));
+                    write_input_value(sdl, arg);
 
                     if options.federation {
                         if arg.inaccessible {
@@ -324,7 +324,7 @@ impl Registry {
                 }
                 if export_scalar {
                     if let Some(description) = description {
-                        export_description(sdl, options, 0, description);
+                        write_description(sdl, options, 0, description);
                     }
                     write!(sdl, "scalar {}", name).ok();
 
@@ -394,7 +394,7 @@ impl Registry {
                 }
 
                 if let Some(description) = description {
-                    export_description(sdl, options, 0, description);
+                    write_description(sdl, options, 0, description);
                 }
 
                 if options.federation && *extends {
@@ -451,7 +451,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, 0, description);
+                    write_description(sdl, options, 0, description);
                 }
 
                 if options.federation && *extends {
@@ -494,7 +494,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, 0, description);
+                    write_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "enum {}", name).ok();
@@ -520,7 +520,7 @@ impl Registry {
 
                 for value in values {
                     if let Some(description) = &value.description {
-                        export_description(sdl, options, 1, description);
+                        write_description(sdl, options, 1, description);
                     }
                     write!(sdl, "\t{}", value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
@@ -555,7 +555,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, 0, description);
+                    write_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "input {}", name).ok();
@@ -585,9 +585,10 @@ impl Registry {
 
                 for field in fields {
                     if let Some(ref description) = &field.description {
-                        export_description(sdl, options, 1, description);
+                        write_description(sdl, options, 1, description);
                     }
-                    write!(sdl, "\t{}", export_input_value(&field)).ok();
+                    sdl.push('\t');
+                    write_input_value(sdl, field);
                     if options.federation {
                         if field.inaccessible {
                             write!(sdl, " @inaccessible").ok();
@@ -614,7 +615,7 @@ impl Registry {
                 ..
             } => {
                 if let Some(description) = description {
-                    export_description(sdl, options, 0, description);
+                    write_description(sdl, options, 0, description);
                 }
 
                 write!(sdl, "union {}", name).ok();
@@ -663,7 +664,7 @@ impl Registry {
     }
 }
 
-fn export_description(
+fn write_description(
     sdl: &mut String,
     options: &SDLExportOptions,
     level: usize,
@@ -680,15 +681,18 @@ fn export_description(
     }
 }
 
-fn export_input_value(input_value: &MetaInputValue) -> String {
+fn write_input_value(sdl: &mut String, input_value: &MetaInputValue) {
     if let Some(default_value) = &input_value.default_value {
-        format!(
+        _ = write!(
+            sdl,
             "{}: {} = {}",
             input_value.name, input_value.ty, default_value
-        )
+        );
     } else {
-        format!("{}: {}", input_value.name, input_value.ty)
+        _ = write!(sdl, "{}: {}", input_value.name, input_value.ty);
     }
+
+    write_deprecated(sdl, &input_value.deprecation);
 }
 
 fn write_deprecated(sdl: &mut String, deprecation: &Deprecation) {
@@ -790,6 +794,7 @@ schema {
                         name: "optionalWithoutDefault".to_string(),
                         description: None,
                         ty: "String".to_string(),
+                        deprecation: Deprecation::NoDeprecated,
                         default_value: None,
                         visible: None,
                         inaccessible: false,
@@ -804,6 +809,7 @@ schema {
                         name: "optionalWithDefault".to_string(),
                         description: None,
                         ty: "String".to_string(),
+                        deprecation: Deprecation::NoDeprecated,
                         default_value: Some("\"DEFAULT\"".to_string()),
                         visible: None,
                         inaccessible: false,

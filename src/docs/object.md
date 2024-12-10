@@ -56,6 +56,8 @@ All methods are converted to camelCase.
 | name         | Argument name                                                                                                                                   | string      | Y        |
 | desc         | Argument description                                                                                                                            | string      | Y        |
 | default      | Use `Default::default` for default value                                                                                                        | none        | Y        |
+| deprecation  | Argument deprecated                                                                                                                             | bool        | Y        |
+| deprecation  | Argument deprecation reason                                                                                                                     | string      | Y        |
 | default      | Argument default value                                                                                                                          | literal     | Y        |
 | default_with | Expression to generate default value                                                                                                            | code string | Y        |
 | validator    | Input value validator *[See also the Book](https://async-graphql.github.io/async-graphql/en/input_value_validators.html)*                       | object      | Y        |
