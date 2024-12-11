@@ -23,7 +23,7 @@ impl RoleGuard {
 
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        if ctx.data_opt::<Role>() == Some(&self.role) {
+        if ctx.data::<Role>().ok() == Some(&self.role) {
             Ok(())
         } else {
             Err("Forbidden".into())
