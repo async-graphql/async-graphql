@@ -14,6 +14,10 @@ where
         T::type_name()
     }
 
+    fn semantic_nullability() -> registry::SemanticNullability {
+        T::semantic_nullability()
+    }
+
     fn create_type_info(registry: &mut registry::Registry) -> String {
         <T as OutputType>::create_type_info(registry)
     }

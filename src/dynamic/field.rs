@@ -11,7 +11,7 @@ use indexmap::IndexMap;
 use super::Directive;
 use crate::{
     dynamic::{InputValue, ObjectAccessor, TypeRef},
-    registry::Deprecation,
+    registry::{Deprecation, SemanticNullability},
     Context, Error, Result, Value,
 };
 
@@ -333,6 +333,7 @@ pub struct Field {
     pub(crate) tags: Vec<String>,
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
+    pub(crate) semantic_nullability: SemanticNullability,
 }
 
 impl Debug for Field {
@@ -372,6 +373,7 @@ impl Field {
             tags: Vec::new(),
             override_from: None,
             directives: Vec::new(),
+            semantic_nullability: SemanticNullability::None,
         }
     }
 
@@ -384,6 +386,7 @@ impl Field {
     impl_set_inaccessible!();
     impl_set_tags!();
     impl_set_override_from!();
+    impl_set_semantic_nullability!();
     impl_directive!();
 
     /// Add an argument to the field

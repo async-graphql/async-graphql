@@ -208,6 +208,14 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         } else {
             quote! { ::std::option::Option::None }
         };
+        let semantic_nullability = if field
+            .semantic_non_null
+            .unwrap_or(object_args.semantic_non_null)
+        {
+            quote! { <#ty as #crate_name::OutputType>::semantic_nullability() }
+        } else {
+            quote! { #crate_name::registry::SemanticNullability::None }
+        };
 
         if !field.flatten {
             schema_fields.push(quote! {
@@ -228,6 +236,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     visible: #visible,
                     compute_complexity: #complexity,
                     directive_invocations: ::std::vec![ #(#directives),* ],
+                    semantic_nullability: #semantic_nullability,
                 });
             });
         } else {

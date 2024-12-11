@@ -181,7 +181,10 @@ pub fn generate(
                     .into())
                 }
             };
-            let res_ty = ty.value_type();
+            let res_ty = match ty {
+                OutputType::Value(ty) => ty,
+                OutputType::Result(ty) => ty,
+            };
             let stream_ty = if let Type::ImplTrait(TypeImplTrait { bounds, .. }) = &res_ty {
                 let mut r = None;
                 for b in bounds {
@@ -192,6 +195,14 @@ pub fn generate(
                 quote! { #r }
             } else {
                 quote! { #res_ty }
+            };
+            let output_ty = match ty {
+                OutputType::Value(_) => {
+                    quote! { <#stream_ty as #crate_name::futures_util::stream::Stream>::Item }
+                }
+                OutputType::Result(_) => {
+                    quote! { #crate_name::Result<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item> }
+                }
             };
 
             if let OutputType::Value(inner_ty) = &ty {
@@ -255,6 +266,15 @@ pub fn generate(
             let directives =
                 gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
 
+            let semantic_nullability = if field
+                .semantic_non_null
+                .unwrap_or(subscription_args.semantic_non_null)
+            {
+                quote! { <#output_ty as #crate_name::OutputType>::semantic_nullability() }
+            } else {
+                quote! { #crate_name::registry::SemanticNullability::None }
+            };
+
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
                 fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
@@ -265,7 +285,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::create_type_info(registry),
+                    ty: <#output_ty as #crate_name::OutputType>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: ::std::default::Default::default(),
                     external: false,
@@ -277,7 +297,8 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    semantic_nullability: #semantic_nullability,
                 });
             });
 
@@ -341,7 +362,7 @@ pub fn generate(
                                     let ri = #crate_name::extensions::ResolveInfo {
                                         path_node: ctx_selection_set.path_node.as_ref().unwrap(),
                                         parent_type: &parent_type,
-                                        return_type: &<<#stream_ty as #crate_name::futures_util::stream::Stream>::Item as #crate_name::OutputType>::qualified_type_name(),
+                                        return_type: &<#output_ty as #crate_name::OutputType>::qualified_type_name(),
                                         name: field.node.name.node.as_str(),
                                         alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                                         is_for_introspection: false,

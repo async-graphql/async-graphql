@@ -1,5 +1,6 @@
 use std::{borrow::Cow, collections::LinkedList};
 
+use super::wrap_semantic_nullability_in_list;
 use crate::{
     parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
     InputValueError, InputValueResult, OutputType, Positioned, ServerResult, Value,
@@ -54,6 +55,10 @@ impl<T: OutputType> OutputType for LinkedList<T> {
 
     fn qualified_type_name() -> String {
         format!("[{}]!", T::qualified_type_name())
+    }
+
+    fn semantic_nullability() -> registry::SemanticNullability {
+        wrap_semantic_nullability_in_list(T::semantic_nullability())
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
