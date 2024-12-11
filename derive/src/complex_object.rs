@@ -141,7 +141,7 @@ pub fn generate(
                         .into())
                     }
                 };
-                let ty = ty.value_type();
+                let ty = ty.value_type(object_args.internal);
                 let ident = &method.sig.ident;
 
                 schema_fields.push(quote! {
@@ -332,7 +332,7 @@ pub fn generate(
                     .into())
                 }
             };
-            let schema_ty = ty.value_type();
+            let schema_ty = ty.value_type(object_args.internal);
             let visible = visible_fn(&method_args.visible);
 
             let complexity = if let Some(complexity) = &method_args.complexity {
