@@ -1,4 +1,4 @@
-use std::{borrow::Cow, convert::Infallible, future::Future, str::FromStr, time::Duration};
+use std::{convert::Infallible, future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
     futures_util::task::{Context, Poll},
@@ -32,7 +32,6 @@ use tower_service::Service;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GraphQLProtocol(WebSocketProtocols);
 
-#[async_trait::async_trait]
 impl<S> FromRequestParts<S> for GraphQLProtocol
 where
     S: Send + Sync,
@@ -284,10 +283,10 @@ where
                 .on_ping(self.on_ping.clone())
                 .keepalive_timeout(self.keepalive_timeout)
                 .map(|msg| match msg {
-                    WsMessage::Text(text) => Message::Text(text),
+                    WsMessage::Text(text) => Message::Text(text.into()),
                     WsMessage::Close(code, status) => Message::Close(Some(CloseFrame {
                         code,
-                        reason: Cow::from(status),
+                        reason: status.into(),
                     })),
                 });
 
