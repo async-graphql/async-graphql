@@ -9,7 +9,7 @@ pub fn chars_min_length<T: AsRef<str> + InputType>(
     } else {
         Err(format!(
             "the chars length is {}, must be greater than or equal to {}",
-            value.as_ref().len(),
+            value.as_ref().chars().count(),
             len
         )
         .into())
