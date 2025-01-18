@@ -162,7 +162,7 @@ pub struct NextRequest<'a> {
     request_fut: RequestFut<'a>,
 }
 
-impl<'a> NextRequest<'a> {
+impl NextRequest<'_> {
     /// Call the [Extension::request] function of next extension.
     pub async fn run(self, ctx: &ExtensionContext<'_>) -> Response {
         if let Some((first, next)) = self.chain.split_first() {
@@ -206,7 +206,7 @@ pub struct NextPrepareRequest<'a> {
     chain: &'a [Arc<dyn Extension>],
 }
 
-impl<'a> NextPrepareRequest<'a> {
+impl NextPrepareRequest<'_> {
     /// Call the [Extension::prepare_request] function of next extension.
     pub async fn run(self, ctx: &ExtensionContext<'_>, request: Request) -> ServerResult<Request> {
         if let Some((first, next)) = self.chain.split_first() {
@@ -225,7 +225,7 @@ pub struct NextParseQuery<'a> {
     parse_query_fut: ParseFut<'a>,
 }
 
-impl<'a> NextParseQuery<'a> {
+impl NextParseQuery<'_> {
     /// Call the [Extension::parse_query] function of next extension.
     pub async fn run(
         self,
@@ -257,7 +257,7 @@ pub struct NextValidation<'a> {
     validation_fut: ValidationFut<'a>,
 }
 
-impl<'a> NextValidation<'a> {
+impl NextValidation<'_> {
     /// Call the [Extension::validation] function of next extension.
     pub async fn run(
         self,
@@ -286,7 +286,7 @@ pub struct NextExecute<'a> {
     execute_data: Option<Data>,
 }
 
-impl<'a> NextExecute<'a> {
+impl NextExecute<'_> {
     async fn internal_run(
         self,
         ctx: &ExtensionContext<'_>,
@@ -343,7 +343,7 @@ pub struct NextResolve<'a> {
     resolve_fut: ResolveFut<'a>,
 }
 
-impl<'a> NextResolve<'a> {
+impl NextResolve<'_> {
     /// Call the [Extension::resolve] function of next extension.
     pub async fn run(
         self,

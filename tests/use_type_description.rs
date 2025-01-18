@@ -41,7 +41,7 @@ pub async fn test_object_with_lifetime() {
     struct MyObj<'a>(&'a str);
 
     #[Object(use_type_description)]
-    impl<'a> MyObj<'a> {
+    impl MyObj<'_> {
         async fn value(&self) -> &str {
             self.0
         }
