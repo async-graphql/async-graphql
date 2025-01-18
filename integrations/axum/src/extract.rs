@@ -57,7 +57,6 @@ pub mod rejection {
     }
 }
 
-#[async_trait::async_trait]
 impl<S, R> FromRequest<S> for GraphQLRequest<R>
 where
     S: Send + Sync,
@@ -90,7 +89,6 @@ impl<R> GraphQLBatchRequest<R> {
     }
 }
 
-#[async_trait::async_trait]
 impl<S, R> FromRequest<S> for GraphQLBatchRequest<R>
 where
     S: Send + Sync,
