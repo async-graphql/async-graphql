@@ -3,7 +3,6 @@ use std::{
     cmp::Ordering,
     fmt,
     hash::{Hash, Hasher},
-    str::Chars,
 };
 
 use pest::{iterators::Pair, RuleType};
@@ -118,7 +117,7 @@ impl BorrowMut<str> for Positioned<String> {
 }
 
 pub(crate) struct PositionCalculator<'a> {
-    input: Chars<'a>,
+    input: &'a str,
     pos: usize,
     line: usize,
     column: usize,
@@ -127,7 +126,7 @@ pub(crate) struct PositionCalculator<'a> {
 impl<'a> PositionCalculator<'a> {
     pub(crate) fn new(input: &'a str) -> PositionCalculator<'a> {
         Self {
-            input: input.chars(),
+            input,
             pos: 0,
             line: 1,
             column: 1,
@@ -137,22 +136,24 @@ impl<'a> PositionCalculator<'a> {
     pub(crate) fn step<R: RuleType>(&mut self, pair: &Pair<R>) -> Pos {
         let pos = pair.as_span().start();
         debug_assert!(pos >= self.pos);
-        for _ in 0..pos - self.pos {
-            match self.input.next() {
-                Some('\r') => {
+        let bytes_to_read = pos - self.pos;
+        let chars_to_read = self.input[..bytes_to_read].chars();
+        for ch in chars_to_read {
+            match ch {
+                '\r' => {
                     self.column = 1;
                 }
-                Some('\n') => {
+                '\n' => {
                     self.line += 1;
                     self.column = 1;
                 }
-                Some(_) => {
+                _ => {
                     self.column += 1;
                 }
-                None => break,
             }
         }
         self.pos = pos;
+        self.input = &self.input[bytes_to_read..];
         Pos {
             line: self.line,
             column: self.column,
