@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update error messages for character length validation [#1657](https://github.com/async-graphql/async-graphql/pull/1657)
 - Upgrade to axum v0.8 [#1653](https://github.com/async-graphql/async-graphql/pull/1653)
+- Fix position calculator for unicode symbols [#1648](https://github.com/async-graphql/async-graphql/pull/1648)
 
 # [7.0.13] 2024-12-10
 
