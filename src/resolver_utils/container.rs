@@ -359,14 +359,14 @@ impl<'a> Fields<'a> {
 
                     let introspection_type_name = root.introspection_type_name();
 
-                    let applies_concrete_object = type_condition.map_or(false, |condition| {
+                    let applies_concrete_object = type_condition.is_some_and(|condition| {
                         introspection_type_name == condition
                             || ctx
                                 .schema_env
                                 .registry
                                 .implements
                                 .get(&*introspection_type_name)
-                                .map_or(false, |interfaces| interfaces.contains(condition))
+                                .is_some_and(|interfaces| interfaces.contains(condition))
                     });
                     if applies_concrete_object {
                         root.collect_all_fields(&ctx.with_selection_set(selection_set), self)?;

@@ -41,7 +41,7 @@ impl<'a> UserGuard<'a> {
 }
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<'a> Guard for UserGuard<'a> {
+impl Guard for UserGuard<'_> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if ctx.data_opt::<Username>().map(|name| name.0.as_str()) == Some(self.username) {
             Ok(())

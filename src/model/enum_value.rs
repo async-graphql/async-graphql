@@ -8,7 +8,7 @@ pub struct __EnumValue<'a> {
 /// placeholder for a string or numeric value. However an Enum value is returned
 /// in a JSON response as a string.
 #[Object(internal, name = "__EnumValue")]
-impl<'a> __EnumValue<'a> {
+impl __EnumValue<'_> {
     #[inline]
     async fn name(&self) -> &str {
         &self.value.name
