@@ -6,12 +6,16 @@ use futures_util::{stream, Stream};
 
 #[test]
 pub fn test_type_directive_1() {
-    #[TypeDirective(
-        location = "FieldDefinition",
-        location = "Object",
-        composable = "https://custom.spec.dev/extension/v1.0"
-    )]
-    fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
+    mod test_mod {
+        #[super::TypeDirective(
+            location = "FieldDefinition",
+            location = "Object",
+            composable = "https://custom.spec.dev/extension/v1.0"
+        )]
+        pub fn testDirective(scope: String, input: u32, opt: Option<u64>) {}
+    }
+
+    use test_mod::*;
 
     #[TypeDirective(
         location = "FieldDefinition",
@@ -37,9 +41,9 @@ pub fn test_type_directive_1() {
     )]
     impl Query {
         #[graphql(
-        directive = testDirective::apply("object field".to_string(), 4, None),
-        directive = noArgsDirective::apply())
-        ]
+            directive = test_mod::testDirective::apply("object field".to_string(), 4, None),
+            directive = noArgsDirective::apply()
+        )]
         async fn value(&self) -> &'static str {
             "abc"
         }
