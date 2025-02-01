@@ -335,7 +335,18 @@ impl From<&'static str> for Error {
     fn from(e: &'static str) -> Self {
         Self {
             message: e.to_string(),
-            source: Some(Arc::new(e)),
+            source: None,
+            extensions: None,
+        }
+    }
+}
+
+#[cfg(feature = "custom-error-conversion")]
+impl From<String> for Error {
+    fn from(e: String) -> Self {
+        Self {
+            message: e,
+            source: None,
             extensions: None,
         }
     }
