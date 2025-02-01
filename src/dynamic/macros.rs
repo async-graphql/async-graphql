@@ -162,6 +162,19 @@ macro_rules! impl_set_override_from {
     };
 }
 
+macro_rules! impl_set_semantic_nullability {
+    () => {
+        /// Semantic nullability
+        #[inline]
+        pub fn semantic_nullability(self, semantic_nullability: SemanticNullability) -> Self {
+            Self {
+                semantic_nullability,
+                ..self
+            }
+        }
+    };
+}
+
 macro_rules! impl_directive {
     () => {
         /// Attach directive to the entity

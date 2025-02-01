@@ -181,7 +181,7 @@ pub fn generate(
                     }
                 };
 
-                let entity_type = ty.value_type();
+                let entity_type = ty.value_type(object_args.internal);
                 let mut key_pat = Vec::new();
                 let mut key_getter = Vec::new();
                 let mut use_keys = Vec::new();
@@ -301,7 +301,7 @@ pub fn generate(
                             .into())
                         }
                     };
-                    let ty = ty.value_type();
+                    let ty = ty.value_type(object_args.internal);
                     let ident = &method.sig.ident;
 
                     schema_fields.push(quote! {
@@ -471,7 +471,7 @@ pub fn generate(
                         .into())
                     }
                 };
-                let schema_ty = ty.value_type();
+                let schema_ty = ty.value_type(object_args.internal);
                 let visible = visible_fn(&method_args.visible);
 
                 let complexity = if let Some(complexity) = &method_args.complexity {
@@ -516,6 +516,14 @@ pub fn generate(
                 } else {
                     quote! { ::std::option::Option::None }
                 };
+                let semantic_nullability = if method_args
+                    .semantic_non_null
+                    .unwrap_or(object_args.semantic_non_null)
+                {
+                    quote! { <#schema_ty as #crate_name::OutputType>::semantic_nullability() }
+                } else {
+                    quote! { #crate_name::registry::SemanticNullability::None }
+                };
 
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
@@ -539,7 +547,8 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        semantic_nullability: #semantic_nullability,
                     });
                 });
 
