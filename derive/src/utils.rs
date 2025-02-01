@@ -341,26 +341,34 @@ pub fn gen_directive_calls(
     directive_calls
         .iter()
         .map(|directive| {
-            let directive_name = if let Expr::Call(expr) = directive {
-                if let Expr::Path(ref expr) = *expr.func {
-                    expr.path.segments.first().map(|s| s.ident.clone())
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-            .expect(
-                "Directive invocation expression format must be <directive_name>::apply(<args>)",
+            let directive_path = extract_directive_call_path(directive).expect(
+                "Directive invocation expression format must be [<directive_path>::]<directive_name>::apply(<args>)",
             );
             let identifier = location.location_trait_identifier();
             quote!({
-                <#directive_name as async_graphql::registry::location_traits::#identifier>::check();
-                <#directive_name as async_graphql::TypeDirective>::register(&#directive_name, registry);
+                <#directive_path as async_graphql::registry::location_traits::#identifier>::check();
+                <#directive_path as async_graphql::TypeDirective>::register(&#directive_path, registry);
                 #directive
             })
         })
         .collect::<Vec<_>>()
+}
+
+fn extract_directive_call_path(directive: &Expr) -> Option<syn::Path> {
+    if let Expr::Call(expr) = directive {
+        if let Expr::Path(ref expr) = *expr.func {
+            let mut path = expr.path.clone();
+            if path.segments.pop()?.value().ident != "apply" {
+                return None;
+            }
+
+            path.segments.pop_punct()?;
+
+            return Some(path);
+        }
+    }
+
+    None
 }
 
 pub fn gen_boxed_trait(crate_name: &TokenStream) -> TokenStream {
