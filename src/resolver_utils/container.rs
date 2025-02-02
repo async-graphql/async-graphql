@@ -233,7 +233,17 @@ impl<'a> Fields<'a> {
                             if extensions.is_empty() && field.node.directives.is_empty() {
                                 Ok((
                                     field_name,
-                                    root.resolve_field(&ctx_field).await?.unwrap_or_default(),
+                                    match root.resolve_field(&ctx_field).await {
+                                        Ok(value) => value.unwrap_or_default(),
+                                        Err(err) => {
+                                            if cfg!(feature = "nullable-result") {
+                                                ctx_field.add_error(err);
+                                                Value::Null
+                                            } else {
+                                                return Err(err);
+                                            }
+                                        }
+                                    },
                                 ))
                             } else {
                                 let type_name = T::type_name();
@@ -277,10 +287,20 @@ impl<'a> Fields<'a> {
                                     futures_util::pin_mut!(resolve_fut);
                                     Ok((
                                         field_name,
-                                        extensions
+                                        match extensions
                                             .resolve(resolve_info, &mut resolve_fut)
-                                            .await?
-                                            .unwrap_or_default(),
+                                            .await
+                                        {
+                                            Ok(value) => value.unwrap_or_default(),
+                                            Err(err) => {
+                                                if cfg!(feature = "nullable-result") {
+                                                    ctx_field.add_error(err);
+                                                    Value::Null
+                                                } else {
+                                                    return Err(err);
+                                                }
+                                            }
+                                        },
                                     ))
                                 } else {
                                     let mut resolve_fut = resolve_fut.boxed();
@@ -314,10 +334,20 @@ impl<'a> Fields<'a> {
 
                                     Ok((
                                         field_name,
-                                        extensions
+                                        match extensions
                                             .resolve(resolve_info, &mut resolve_fut)
-                                            .await?
-                                            .unwrap_or_default(),
+                                            .await
+                                        {
+                                            Ok(value) => value.unwrap_or_default(),
+                                            Err(err) => {
+                                                if cfg!(feature = "nullable-result") {
+                                                    ctx_field.add_error(err);
+                                                    Value::Null
+                                                } else {
+                                                    return Err(err);
+                                                }
+                                            }
+                                        },
                                     ))
                                 }
                             }

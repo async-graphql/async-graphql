@@ -2,6 +2,8 @@ use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{Error, GenericArgument, PathArguments, Result, Type};
 
+use crate::utils::get_crate_name;
+
 pub enum OutputType<'a> {
     Value(&'a Type),
     Result(&'a Type),
@@ -42,10 +44,11 @@ impl<'a> OutputType<'a> {
         Ok(ty)
     }
 
-    pub fn value_type(&self) -> Type {
+    pub fn value_type(&self, internal: bool) -> Type {
+        let crate_name = get_crate_name(internal);
         let tokens = match self {
             OutputType::Value(ty) => quote! {#ty},
-            OutputType::Result(ty) => quote! {#ty},
+            OutputType::Result(ty) => quote! {#crate_name::Result<#ty>},
         };
         let mut ty = syn::parse2::<syn::Type>(tokens).unwrap();
         Self::remove_lifecycle(&mut ty);
