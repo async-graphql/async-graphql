@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [7.0.15] 2025-02-03
 
 - feat: Add `custom-error-conversion` feature [#1631](https://github.com/async-graphql/async-graphql/pull/1631)
+- Update graphql annotation directive property to support paths [#1663](https://github.com/async-graphql/async-graphql/pull/1663)
 
 # [7.0.14] 2025-01-22
 
