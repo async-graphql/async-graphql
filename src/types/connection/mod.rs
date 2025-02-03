@@ -354,7 +354,9 @@ where
 {
     let first = match first {
         Some(first) if first < 0 => {
-            return Err("The \"first\" parameter must be a non-negative number".into());
+            return Err(Error::new(
+                "The \"first\" parameter must be a non-negative number",
+            ));
         }
         Some(first) => Some(first as usize),
         None => None,
@@ -362,19 +364,21 @@ where
 
     let last = match last {
         Some(last) if last < 0 => {
-            return Err("The \"last\" parameter must be a non-negative number".into());
+            return Err(Error::new(
+                "The \"last\" parameter must be a non-negative number",
+            ));
         }
         Some(last) => Some(last as usize),
         None => None,
     };
 
     let before = match before {
-        Some(before) => Some(Cursor::decode_cursor(&before)?),
+        Some(before) => Some(Cursor::decode_cursor(&before).map_err(Error::new_with_source)?),
         None => None,
     };
 
     let after = match after {
-        Some(after) => Some(Cursor::decode_cursor(&after)?),
+        Some(after) => Some(Cursor::decode_cursor(&after).map_err(Error::new_with_source)?),
         None => None,
     };
 
