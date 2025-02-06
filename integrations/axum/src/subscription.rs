@@ -25,6 +25,8 @@ use futures_util::{
     Sink, SinkExt, Stream, StreamExt,
 };
 use tower_service::Service;
+#[cfg(feature = "tracing")]
+use tracing::{Instrument, Span};
 
 /// A GraphQL protocol extractor.
 ///
@@ -109,10 +111,16 @@ where
 
             let executor = executor.clone();
 
+            #[cfg(feature = "tracing")]
+            let span = Span::current();
+
             let resp = upgrade
                 .protocols(ALL_WEBSOCKET_PROTOCOLS)
                 .on_upgrade(move |stream| {
-                    GraphQLWebSocket::new(stream, executor, protocol).serve()
+                    let task = GraphQLWebSocket::new(stream, executor, protocol).serve();
+                    #[cfg(feature = "tracing")]
+                    let task = task.instrument(span);
+                    task
                 });
             Ok(resp.into_response())
         })
