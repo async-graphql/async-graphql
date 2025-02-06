@@ -105,7 +105,7 @@ where
                 Err(err) => return Ok(err.into_response()),
             };
             let upgrade = match WebSocketUpgrade::from_request_parts(&mut parts, &()).await {
-                Ok(protocol) => protocol,
+                Ok(upgrade) => upgrade,
                 Err(err) => return Ok(err.into_response()),
             };
 
