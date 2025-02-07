@@ -27,11 +27,16 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
     let directives =
         gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
     let gql_typename = if !object_args.name_type {
-        let name = object_args
+        let mut name = object_args
             .input_name
             .clone()
             .or_else(|| object_args.name.clone())
             .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+
+        if let Some(suffix) = &object_args.input_name_suffix {
+            name.push_str(suffix);
+        }
+
         quote!(::std::borrow::Cow::Borrowed(#name))
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
