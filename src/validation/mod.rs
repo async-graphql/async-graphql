@@ -43,6 +43,7 @@ pub(crate) fn check_rules(
     registry: &Registry,
     doc: &ExecutableDocument,
     variables: Option<&Variables>,
+    operation_name: Option<&str>,
     mode: ValidationMode,
     limit_complexity: Option<usize>,
     limit_depth: Option<usize>,
@@ -51,9 +52,9 @@ pub(crate) fn check_rules(
     let mut complexity = 0;
     let mut depth = 0;
 
+    let mut ctx = VisitorContext::new(registry, doc, variables, operation_name);
     let errors = match mode {
         ValidationMode::Strict => {
-            let mut ctx = VisitorContext::new(registry, doc, variables);
             let mut visitor = VisitorNil
                 .with(rules::ArgumentsOfCorrectType::default())
                 .with(rules::DefaultValuesOfCorrectType)
@@ -89,7 +90,6 @@ pub(crate) fn check_rules(
             ctx.errors
         }
         ValidationMode::Fast => {
-            let mut ctx = VisitorContext::new(registry, doc, variables);
             let mut visitor = VisitorNil
                 .with(rules::NoFragmentCycles::default())
                 .with(rules::UploadFile)

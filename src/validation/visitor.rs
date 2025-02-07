@@ -19,6 +19,7 @@ use crate::{
 pub struct VisitorContext<'a> {
     pub(crate) registry: &'a registry::Registry,
     pub(crate) variables: Option<&'a Variables>,
+    pub(crate) operation_name: Option<&'a str>,
     pub(crate) errors: Vec<RuleError>,
     type_stack: Vec<Option<&'a registry::MetaType>>,
     input_type: Vec<Option<MetaTypeName<'a>>>,
@@ -30,10 +31,12 @@ impl<'a> VisitorContext<'a> {
         registry: &'a registry::Registry,
         doc: &'a ExecutableDocument,
         variables: Option<&'a Variables>,
+        operation_name: Option<&'a str>,
     ) -> Self {
         Self {
             registry,
             variables,
+            operation_name,
             errors: Default::default(),
             type_stack: Default::default(),
             input_type: Default::default(),

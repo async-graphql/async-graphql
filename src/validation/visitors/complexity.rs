@@ -194,7 +194,7 @@ mod tests {
         let registry =
             Schema::<Query, EmptyMutation, Subscription>::create_registry(Default::default());
         let doc = parse_query(query).unwrap();
-        let mut ctx = VisitorContext::new(&registry, &doc, None);
+        let mut ctx = VisitorContext::new(&registry, &doc, None, None);
         let mut complexity = 0;
         let mut complexity_calculate = ComplexityCalculate::new(&mut complexity);
         visit(&mut complexity_calculate, &mut ctx, &doc);

@@ -78,7 +78,7 @@ mod tests {
         let registry =
             Schema::<Query, EmptyMutation, EmptySubscription>::create_registry(Default::default());
         let doc = parse_query(query).unwrap();
-        let mut ctx = VisitorContext::new(&registry, &doc, None);
+        let mut ctx = VisitorContext::new(&registry, &doc, None, None);
         let mut depth = 0;
         let mut depth_calculate = DepthCalculate::new(&mut depth);
         visit(&mut depth_calculate, &mut ctx, &doc);
