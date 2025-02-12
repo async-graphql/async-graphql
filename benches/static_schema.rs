@@ -175,7 +175,7 @@ pub struct Human<'a>(&'a StarWarsChar);
 
 /// A humanoid creature in the Star Wars universe.
 #[Object]
-impl<'a> Human<'a> {
+impl Human<'_> {
     /// The id of the human.
     async fn id(&self) -> &str {
         self.0.id
@@ -217,7 +217,7 @@ pub struct Droid<'a>(&'a StarWarsChar);
 
 /// A mechanical creature in the Star Wars universe.
 #[Object]
-impl<'a> Droid<'a> {
+impl Droid<'_> {
     /// The id of the droid.
     async fn id(&self) -> &str {
         self.0.id
