@@ -60,13 +60,13 @@ indexmap.workspace = true
 mime = "0.3.17"
 multer = "3.0.0"
 num-traits = "0.2.18"
-pin-project-lite = "0.2.14"
-regex = "1.10.4"
+pin-project-lite = "0.2.16"
+regex = "1.11.1"
 serde.workspace = true
 serde_json.workspace = true
 static_assertions_next = "1.1.2"
 thiserror.workspace = true
-base64 = "0.22.0"
+base64 = "0.22.1"
 serde_urlencoded = "0.7.1"
 http.workspace = true
 futures-timer = "3.0.3"
@@ -76,45 +76,45 @@ bson = { version = "2.9.0", optional = true, features = [
   "chrono-0_4",
   "uuid-1",
 ] }
-chrono = { version = "0.4.37", optional = true, default-features = false, features = [
+chrono = { version = "0.4.39", optional = true, default-features = false, features = [
   "clock",
   "std",
 ] }
-chrono-tz = { version = "0.10.0", optional = true }
+chrono-tz = { version = "0.10.1", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
-hashbrown = { version = "0.14.5", optional = true }
-iso8601 = { version = "0.6.1", optional = true }
-log = { version = "0.4.21", optional = true }
+hashbrown = { version = "0.15.2", optional = true }
+iso8601 = { version = "0.6.2", optional = true }
+log = { version = "0.4.25", optional = true }
 opentelemetry = { version = "0.27.0", optional = true, default-features = false, features = [
   "trace",
 ] }
 rust_decimal = { version = "1.35.0", optional = true, default-features = false }
 bigdecimal = { version = ">=0.3.0, <0.5.0", optional = true, default-features = false }
 secrecy = { version = "0.10.3", optional = true }
-smol_str = { version = "0.3.1", optional = true }
-time = { version = "0.3.36", optional = true, features = [
+smol_str = { version = "0.3.2", optional = true }
+time = { version = "0.3.37", optional = true, features = [
   "parsing",
   "formatting",
   "macros",
 ] }
-tokio = { version = "1.37.0", features = ["sync"], optional = true }
+tokio = { version = "1.43.0", features = ["sync"], optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracinglib = { version = "0.1.40", optional = true, package = "tracing" }
-url = { version = "2.5.0", optional = true }
-uuid = { version = "1.8.0", optional = true, features = ["v4", "serde"] }
-tempfile = { version = "3.10.1", optional = true }
+tracinglib = { version = "0.1.41", optional = true, package = "tracing" }
+url = { version = "2.5.4", optional = true }
+uuid = { version = "1.13.1", optional = true, features = ["v4", "serde"] }
+tempfile = { version = "3.16.0", optional = true }
 
 # Non-feature optional dependencies
 blocking = { version = "1.6.1", optional = true }
 futures-channel = { version = "0.3.30", optional = true }
-lru = { version = "0.12.3", optional = true }
+lru = { version = "0.13.0", optional = true }
 serde_cbor = { version = "0.11.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
 zxcvbn = { version = "2.2.2", optional = true }
-handlebars = { version = "5.1.2", optional = true }
+handlebars = { version = "6.3.1", optional = true }
 schemars = { version = "0.8.21", optional = true }
 
 [dev-dependencies]
@@ -152,12 +152,12 @@ async-graphql-derive = { path = "derive", version = "7.0.15" }
 async-graphql-parser = { path = "parser", version = "7.0.15" }
 async-graphql-value = { path = "value", version = "7.0.15" }
 
-serde = { version = "1.0.197", features = ["derive"] }
-serde_json = "1.0.115"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
 indexmap = { version = "2", features = ["serde"] }
 bytes = { version = "1.6.0", features = ["serde"] }
-thiserror = "1.0.58"
-async-trait = "0.1.79"
+thiserror = "2.0.11"
+async-trait = "0.1.86"
 futures-util = { version = "0.3.30", default-features = false }
-tokio-util = { version = "0.7.10", default-features = false }
-http = { package = "http", version = "1.1.0" }
+tokio-util = { version = "0.7.13", default-features = false }
+http = { package = "http", version = "1.2.0" }
