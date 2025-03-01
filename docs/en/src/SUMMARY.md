@@ -15,6 +15,7 @@
   - [InputObject](define_input_object.md)
   - [OneofObject](define_one_of_object.md)
   - [Default value](default_value.md)
+  - [Generics](generic.md)
 - [Schema](define_schema.md)
   - [Query and Mutation](query_and_mutation.md)
   - [Subscription](subscription.md)
