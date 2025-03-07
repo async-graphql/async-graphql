@@ -152,7 +152,7 @@ impl Registry {
                 return;
             }
 
-            writeln!(sdl, "{}", directive.sdl()).ok();
+            writeln!(sdl, "{}", directive.sdl(&options)).ok();
         });
 
         if options.federation {
@@ -664,7 +664,7 @@ impl Registry {
     }
 }
 
-fn write_description(
+pub(super) fn write_description(
     sdl: &mut String,
     options: &SDLExportOptions,
     level: usize,

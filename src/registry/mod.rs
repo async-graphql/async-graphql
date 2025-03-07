@@ -727,8 +727,15 @@ pub struct MetaDirective {
 }
 
 impl MetaDirective {
-    pub(crate) fn sdl(&self) -> String {
-        let mut sdl = format!("directive @{}", self.name);
+    pub(crate) fn sdl(&self, options: &SDLExportOptions) -> String {
+        let mut sdl = String::new();
+
+        if let Some(description) = &self.description {
+            self::export_sdl::write_description(&mut sdl, options, 0, description);
+        }
+
+        write!(sdl, "directive @{}", self.name).ok();
+
         if !self.args.is_empty() {
             let args = self
                 .args
@@ -903,8 +910,8 @@ impl Registry {
         self.add_directive(MetaDirective {
             name: "oneOf".into(),
             description: Some(
-                "Indicates that an Input Object is a OneOf Input Object (and thus requires
-                        exactly one of its field be provided)"
+                "Indicates that an Input Object is a OneOf Input Object (and thus requires \
+                exactly one of its field be provided)"
                     .to_string(),
             ),
             locations: vec![__DirectiveLocation::INPUT_OBJECT],
