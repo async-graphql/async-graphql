@@ -14,9 +14,9 @@ impl ScalarType for ObjectId {
             Value::Object(o) => {
                 let json = Value::Object(o).into_json()?;
                 let bson = Bson::try_from(json)?;
-                bson.as_object_id().ok_or(InputValueError::custom(
-                    "could not parse the value as a BSON ObjectId",
-                ))
+                bson.as_object_id().ok_or_else(|| {
+                    InputValueError::custom("could not parse the value as a BSON ObjectId")
+                })
             }
             _ => Err(InputValueError::expected_type(value)),
         }
