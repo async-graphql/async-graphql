@@ -27,7 +27,7 @@ pub trait CacheStorage: Send + Sync + 'static {
 
     /// Returns a reference to the value of the key in the cache or None if it
     /// is not present in the cache.
-    fn get(&mut self, key: &Self::Key) -> Option<&Self::Value>;
+    fn get(&mut self, key: &Self::Key) -> Option<Self::Value>;
 
     /// Puts a key-value pair into the cache. If the key already exists in the
     /// cache, then it updates the key's value.
@@ -73,7 +73,7 @@ where
     type Value = V;
 
     #[inline]
-    fn get(&mut self, _key: &K) -> Option<&V> {
+    fn get(&mut self, _key: &K) -> Option<V> {
         None
     }
 
@@ -131,8 +131,8 @@ where
     type Value = V;
 
     #[inline]
-    fn get(&mut self, key: &Self::Key) -> Option<&Self::Value> {
-        self.0.get(key)
+    fn get(&mut self, key: &Self::Key) -> Option<Self::Value> {
+        self.0.get(key).cloned()
     }
 
     #[inline]
@@ -190,8 +190,8 @@ where
     type Value = V;
 
     #[inline]
-    fn get(&mut self, key: &Self::Key) -> Option<&Self::Value> {
-        self.0.get(key)
+    fn get(&mut self, key: &Self::Key) -> Option<Self::Value> {
+        self.0.get(key).cloned()
     }
 
     #[inline]
