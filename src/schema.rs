@@ -33,7 +33,7 @@ pub enum IntrospectionMode {
     /// Introspection only
     IntrospectionOnly,
     /// Introspection of __typename only
-    IntrospectioTypeNamenOnly,
+    IntrospectioTypeNameOnly,
     /// Enables introspection
     #[default]
     Enabled,

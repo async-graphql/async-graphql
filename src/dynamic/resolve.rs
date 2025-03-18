@@ -57,10 +57,10 @@ fn collect_typename_field<'a>(
 ) {
     if matches!(
         ctx.schema_env.registry.introspection_mode,
-        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly | IntrospectionMode::IntrospectioTypeNamenOnly 
+        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly | IntrospectionMode::IntrospectioTypeNameOnly 
     ) && matches!(
         ctx.query_env.introspection_mode,
-        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly | IntrospectionMode::IntrospectioTypeNamenOnly ,
+        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly | IntrospectionMode::IntrospectioTypeNameOnly ,
     ) {
         fields.push(
             async move {
