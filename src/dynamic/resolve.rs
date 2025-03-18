@@ -55,26 +55,15 @@ fn collect_typename_field<'a>(
     ctx: &ContextSelectionSet<'a>,
     field: &'a Positioned<Field>,
 ) {
-    if matches!(
-        ctx.schema_env.registry.introspection_mode,
-        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
-    ) && matches!(
-        ctx.query_env.introspection_mode,
-        IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly,
-    ) {
-        fields.push(
-            async move {
-                Ok((
-                    field.node.response_key().node.clone(),
-                    Value::from(object.name.as_str()),
-                ))
-            }
-            .boxed(),
-        )
-    } else {
-        fields
-            .push(async move { Ok((field.node.response_key().node.clone(), Value::Null)) }.boxed())
-    }
+    fields.push(
+        async move {
+            Ok((
+                field.node.response_key().node.clone(),
+                Value::from(object.name.as_str()),
+            ))
+        }
+        .boxed(),
+    )
 }
 
 fn collect_schema_field<'a>(
