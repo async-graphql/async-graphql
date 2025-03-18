@@ -32,6 +32,8 @@ use crate::{
 pub enum IntrospectionMode {
     /// Introspection only
     IntrospectionOnly,
+    /// Introspection of __typename only
+    IntrospectioTypeNamenOnly,
     /// Enables introspection
     #[default]
     Enabled,

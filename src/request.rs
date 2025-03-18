@@ -99,6 +99,13 @@ impl Request {
         self
     }
 
+    /// Enable introspection for __typename field for queries.
+    #[must_use]
+    pub fn introspection_type_name_only(mut self) -> Self {
+        self.introspection_mode = IntrospectionMode::IntrospectioTypeNamenOnly;
+        self
+    }
+
     /// Only allow introspection queries for this request.
     #[must_use]
     pub fn only_introspection(mut self) -> Self {
