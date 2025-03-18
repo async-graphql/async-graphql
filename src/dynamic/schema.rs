@@ -122,7 +122,7 @@ impl SchemaBuilder {
     /// Enable introspection for __typename field for queries.
     #[must_use]
     pub fn introspection_type_name_only(mut self) -> Self {
-        self.introspection_mode = IntrospectionMode::IntrospectioTypeNameOnly;
+        self.introspection_mode = IntrospectionMode::IntrospectTypeNameOnly;
         self
     }
 
