@@ -53,7 +53,7 @@ pub struct ServerError {
 }
 
 fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
-    values.as_ref().map_or(true, |values| values.0.is_empty())
+    values.as_ref().is_none_or(|values| values.0.is_empty())
 }
 
 impl Debug for ServerError {

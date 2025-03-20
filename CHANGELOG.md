@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.16] 2025-03-20
+
+- dynamic: fixed `__typename` always returned `null` when introspection was disabled.
+- update MSRV to `1.83.0`
+
 # [7.0.15] 2025-02-03
 
 - feat: Add `custom-error-conversion` feature [#1631](https://github.com/async-graphql/async-graphql/pull/1631)
@@ -21,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [7.0.12] 2024-12-08
 
-- update MSRV to `1.81.0`
+- update MSRV to `1.83.0`
 - Add specified complexity for fields in `SimpleObject`.
 - feat: expose SDL export utilities in ExtensionContext [#1606](https://github.com/async-graphql/async-graphql/pull/1606)
 - feat(dynamic-schema): specify type directives in schema [#1607](https://github.com/async-graphql/async-graphql/pull/1607)
