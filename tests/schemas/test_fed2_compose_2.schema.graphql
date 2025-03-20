@@ -44,8 +44,17 @@ type TestSimpleObject @type_directive_object(description: "This is OBJECT in Sim
 	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in SimpleObject")
 }
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Indicates that an Input Object is a OneOf Input Object (and thus requires exactly one of its field be provided)
+"""
 directive @oneOf on INPUT_OBJECT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @type_directive_argument_definition(description: String!) on ARGUMENT_DEFINITION
 directive @type_directive_enum(description: String!) on ENUM

@@ -20,7 +20,13 @@ extend type User @key(fields: "id") {
 	reviews: [Review!]!
 }
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 extend schema @link(
 	url: "https://specs.apollo.dev/federation/v2.3",
