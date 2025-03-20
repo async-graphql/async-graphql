@@ -370,7 +370,7 @@ impl<'a> Fields<'a> {
                     });
                     if applies_concrete_object {
                         root.collect_all_fields(&ctx.with_selection_set(selection_set), self)?;
-                    } else if type_condition.map_or(true, |condition| T::type_name() == condition) {
+                    } else if type_condition.is_none_or(|condition| T::type_name() == condition) {
                         // The fragment applies to an interface type.
                         self.add_set(&ctx.with_selection_set(selection_set), root)?;
                     }
