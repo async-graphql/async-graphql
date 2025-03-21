@@ -1,7 +1,3 @@
-
-
-
-
 type Query {
 	testArgument(arg1: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object.arg1"), arg2: String! @type_directive_argument_definition(description: "This is ARGUMENT_DEFINITION in Object.arg2")): String!
 	testInputObject(arg: TestInput!): String!
@@ -11,7 +7,6 @@ type Query {
 	testEnum(arg: TestEnum!): String!
 	testInterface: TestObjectForInterface!
 }
-
 
 type TestComplexObject @type_directive_object(description: "This is OBJECT in (Complex / Simple)Object") {
 	field: String! @type_directive_field_definition(description: "This is FIELD_DEFINITION in (Complex / Simple)Object")
