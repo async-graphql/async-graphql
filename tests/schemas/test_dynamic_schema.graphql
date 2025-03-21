@@ -1,10 +1,6 @@
-
-
-
 input InputType @a @b {
 	a: String! @input_a(test: 5)
 }
-
 
 type OutputType implements TestInterface @type {
 	id: String! @test
@@ -23,7 +19,6 @@ type Query {
 	union: TestUnion!
 	scalar: TestScalar
 }
-
 
 enum TestEnum @oneOf {
 	A
