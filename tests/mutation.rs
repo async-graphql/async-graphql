@@ -22,13 +22,13 @@ pub async fn test_root_mutation_execution_order() {
     impl Mutation {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            ctx.data_unchecked::<List>().lock().await.push(1);
+            ctx.data::<List>().unwrap().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(500)).await;
-            ctx.data_unchecked::<List>().lock().await.push(2);
+            ctx.data::<List>().unwrap().lock().await.push(2);
             true
         }
     }
@@ -94,13 +94,13 @@ pub async fn test_serial_object() {
     impl MyObj {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            ctx.data_unchecked::<List>().lock().await.push(1);
+            ctx.data::<List>().unwrap().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(500)).await;
-            ctx.data_unchecked::<List>().lock().await.push(2);
+            ctx.data::<List>().unwrap().lock().await.push(2);
             true
         }
     }
@@ -145,13 +145,13 @@ pub async fn test_serial_simple_object() {
     impl MyObj {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            ctx.data_unchecked::<List>().lock().await.push(1);
+            ctx.data::<List>().unwrap().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(500)).await;
-            ctx.data_unchecked::<List>().lock().await.push(2);
+            ctx.data::<List>().unwrap().lock().await.push(2);
             true
         }
     }
@@ -196,13 +196,13 @@ pub async fn test_serial_merged_object() {
     impl MyObj1 {
         async fn append1(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            ctx.data_unchecked::<List>().lock().await.push(1);
+            ctx.data::<List>().unwrap().lock().await.push(1);
             true
         }
 
         async fn append2(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(500)).await;
-            ctx.data_unchecked::<List>().lock().await.push(2);
+            ctx.data::<List>().unwrap().lock().await.push(2);
             true
         }
     }
@@ -213,13 +213,13 @@ pub async fn test_serial_merged_object() {
     impl MyObj2 {
         async fn append3(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(200)).await;
-            ctx.data_unchecked::<List>().lock().await.push(3);
+            ctx.data::<List>().unwrap().lock().await.push(3);
             true
         }
 
         async fn append4(&self, ctx: &Context<'_>) -> bool {
             tokio::time::sleep(Duration::from_millis(700)).await;
-            ctx.data_unchecked::<List>().lock().await.push(4);
+            ctx.data::<List>().unwrap().lock().await.push(4);
             true
         }
     }

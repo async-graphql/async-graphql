@@ -20,7 +20,7 @@ impl RoleGuard {
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl Guard for RoleGuard {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        if ctx.data_opt::<Role>() == Some(&self.role) {
+        if ctx.data::<Role>().ok() == Some(&self.role) {
             Ok(())
         } else {
             Err("Forbidden".into())
@@ -43,7 +43,7 @@ impl<'a> UserGuard<'a> {
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl Guard for UserGuard<'_> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
-        if ctx.data_opt::<Username>().map(|name| name.0.as_str()) == Some(self.username) {
+        if ctx.data::<Username>().ok().map(|name| name.0.as_str()) == Some(self.username) {
             Ok(())
         } else {
             Err("Forbidden".into())
@@ -587,7 +587,7 @@ pub async fn test_guard_on_complex_object_field() {
 #[tokio::test]
 pub async fn test_guard_with_fn() {
     fn is_admin(ctx: &Context<'_>) -> Result<()> {
-        if ctx.data_opt::<Role>() == Some(&Role::Admin) {
+        if ctx.data::<Role>().ok() == Some(&Role::Admin) {
             Ok(())
         } else {
             Err("Forbidden".into())

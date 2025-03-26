@@ -20,7 +20,7 @@ struct User {
 #[Object]
 impl User {
     async fn name(&self, ctx: &Context<'_>) -> Result<String> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let pool = ctx.data::<Pool<Postgres>>().unwrap();
         let (name,): (String,) = sqlx::query_as("SELECT name FROM user WHERE id = $1")
             .bind(self.id)
             .fetch_one(pool)
@@ -94,7 +94,7 @@ struct User {
 #[Object]
 impl User {
     async fn name(&self, ctx: &Context<'_>) -> Result<String> {
-        let loader = ctx.data_unchecked::<DataLoader<UserNameLoader>>();
+        let loader = ctx.data::<DataLoader<UserNameLoader>>().unwrap();
         let name: Option<String> = loader.load_one(self.id).await?;
         name.ok_or_else(|| "Not found".into())
     }

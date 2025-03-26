@@ -74,7 +74,7 @@ async fn hello() -> Result<()> {
         impl QueryRoot {
             /// Returns hello
             async fn hello<'a>(&self, ctx: &'a Context<'_>) -> String {
-                let name = ctx.data_opt::<Hello>().map(|hello| hello.0.as_str());
+                let name = ctx.data::<Hello>().ok().map(|hello| hello.0.as_str());
                 format!("Hello, {}!", name.unwrap_or("world"))
             }
         }

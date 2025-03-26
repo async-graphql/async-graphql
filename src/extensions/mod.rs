@@ -53,11 +53,11 @@ impl<'a> DataContext<'a> for ExtensionContext<'a> {
     }
 
     fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
-        ExtensionContext::data_unchecked::<D>(self)
+        ExtensionContext::data::<D>(self).unwrap()
     }
 
     fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
-        ExtensionContext::data_opt::<D>(self)
+        ExtensionContext::data::<D>(self).ok()
     }
 }
 
@@ -91,12 +91,17 @@ impl<'a> ExtensionContext<'a> {
     ///
     /// Returns a `Error` if the specified type data does not exist.
     pub fn data<D: Any + Send + Sync>(&self) -> Result<&'a D> {
-        self.data_opt::<D>().ok_or_else(|| {
-            Error::new(format!(
-                "Data `{}` does not exist.",
-                std::any::type_name::<D>()
-            ))
-        })
+        self.query_data
+            .and_then(|query_data| query_data.get(&TypeId::of::<D>()))
+            .or_else(|| self.session_data.get(&TypeId::of::<D>()))
+            .or_else(|| self.schema_env.data.get(&TypeId::of::<D>()))
+            .and_then(|d| d.downcast_ref::<D>())
+            .ok_or_else(|| {
+                Error::new(format!(
+                    "Data `{}` does not exist.",
+                    std::any::type_name::<D>()
+                ))
+            })
     }
 
     /// Gets the global data defined in the `Context` or `Schema`.
@@ -104,19 +109,16 @@ impl<'a> ExtensionContext<'a> {
     /// # Panics
     ///
     /// It will panic if the specified data type does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().unwrap()` instead.")]
     pub fn data_unchecked<D: Any + Send + Sync>(&self) -> &'a D {
-        self.data_opt::<D>()
-            .unwrap_or_else(|| panic!("Data `{}` does not exist.", std::any::type_name::<D>()))
+        self.data::<D>().unwrap()
     }
 
     /// Gets the global data defined in the `Context` or `Schema` or `None` if
     /// the specified type data does not exist.
+    #[deprecated(since = "7.0.12", note = "Use `data::<D>().ok()` instead.")]
     pub fn data_opt<D: Any + Send + Sync>(&self) -> Option<&'a D> {
-        self.query_data
-            .and_then(|query_data| query_data.get(&TypeId::of::<D>()))
-            .or_else(|| self.session_data.get(&TypeId::of::<D>()))
-            .or_else(|| self.schema_env.data.get(&TypeId::of::<D>()))
-            .and_then(|d| d.downcast_ref::<D>())
+        self.data::<D>().ok()
     }
 }
 
