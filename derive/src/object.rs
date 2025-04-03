@@ -38,6 +38,11 @@ pub fn generate(
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let requires_scopes = object_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
         object_args
@@ -340,6 +345,11 @@ pub fn generate(
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+                let requires_scopes = method_args
+                    .requires_scopes
+                    .iter()
+                    .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+                    .collect::<Vec<_>>();
 
                 unresolvable_key.push_str(&field_name);
                 unresolvable_key.push(' ');
@@ -539,7 +549,8 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     });
                 });
 
@@ -703,7 +714,8 @@ pub fn generate(
                             visible: #visible,
                             is_subscription: false,
                             rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                            directive_invocations: ::std::vec![ #(#directives),* ]
+                            directive_invocations: ::std::vec![ #(#directives),* ],
+                            requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*
@@ -757,6 +769,7 @@ pub fn generate(
                             is_subscription: false,
                             rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                             directive_invocations: ::std::vec![ #(#directives),* ],
+                            requires_scopes: ::std::vec![],
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*

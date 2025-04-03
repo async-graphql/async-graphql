@@ -837,6 +837,178 @@ pub async fn test_entity_tag() {
 }
 
 #[tokio::test]
+pub async fn test_entity_requires_scopes() {
+    struct MyCustomObjRequiresScoped;
+
+    #[Object(
+        requires_scopes = "requires scopes with",
+        requires_scopes = "multiple scopes"
+    )]
+    impl MyCustomObjRequiresScoped {
+        async fn a(&self) -> i32 {
+            todo!()
+        }
+
+        #[graphql(requires_scopes = "custom:field")]
+        async fn custom_object_requires_scoped(&self) -> i32 {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct MyObjFieldRequiresScoped {
+        #[graphql(
+            requires_scopes = "fielda:scoped read:all",
+            requires_scopes = "read:others"
+        )]
+        obj_field_requires_scoped_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(requires_scopes = "myobj:read")]
+    struct MyObjRequiresScoped {
+        a: i32,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    #[graphql(requires_scopes = "enum:read")]
+    enum MyEnumRequiresScoped {
+        OptionA,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyInterfaceObjA {
+        requires_scoped_interface_value: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(requires_scopes = "objB:read")]
+    struct MyInterfaceObjB {
+        requires_scoped_interface_value: String,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(
+        name = "requires_scoped_interface_value",
+        ty = "String",
+        requires_scopes = "read:interface"
+    ))]
+    #[graphql(requires_scopes = "read:all")]
+    enum MyInterfaceRequiresScoped {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    struct MyNumberRequiresScoped(i32);
+
+    #[Scalar(requires_scopes = "scalar:read")]
+    impl ScalarType for MyNumberRequiresScoped {
+        fn parse(_value: Value) -> InputValueResult<Self> {
+            todo!()
+        }
+
+        fn to_value(&self) -> Value {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyComplexObjRequiresScoped {
+        complex_a: i32,
+    }
+
+    #[ComplexObject]
+    impl MyComplexObjRequiresScoped {
+        #[graphql(requires_scopes = "read:complex")]
+        async fn complex_b(&self) -> i32 {
+            self.complex_a
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(requires_scopes = "scoped:field")]
+        async fn requires_scoped_field(&self, _id: i32) -> i32 {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_field_requires_scoped(&self, _id: i32) -> MyObjFieldRequiresScoped {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_requires_scoped(&self, _id: i32) -> MyObjRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_enum(&self, _id: i32) -> MyEnumRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_interface(&self) -> MyInterfaceRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_scalar(&self) -> MyNumberRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_custom_object(&self) -> MyCustomObjRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_complex_object(&self) -> MyComplexObjRequiresScoped {
+            MyComplexObjRequiresScoped { complex_a: 10 }
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    // FIELD_DEFINITION
+    assert!(schema_sdl.contains(
+        r#"requiresScopedField(id: Int!): Int! @requiresScopes(scopes: [["scoped:field"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"objFieldRequiresScopedA: Int! @requiresScopes(scopes: [["fielda:scoped", "read:all"], ["read:others"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"requiresScopedInterfaceValue: String! @requiresScopes(scopes: [["read:interface"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"customObjectRequiresScoped: Int! @requiresScopes(scopes: [["custom:field"]])"#
+    ));
+    assert!(schema_sdl.contains(r#"complexB: Int! @requiresScopes(scopes: [["read:complex"]])"#));
+    // INTERFACE
+    assert!(schema_sdl.contains(
+        r#"interface MyInterfaceRequiresScoped @requiresScopes(scopes: [["read:all"]])"#
+    ));
+    // OBJECT
+    assert!(schema_sdl
+        .contains(r#"type MyCustomObjRequiresScoped @requiresScopes(scopes: [["requires", "scopes", "with"], ["multiple", "scopes"]]) {"#));
+    assert!(schema_sdl.contains(
+        r#"type MyObjRequiresScoped @key(fields: "id") @requiresScopes(scopes: [["myobj:read"]]) {"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"type MyInterfaceObjB implements MyInterfaceRequiresScoped @requiresScopes(scopes: [["objB:read"]])"#
+    ));
+    // SCALAR
+    assert!(schema_sdl
+        .contains(r#"scalar MyNumberRequiresScoped @requiresScopes(scopes: [["scalar:read"]])"#));
+    // ENUM
+    assert!(schema_sdl
+        .contains(r#"enum MyEnumRequiresScoped @requiresScopes(scopes: [["enum:read"]])"#));
+    // no trailing spaces
+    assert!(!schema_sdl.contains(" \n"));
+}
+
+#[tokio::test]
 pub async fn test_interface_object() {
     #[derive(SimpleObject)]
     struct VariantA {

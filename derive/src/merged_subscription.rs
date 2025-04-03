@@ -88,6 +88,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                         is_subscription: true,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::default::Default::default(),
+                        requires_scopes: ::std::default::Default::default(),
                     }
                 })
             }

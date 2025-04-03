@@ -191,6 +191,11 @@ pub fn generate(
                 .iter()
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
+            let requires_scopes = method_args
+                .requires_scopes
+                .iter()
+                .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+                .collect::<Vec<_>>();
             let requires = match &method_args.requires {
                 Some(requires) => {
                     quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#requires)) }
@@ -401,6 +406,7 @@ pub fn generate(
                     visible: #visible,
                     compute_complexity: #complexity,
                     directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 }));
             });
 

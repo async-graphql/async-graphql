@@ -43,6 +43,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let requires_scopes = object_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let object_directives =
         gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
@@ -149,6 +154,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+        let requires_scopes = field
+            .requires_scopes
+            .iter()
+            .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+            .collect::<Vec<_>>();
         let override_from = match &field.override_from {
             Some(from) => {
                 quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
@@ -189,11 +199,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 field.cache_control.max_age as i32
             };
             quote! {
-                #crate_name::CacheControl {
-                    public: #public,
-                    max_age: #max_age,
+            #crate_name::CacheControl {
+                        public: #public,
+                        max_age: #max_age,
+                    }
                 }
-            }
         };
 
         let visible = visible_fn(&field.visible);
@@ -230,6 +240,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     visible: #visible,
                     compute_complexity: #complexity,
                     directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 });
             });
         } else {
@@ -430,6 +441,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#object_directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     })
                 }
 
@@ -494,6 +506,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#object_directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     })
                 }
 

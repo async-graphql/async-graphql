@@ -87,6 +87,7 @@ where
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }
@@ -150,6 +151,7 @@ where
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }
@@ -189,6 +191,7 @@ impl SubscriptionType for MergedObjectTail {
             is_subscription: false,
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

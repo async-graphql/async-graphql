@@ -134,6 +134,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![],
                     }
                 })
             }

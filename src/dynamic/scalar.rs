@@ -51,6 +51,7 @@ pub struct Scalar {
     inaccessible: bool,
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
+    requires_scopes: Vec<String>,
 }
 
 impl Debug for Scalar {
@@ -61,6 +62,7 @@ impl Debug for Scalar {
             .field("specified_by_url", &self.specified_by_url)
             .field("inaccessible", &self.inaccessible)
             .field("tags", &self.tags)
+            .field("requires_scopes", &self.requires_scopes)
             .finish()
     }
 }
@@ -77,6 +79,7 @@ impl Scalar {
             inaccessible: false,
             tags: Vec::new(),
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 
@@ -129,6 +132,7 @@ impl Scalar {
                 tags: self.tags.clone(),
                 specified_by_url: self.specified_by_url.clone(),
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
+                requires_scopes: self.requires_scopes.clone(),
             },
         );
         Ok(())

@@ -36,6 +36,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let requires_scopes = enum_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let directives = gen_directive_calls(&enum_args.directives, TypeDirectiveLocation::Enum);
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
@@ -187,7 +192,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     }
                 })
             }
