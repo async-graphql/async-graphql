@@ -280,6 +280,7 @@ impl Interface {
 #[cfg(test)]
 mod tests {
     use async_graphql_parser::Pos;
+    use indexmap::IndexMap;
 
     use crate::{dynamic::*, value, PathSegment, ServerError, Value};
 
@@ -352,6 +353,196 @@ mod tests {
                     "__typename": "MyObjB",
                     "a": 300,
                     "c": 400,
+                }
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn subtype_of_interface() {
+        let interface1 = Interface::new("MyInterface1")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface1")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }))
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .implement("MyInterface1")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(300))) })
+            }))
+            .field(Field::new("c", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(400))) })
+            }));
+
+        let interface2 = Interface::new("MyInterface2")
+            .field(InterfaceField::new("child", TypeRef::named("MyInterface1")));
+
+        let obj_c = Object::new("MyObjC")
+            .implement("MyInterface2")
+            .field(Field::new("child", TypeRef::named("MyObjA"), |_| {
+                FieldFuture::new(async {
+                    Ok(Some(Value::Object(IndexMap::from([
+                        (
+                            async_graphql_value::Name::new("__typename"),
+                            Value::from("MyObjC"),
+                        ),
+                        (
+                            async_graphql_value::Name::new("child"),
+                            Value::Object(IndexMap::from([
+                                (
+                                    async_graphql_value::Name::new("__typename"),
+                                    Value::from("MyObjA"),
+                                ),
+                                (async_graphql_value::Name::new("a"), Value::from(100)),
+                                (async_graphql_value::Name::new("b"), Value::from(200)),
+                            ])),
+                        ),
+                    ]))))
+                })
+            }))
+            .field(Field::new("d", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(400))) })
+            }));
+
+        let query = Object::new("Query").field(Field::new(
+            "valueC",
+            TypeRef::named_nn(obj_c.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL.with_type("MyObjC"))) }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(obj_c)
+            .register(interface1)
+            .register(interface2)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+        fragment A on MyObjA {
+            b
+        }
+
+        {
+            valueC { child { __typename a ...A } }
+        }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "valueC": {
+                    "child": {
+                        "__typename": "MyObjA",
+                        "a": 100,
+                        "b": 200,
+                    },
+                }
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn subtype_of_interface_nn() {
+        let interface1 = Interface::new("MyInterface1")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface1")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }))
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .implement("MyInterface1")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(300))) })
+            }))
+            .field(Field::new("c", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(400))) })
+            }));
+
+        let interface2 = Interface::new("MyInterface2").field(InterfaceField::new(
+            "children",
+            TypeRef::named_nn_list("MyInterface1"),
+        ));
+
+        let obj_c = Object::new("MyObjC")
+            .implement("MyInterface2")
+            .field(Field::new(
+                "children",
+                TypeRef::named_nn_list("MyObjA"),
+                |_| {
+                    FieldFuture::new(async {
+                        Ok(Some(vec![Value::Object(IndexMap::from([
+                            (
+                                async_graphql_value::Name::new("__typename"),
+                                Value::from("MyObjC"),
+                            ),
+                            (
+                                async_graphql_value::Name::new("children"),
+                                Value::List(vec![Value::Object(IndexMap::from([
+                                    (
+                                        async_graphql_value::Name::new("__typename"),
+                                        Value::from("MyObjA"),
+                                    ),
+                                    (async_graphql_value::Name::new("a"), Value::from(100)),
+                                    (async_graphql_value::Name::new("b"), Value::from(200)),
+                                ]))]),
+                            ),
+                        ]))]))
+                    })
+                },
+            ))
+            .field(Field::new("d", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(400))) })
+            }));
+
+        let query = Object::new("Query").field(Field::new(
+            "valueC",
+            TypeRef::named_nn(obj_c.type_name()),
+            |_| FieldFuture::new(async { Ok(Some::<Vec<Value>>(vec![])) }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(obj_c)
+            .register(interface1)
+            .register(interface2)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+        fragment A on MyObjA {
+            b
+        }
+
+        {
+            valueC { children { __typename a ...A } }
+        }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "valueC": {
+                    "children": [{
+                        "__typename": "MyObjA",
+                        "a": 100,
+                        "b": 200,
+                    }],
                 }
             })
         );
