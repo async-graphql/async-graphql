@@ -26,11 +26,11 @@
     </style>
     <script
       crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
+      src="https://unpkg.com/react@18/umd/react.development.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
@@ -87,7 +87,7 @@
         {{/each}}
       {{/if}}
       {{! end loading plugins }}
-      ReactDOM.render(
+      ReactDOM.createRoot(document.getElementById("graphiql")).render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: createUrl('{{ endpoint }}'),
@@ -110,8 +110,7 @@
           {{#if plugins}}
           plugins,
           {{/if}}
-        }),
-        document.getElementById("graphiql")
+        })
       );
     </script>
   </body>

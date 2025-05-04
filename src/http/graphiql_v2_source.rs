@@ -158,11 +158,11 @@ mod tests {
     </style>
     <script
       crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
+      src="https://unpkg.com/react@18/umd/react.development.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
@@ -187,15 +187,14 @@ mod tests {
         return url.toString();
       }
 
-      ReactDOM.render(
+      ReactDOM.createRoot(document.getElementById("graphiql")).render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: createUrl('/'),
             fetch: customFetch,
           }),
           defaultEditorToolsVisibility: true,
-        }),
-        document.getElementById("graphiql")
+        })
       );
     </script>
   </body>
@@ -236,11 +235,11 @@ mod tests {
     </style>
     <script
       crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
+      src="https://unpkg.com/react@18/umd/react.development.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
@@ -265,7 +264,7 @@ mod tests {
         return url.toString();
       }
 
-      ReactDOM.render(
+      ReactDOM.createRoot(document.getElementById("graphiql")).render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: createUrl('/'),
@@ -273,8 +272,7 @@ mod tests {
             subscriptionUrl: createUrl('/ws', true),
           }),
           defaultEditorToolsVisibility: true,
-        }),
-        document.getElementById("graphiql")
+        })
       );
     </script>
   </body>
@@ -321,11 +319,11 @@ mod tests {
     </style>
     <script
       crossorigin
-      src="https://unpkg.com/react@17/umd/react.development.js"
+      src="https://unpkg.com/react@18/umd/react.development.js"
     ></script>
     <script
       crossorigin
-      src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql/graphiql.min.css" />
@@ -358,7 +356,7 @@ mod tests {
       const plugins = [];
       plugins.push(GraphiQLPluginExplorer.explorerPlugin());
 
-      ReactDOM.render(
+      ReactDOM.createRoot(document.getElementById("graphiql")).render(
         React.createElement(GraphiQL, {
           fetcher: GraphiQL.createFetcher({
             url: createUrl('/'),
@@ -373,8 +371,7 @@ mod tests {
           }),
           defaultEditorToolsVisibility: true,
           plugins,
-        }),
-        document.getElementById("graphiql")
+        })
       );
     </script>
   </body>
