@@ -8,7 +8,7 @@ pub async fn test_input_value_custom_error() {
 
     #[Object]
     impl Query {
-        async fn parse_int(&self, _n: i8) -> bool {
+        async fn parse_int(&self, #[graphql(name = "n")] _n: i8) -> bool {
             true
         }
     }

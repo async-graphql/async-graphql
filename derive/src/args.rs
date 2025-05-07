@@ -824,7 +824,7 @@ pub struct MergedSubscription {
     pub extends: bool,
 }
 
-#[derive(Debug, Copy, Clone, FromMeta)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, FromMeta)]
 pub enum RenameRule {
     #[darling(rename = "lowercase")]
     Lower,
@@ -842,13 +842,30 @@ pub enum RenameRule {
 
 impl RenameRule {
     fn rename(&self, name: impl AsRef<str>) -> String {
+        let name_str = name.as_ref();
+        let starts_with_underscore = name_str.starts_with('_');
+
+        // If the name starts with underscore and we're doing camelCase or PascalCase,
+        // we need special handling to preserve the underscore prefix
+        if starts_with_underscore && (*self == Self::Camel || *self == Self::Pascal) {
+            // Remove the underscore, apply the transformation, then add it back
+            let name_without_underscore = &name_str[1..];
+            let transformed = match self {
+                Self::Pascal => name_without_underscore.to_pascal_case(),
+                Self::Camel => name_without_underscore.to_camel_case(),
+                _ => unreachable!(),
+            };
+            return format!("_{}", transformed);
+        }
+
+        // Standard transformation for other cases
         match self {
-            Self::Lower => name.as_ref().to_lowercase(),
-            Self::Upper => name.as_ref().to_uppercase(),
-            Self::Pascal => name.as_ref().to_pascal_case(),
-            Self::Camel => name.as_ref().to_camel_case(),
-            Self::Snake => name.as_ref().to_snake_case(),
-            Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
+            Self::Lower => name_str.to_lowercase(),
+            Self::Upper => name_str.to_uppercase(),
+            Self::Pascal => name_str.to_pascal_case(),
+            Self::Camel => name_str.to_camel_case(),
+            Self::Snake => name_str.to_snake_case(),
+            Self::ScreamingSnake => name_str.to_screaming_snake_case(),
         }
     }
 }

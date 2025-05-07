@@ -268,7 +268,7 @@ pub async fn test_entity_union() {
     #[Object]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj(&self, _id: i32) -> MyObj {
+        async fn find_obj(&self, #[graphql(name = "id")] _id: i32) -> MyObj {
             todo!()
         }
     }
@@ -308,11 +308,14 @@ pub async fn test_entity_shareable() {
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj_field_shareable(&self, _id: i32) -> MyObjFieldShareable {
+        async fn find_obj_field_shareable(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyObjFieldShareable {
             todo!()
         }
         #[graphql(entity)]
-        async fn find_obj_shareable(&self, _id: i32) -> MyObjShareable {
+        async fn find_obj_shareable(&self, #[graphql(name = "id")] _id: i32) -> MyObjShareable {
             todo!()
         }
     }
@@ -337,7 +340,10 @@ pub async fn test_field_override_directive() {
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj_field_override(&self, _id: i32) -> MyObjFieldOverride {
+        async fn find_obj_field_override(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyObjFieldOverride {
             todo!()
         }
     }
@@ -447,29 +453,41 @@ pub async fn test_entity_inaccessible() {
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj_field_inaccessible(&self, _id: i32) -> MyObjFieldInaccessible {
+        async fn find_obj_field_inaccessible(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyObjFieldInaccessible {
             todo!()
         }
 
         #[graphql(entity)]
-        async fn find_obj_inaccessible(&self, _id: i32) -> MyObjInaccessible {
+        async fn find_obj_inaccessible(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyObjInaccessible {
             todo!()
         }
 
-        async fn enum_variant_inaccessible(&self, _id: i32) -> MyEnumVariantInaccessible {
+        async fn enum_variant_inaccessible(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyEnumVariantInaccessible {
             todo!()
         }
 
-        async fn enum_inaccessible(&self, _id: i32) -> MyEnumInaccessible {
+        async fn enum_inaccessible(&self, #[graphql(name = "id")] _id: i32) -> MyEnumInaccessible {
             todo!()
         }
 
         #[graphql(inaccessible)]
-        async fn inaccessible_field(&self, _id: i32) -> i32 {
+        async fn inaccessible_field(&self, #[graphql(name = "id")] _id: i32) -> i32 {
             todo!()
         }
 
-        async fn inaccessible_argument(&self, #[graphql(inaccessible)] _id: i32) -> i32 {
+        async fn inaccessible_argument(
+            &self,
+            #[graphql(inaccessible, name = "id")] _id: i32,
+        ) -> i32 {
             todo!()
         }
 
@@ -485,11 +503,17 @@ pub async fn test_entity_inaccessible() {
             todo!()
         }
 
-        async fn inaccessible_input_field(&self, _value: MyInputObjFieldInaccessible) -> i32 {
+        async fn inaccessible_input_field(
+            &self,
+            #[graphql(name = "value")] _value: MyInputObjFieldInaccessible,
+        ) -> i32 {
             todo!()
         }
 
-        async fn inaccessible_input(&self, _value: MyInputObjInaccessible) -> i32 {
+        async fn inaccessible_input(
+            &self,
+            #[graphql(name = "value")] _value: MyInputObjInaccessible,
+        ) -> i32 {
             todo!()
         }
 
@@ -729,29 +753,38 @@ pub async fn test_entity_tag() {
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn find_obj_field_tagged(&self, _id: i32) -> MyObjFieldTagged {
+        async fn find_obj_field_tagged(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyObjFieldTagged {
             todo!()
         }
 
         #[graphql(entity)]
-        async fn find_obj_tagged(&self, _id: i32) -> MyObjTagged {
+        async fn find_obj_tagged(&self, #[graphql(name = "id")] _id: i32) -> MyObjTagged {
             todo!()
         }
 
-        async fn enum_variant_tagged(&self, _id: i32) -> MyEnumVariantTagged {
+        async fn enum_variant_tagged(
+            &self,
+            #[graphql(name = "id")] _id: i32,
+        ) -> MyEnumVariantTagged {
             todo!()
         }
 
-        async fn enum_tagged(&self, _id: i32) -> MyEnumTagged {
+        async fn enum_tagged(&self, #[graphql(name = "id")] _id: i32) -> MyEnumTagged {
             todo!()
         }
 
         #[graphql(tag = "tagged_\"field\"")]
-        async fn tagged_field(&self, _id: i32) -> i32 {
+        async fn tagged_field(&self, #[graphql(name = "id")] _id: i32) -> i32 {
             todo!()
         }
 
-        async fn tagged_argument(&self, #[graphql(tag = "tagged_argument")] _id: i32) -> i32 {
+        async fn tagged_argument(
+            &self,
+            #[graphql(tag = "tagged_argument", name = "id")] _id: i32,
+        ) -> i32 {
             todo!()
         }
 
@@ -767,11 +800,14 @@ pub async fn test_entity_tag() {
             todo!()
         }
 
-        async fn tagged_input_field(&self, _value: MyInputObjFieldTagged) -> i32 {
+        async fn tagged_input_field(
+            &self,
+            #[graphql(name = "value")] _value: MyInputObjFieldTagged,
+        ) -> i32 {
             todo!()
         }
 
-        async fn tagged_input(&self, _value: MyInputObjTagged) -> i32 {
+        async fn tagged_input(&self, #[graphql(name = "value")] _value: MyInputObjTagged) -> i32 {
             todo!()
         }
 
@@ -862,17 +898,23 @@ pub async fn test_interface_object() {
     #[Object(extends)]
     impl Query {
         #[graphql(entity)]
-        async fn my_interface(&self, _id: u64) -> MyInterface {
+        async fn my_interface(&self, #[graphql(name = "id")] _id: u64) -> MyInterface {
             todo!()
         }
 
         #[graphql(entity)]
-        async fn my_interface_object1(&self, _id: u64) -> MyInterfaceObject1 {
+        async fn my_interface_object1(
+            &self,
+            #[graphql(name = "id")] _id: u64,
+        ) -> MyInterfaceObject1 {
             todo!()
         }
 
         #[graphql(entity)]
-        async fn my_interface_object2(&self, _id: u64) -> MyInterfaceObject2 {
+        async fn my_interface_object2(
+            &self,
+            #[graphql(name = "id")] _id: u64,
+        ) -> MyInterfaceObject2 {
             todo!()
         }
     }
@@ -942,24 +984,38 @@ pub async fn test_unresolvable_entity() {
 
     #[Object]
     impl Query {
-        async fn simple_explicit_reference(&self, _id: u64) -> SimpleExplicitUnresolvable {
+        async fn simple_explicit_reference(
+            &self,
+            #[graphql(name = "id")] _id: u64,
+        ) -> SimpleExplicitUnresolvable {
             todo!()
         }
 
-        async fn simple_implicit_reference(&self, _a: u64) -> SimpleImplicitUnresolvable {
+        async fn simple_implicit_reference(
+            &self,
+            #[graphql(name = "a")] _a: u64,
+        ) -> SimpleImplicitUnresolvable {
             todo!()
         }
 
-        async fn explicit_reference(&self, _id1: u64, _id2: u64) -> ExplicitUnresolvable {
+        async fn explicit_reference(
+            &self,
+            #[graphql(name = "id1")] _id1: u64,
+            #[graphql(name = "id2")] _id2: u64,
+        ) -> ExplicitUnresolvable {
             todo!()
         }
 
-        async fn implicit_unresolvable(&self, _a: String, _b: bool) -> ImplicitUnresolvable {
+        async fn implicit_unresolvable(
+            &self,
+            #[graphql(name = "a")] _a: String,
+            #[graphql(name = "b")] _b: bool,
+        ) -> ImplicitUnresolvable {
             todo!()
         }
 
         #[graphql(entity)]
-        async fn object_entity(&self, _id: u64) -> ResolvableObject {
+        async fn object_entity(&self, #[graphql(name = "id")] _id: u64) -> ResolvableObject {
             todo!()
         }
     }
