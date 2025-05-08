@@ -37,13 +37,24 @@ use crate::{
 
 /// Context for extension
 pub struct ExtensionContext<'a> {
-    #[doc(hidden)]
+    /// Schema-scope context data, [`Registry`], and custom directives.
     pub schema_env: &'a SchemaEnv,
 
-    #[doc(hidden)]
+    /// Extension-scoped context data shared across all extensions.
+    ///
+    /// Can be accessed only from hooks that implement the [`Extension`] trait.
+    ///
+    /// It is created with each new [`Request`] and is empty by default.
+    ///
+    /// For subscriptions, the session ends when the subscription is closed.
     pub session_data: &'a Data,
 
-    #[doc(hidden)]
+    /// Request-scoped context data shared across all resolvers.
+    ///
+    /// This is a reference to [`Request::data`](Request) field.
+    /// If the request has not initialized yet, the value is seen as `None`
+    /// inside the [`Extension::request`], [`Extension::subscribe`], and
+    /// [`Extension::prepare_request`] hooks.
     pub query_data: Option<&'a Data>,
 }
 
