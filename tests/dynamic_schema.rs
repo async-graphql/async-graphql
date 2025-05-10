@@ -1,11 +1,11 @@
 #[cfg(feature = "dynamic-schema")]
 mod tests {
     use async_graphql::{
+        Value,
         dynamic::{
             Directive, Enum, EnumItem, Field, FieldFuture, InputObject, InputValue, Interface,
             InterfaceField, Object, ResolverContext, Scalar, Schema, SchemaError, TypeRef, Union,
         },
-        Value,
     };
 
     fn mock_resolver_fn(_ctx: ResolverContext) -> FieldFuture {

@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use crate::{
+    Context, Object,
     model::{__InputValue, __Type},
     registry,
     registry::is_visible,
-    Context, Object,
 };
 
 pub struct __Field<'a> {

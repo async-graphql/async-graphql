@@ -3,10 +3,10 @@ use std::time::Duration;
 use actix_http::StatusCode;
 use actix_web::{Handler, HttpRequest, HttpResponse, Responder};
 use async_graphql::{
-    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
     Executor,
+    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
 };
-use futures_util::{future::LocalBoxFuture, FutureExt, StreamExt};
+use futures_util::{FutureExt, StreamExt, future::LocalBoxFuture};
 
 use crate::{GraphQLRequest, GraphQLResponse};
 

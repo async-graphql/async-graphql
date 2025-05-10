@@ -1,15 +1,16 @@
 use std::{future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
-    http::{
-        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
-        WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
-    },
     Data, Executor, Result,
+    http::{
+        ALL_WEBSOCKET_PROTOCOLS, DefaultOnConnInitType, DefaultOnPingType,
+        WebSocket as AGWebSocket, WebSocketProtocols, WsMessage, default_on_connection_init,
+        default_on_ping,
+    },
 };
-use futures_util::{future, StreamExt};
+use futures_util::{StreamExt, future};
 use tide::Endpoint;
-use tide_websockets::{tungstenite::protocol::CloseFrame, Message};
+use tide_websockets::{Message, tungstenite::protocol::CloseFrame};
 
 /// A GraphQL subscription endpoint builder.
 #[cfg_attr(docsrs, doc(cfg(feature = "websocket")))]

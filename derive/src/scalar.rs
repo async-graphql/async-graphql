@@ -5,8 +5,8 @@ use syn::ItemImpl;
 use crate::{
     args::{self, RenameTarget},
     utils::{
-        gen_boxed_trait, get_crate_name, get_rustdoc, get_type_path_and_name, visible_fn,
-        GeneratorResult,
+        GeneratorResult, gen_boxed_trait, get_crate_name, get_rustdoc, get_type_path_and_name,
+        visible_fn,
     },
 };
 

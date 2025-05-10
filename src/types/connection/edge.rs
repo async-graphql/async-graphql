@@ -1,9 +1,9 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
+    ComplexObject, ObjectType, OutputType, SimpleObject, TypeName,
     connection::{DefaultEdgeName, EmptyFields},
     types::connection::{CursorType, EdgeNameType},
-    ComplexObject, ObjectType, OutputType, SimpleObject, TypeName,
 };
 
 /// An edge in a connection.

@@ -1,7 +1,7 @@
-use async_graphql::{http::MultipartOptions, BatchRequest, Executor, Request};
-use warp::{reply::Response as WarpResponse, Filter, Rejection, Reply};
+use async_graphql::{BatchRequest, Executor, Request, http::MultipartOptions};
+use warp::{Filter, Rejection, Reply, reply::Response as WarpResponse};
 
-use crate::{graphql_batch_opts, GraphQLBadRequest, GraphQLBatchResponse};
+use crate::{GraphQLBadRequest, GraphQLBatchResponse, graphql_batch_opts};
 
 /// GraphQL request filter
 ///

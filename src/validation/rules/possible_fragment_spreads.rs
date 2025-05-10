@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::{
+    Positioned,
     parser::types::{ExecutableDocument, FragmentSpread, InlineFragment, TypeCondition},
     validation::visitor::{Visitor, VisitorContext},
-    Positioned,
 };
 
 #[derive(Default)]

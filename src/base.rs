@@ -8,10 +8,10 @@ use std::{
 use async_graphql_value::ConstValue;
 
 use crate::{
-    parser::types::Field,
-    registry::{self, Registry},
     ContainerType, Context, ContextSelectionSet, Error, InputValueError, InputValueResult,
     Positioned, Result, ServerResult, Value,
+    parser::types::Field,
+    registry::{self, Registry},
 };
 
 #[doc(hidden)]

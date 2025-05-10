@@ -144,14 +144,16 @@ pub async fn test_subscription_with_token() {
     }
 
     {
-        assert!(schema
-            .execute_stream(
-                Request::new("subscription { values }").data(Token("654321".to_string()))
-            )
-            .next()
-            .await
-            .unwrap()
-            .is_err());
+        assert!(
+            schema
+                .execute_stream(
+                    Request::new("subscription { values }").data(Token("654321".to_string()))
+                )
+                .next()
+                .await
+                .unwrap()
+                .is_err()
+        );
     }
 }
 

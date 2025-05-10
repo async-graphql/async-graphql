@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::types::Field, registry, registry::MetaTypeId, resolver_utils::ContainerType, Context,
-    ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError, ServerResult, Value,
+    Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError, ServerResult,
+    Value, parser::types::Field, registry, registry::MetaTypeId, resolver_utils::ContainerType,
 };
 
 /// Empty mutation

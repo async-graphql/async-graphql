@@ -4,18 +4,18 @@ use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
 use syn::{
-    ext::IdentExt, punctuated::Punctuated, Block, Error, FnArg, ImplItem, ItemImpl, Pat,
-    ReturnType, Token, Type, TypeReference,
+    Block, Error, FnArg, ImplItem, ItemImpl, Pat, ReturnType, Token, Type, TypeReference,
+    ext::IdentExt, punctuated::Punctuated,
 };
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
+        GeneratorResult, extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
         generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
         get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
-        visible_fn, GeneratorResult,
+        visible_fn,
     },
 };
 
@@ -138,7 +138,7 @@ pub fn generate(
                             &method.sig.output,
                             "Flatten resolver must have a return type",
                         )
-                        .into())
+                        .into());
                     }
                 };
                 let ty = ty.value_type();
@@ -329,7 +329,7 @@ pub fn generate(
                         &method.sig.output,
                         "Resolver must have a return type",
                     )
-                    .into())
+                    .into());
                 }
             };
             let schema_ty = ty.value_type();

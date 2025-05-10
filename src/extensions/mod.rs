@@ -18,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::{future::BoxFuture, stream::BoxStream, FutureExt};
+use futures_util::{FutureExt, future::BoxFuture, stream::BoxStream};
 
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
@@ -30,9 +30,9 @@ pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::{
-    parser::types::{ExecutableDocument, Field},
     Data, DataContext, Error, QueryPathNode, Request, Response, Result, SDLExportOptions,
     SchemaEnv, ServerError, ServerResult, ValidationResult, Value, Variables,
+    parser::types::{ExecutableDocument, Field},
 };
 
 /// Context for extension

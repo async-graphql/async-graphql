@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use futures_util::{stream::BoxStream, TryFutureExt};
+use futures_util::{TryFutureExt, stream::BoxStream};
 use tracing_futures::Instrument;
-use tracinglib::{span, Level};
+use tracinglib::{Level, span};
 
 use crate::{
+    Response, ServerError, ServerResult, ValidationResult, Value, Variables,
     extensions::{
         Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
         NextResolve, NextSubscribe, NextValidation, ResolveInfo,
     },
     parser::types::ExecutableDocument,
-    Response, ServerError, ServerResult, ValidationResult, Value, Variables,
 };
 
 /// Tracing extension

@@ -20,7 +20,7 @@ use std::io::ErrorKind;
 pub use altair_source::*;
 use futures_util::io::{AsyncRead, AsyncReadExt};
 #[cfg(feature = "graphiql")]
-pub use graphiql_plugin::{graphiql_plugin_explorer, GraphiQLPlugin};
+pub use graphiql_plugin::{GraphiQLPlugin, graphiql_plugin_explorer};
 #[cfg(feature = "graphiql")]
 pub use graphiql_source::graphiql_source;
 #[cfg(feature = "graphiql")]
@@ -28,12 +28,12 @@ pub use graphiql_v2_source::{Credentials, GraphiQLSource};
 pub use multipart::MultipartOptions;
 pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart_mixed};
 #[cfg(feature = "playground")]
-pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
+pub use playground_source::{GraphQLPlaygroundConfig, playground_source};
 use serde::Deserialize;
 pub use websocket::{
-    default_on_connection_init, default_on_ping, ClientMessage, DefaultOnConnInitType,
-    DefaultOnPingType, Protocols as WebSocketProtocols, WebSocket, WsMessage,
-    ALL_WEBSOCKET_PROTOCOLS,
+    ALL_WEBSOCKET_PROTOCOLS, ClientMessage, DefaultOnConnInitType, DefaultOnPingType,
+    Protocols as WebSocketProtocols, WebSocket, WsMessage, default_on_connection_init,
+    default_on_ping,
 };
 
 use crate::{BatchRequest, ParseRequestError, Request};
@@ -182,7 +182,7 @@ mod tests {
     use async_graphql_value::Extensions;
 
     use super::*;
-    use crate::{value, Variables};
+    use crate::{Variables, value};
 
     #[test]
     fn test_parse_query_string() {

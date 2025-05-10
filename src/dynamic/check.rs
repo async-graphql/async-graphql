@@ -3,10 +3,10 @@ use std::collections::HashSet;
 use indexmap::IndexMap;
 
 use crate::dynamic::{
+    InputObject, Interface, Object, SchemaError, Type,
     base::{BaseContainer, BaseField},
     schema::SchemaInner,
     type_ref::TypeRef,
-    InputObject, Interface, Object, SchemaError, Type,
 };
 
 impl SchemaInner {
@@ -441,10 +441,10 @@ fn check_is_valid_implementation(
 #[cfg(test)]
 mod tests {
     use crate::{
+        Value,
         dynamic::{
             Field, FieldFuture, InputObject, InputValue, Object, Schema, SchemaBuilder, TypeRef,
         },
-        Value,
     };
 
     fn base_schema() -> SchemaBuilder {

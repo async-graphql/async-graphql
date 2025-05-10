@@ -1,28 +1,27 @@
 use std::{convert::Infallible, future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
+    Data, Executor, Result,
     futures_util::task::{Context, Poll},
     http::{
-        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
-        WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
+        ALL_WEBSOCKET_PROTOCOLS, DefaultOnConnInitType, DefaultOnPingType, WebSocketProtocols,
+        WsMessage, default_on_connection_init, default_on_ping,
     },
-    Data, Executor, Result,
 };
 use axum::{
+    Error,
     body::{Body, HttpBody},
     extract::{
-        ws::{CloseFrame, Message},
         FromRequestParts, WebSocketUpgrade,
+        ws::{CloseFrame, Message},
     },
-    http::{self, request::Parts, Request, Response, StatusCode},
+    http::{self, Request, Response, StatusCode, request::Parts},
     response::IntoResponse,
-    Error,
 };
 use futures_util::{
-    future,
+    Sink, SinkExt, Stream, StreamExt, future,
     future::BoxFuture,
     stream::{SplitSink, SplitStream},
-    Sink, SinkExt, Stream, StreamExt,
 };
 use tower_service::Service;
 

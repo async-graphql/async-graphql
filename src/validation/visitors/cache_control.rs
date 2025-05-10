@@ -1,8 +1,8 @@
 use crate::{
+    CacheControl, Positioned,
     parser::types::{Field, SelectionSet},
     registry::MetaType,
     validation::visitor::{VisitMode, Visitor, VisitorContext},
-    CacheControl, Positioned,
 };
 
 pub struct CacheControlCalculate<'a> {

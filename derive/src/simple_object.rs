@@ -3,15 +3,15 @@ use std::str::FromStr;
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, visit::Visit, Error, Ident, LifetimeParam, Path, Type};
+use syn::{Error, Ident, LifetimeParam, Path, Type, ext::IdentExt, visit::Visit};
 
 use crate::{
     args::{
         self, RenameRuleExt, RenameTarget, Resolvability, SimpleObjectField, TypeDirectiveLocation,
     },
     utils::{
-        gen_boxed_trait, gen_deprecation, gen_directive_calls, generate_guards, get_crate_name,
-        get_rustdoc, parse_complexity_expr, visible_fn, GeneratorResult,
+        GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, generate_guards,
+        get_crate_name, get_rustdoc, parse_complexity_expr, visible_fn,
     },
 };
 
@@ -65,9 +65,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let s = match &object_args.data {
         Data::Struct(e) => e,
         _ => {
-            return Err(
-                Error::new_spanned(ident, "SimpleObject can only be applied to an struct.").into(),
+            return Err(Error::new_spanned(
+                ident,
+                "SimpleObject can only be applied to an struct.",
             )
+            .into());
         }
     };
     let mut getters = Vec::new();

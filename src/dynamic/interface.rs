@@ -1,6 +1,6 @@
 use indexmap::{IndexMap, IndexSet};
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::{InputValue, SchemaError, TypeRef},
     registry::{Deprecation, MetaField, MetaType, Registry},
@@ -281,7 +281,7 @@ impl Interface {
 mod tests {
     use async_graphql_parser::Pos;
 
-    use crate::{dynamic::*, value, PathSegment, ServerError, Value};
+    use crate::{PathSegment, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn basic_interface() {

@@ -1,8 +1,8 @@
 use std::{borrow::Cow, sync::Arc};
 
 use crate::{
-    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
-    InputValueError, InputValueResult, OutputType, Positioned, ServerResult, Value,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
+    ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
 };
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
@@ -87,8 +87,10 @@ macro_rules! impl_input_slice_for_smart_ptr {
                         .map_err(InputValueError::propagate),
                     value => {
                         Ok(
-                            vec![InputType::parse(Some(value))
-                                .map_err(InputValueError::propagate)?]
+                            vec![
+                                InputType::parse(Some(value))
+                                    .map_err(InputValueError::propagate)?,
+                            ]
                             .into(),
                         )
                     }

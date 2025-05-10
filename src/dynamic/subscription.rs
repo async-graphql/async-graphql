@@ -1,21 +1,21 @@
 use std::{borrow::Cow, fmt, fmt::Debug, sync::Arc};
 
 use futures_util::{
-    future::BoxFuture, stream::BoxStream, Future, FutureExt, Stream, StreamExt, TryStreamExt,
+    Future, FutureExt, Stream, StreamExt, TryStreamExt, future::BoxFuture, stream::BoxStream,
 };
 use indexmap::IndexMap;
 
 use crate::{
+    ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result,
+    ServerResult, Value,
     dynamic::{
-        resolve::resolve, FieldValue, InputValue, ObjectAccessor, ResolverContext, Schema,
-        SchemaError, TypeRef,
+        FieldValue, InputValue, ObjectAccessor, ResolverContext, Schema, SchemaError, TypeRef,
+        resolve::resolve,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
     registry::{Deprecation, MetaField, MetaType, Registry},
     subscription::BoxFieldStream,
-    ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result,
-    ServerResult, Value,
 };
 
 type BoxResolveFut<'a> = BoxFuture<'a, Result<BoxStream<'a, Result<FieldValue<'a>>>>>;
@@ -292,7 +292,7 @@ mod tests {
 
     use futures_util::StreamExt;
 
-    use crate::{dynamic::*, value, Value};
+    use crate::{Value, dynamic::*, value};
 
     #[tokio::test]
     async fn subscription() {

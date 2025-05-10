@@ -9,7 +9,7 @@ mod error;
 mod request;
 mod subscription;
 
-pub use batch_request::{graphql_batch, graphql_batch_opts, GraphQLBatchResponse};
+pub use batch_request::{GraphQLBatchResponse, graphql_batch, graphql_batch_opts};
 pub use error::GraphQLBadRequest;
-pub use request::{graphql, graphql_opts, GraphQLResponse};
-pub use subscription::{graphql_protocol, graphql_subscription, GraphQLWebSocket};
+pub use request::{GraphQLResponse, graphql, graphql_opts};
+pub use subscription::{GraphQLWebSocket, graphql_protocol, graphql_subscription};

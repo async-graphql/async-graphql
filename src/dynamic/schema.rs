@@ -1,20 +1,20 @@
 use std::{any::Any, collections::HashMap, fmt::Debug, sync::Arc};
 
 use async_graphql_parser::types::OperationType;
-use futures_util::{stream::BoxStream, Stream, StreamExt, TryFutureExt};
+use futures_util::{Stream, StreamExt, TryFutureExt, stream::BoxStream};
 use indexmap::IndexMap;
 
 use crate::{
+    Data, Executor, IntrospectionMode, QueryEnv, Request, Response, SDLExportOptions, SchemaEnv,
+    ServerError, ServerResult, ValidationMode,
     dynamic::{
-        field::BoxResolverFn, r#type::Type, resolve::resolve_container, DynamicRequest,
-        FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError, Subscription,
-        TypeRef, Union,
+        DynamicRequest, FieldFuture, FieldValue, Object, ResolverContext, Scalar, SchemaError,
+        Subscription, TypeRef, Union, field::BoxResolverFn, resolve::resolve_container,
+        r#type::Type,
     },
     extensions::{ExtensionFactory, Extensions},
     registry::{MetaType, Registry},
-    schema::{prepare_request, SchemaEnvInner},
-    Data, Executor, IntrospectionMode, QueryEnv, Request, Response, SDLExportOptions, SchemaEnv,
-    ServerError, ServerResult, ValidationMode,
+    schema::{SchemaEnvInner, prepare_request},
 };
 
 /// Dynamic schema builder
@@ -531,14 +531,14 @@ fn update_interface_possible_types(types: &mut IndexMap<String, Type>, registry:
 mod tests {
     use std::sync::Arc;
 
-    use async_graphql_parser::{types::ExecutableDocument, Pos};
+    use async_graphql_parser::{Pos, types::ExecutableDocument};
     use async_graphql_value::Variables;
-    use futures_util::{stream::BoxStream, StreamExt};
+    use futures_util::{StreamExt, stream::BoxStream};
     use tokio::sync::Mutex;
 
     use crate::{
-        dynamic::*, extensions::*, value, PathSegment, Request, Response, ServerError,
-        ServerResult, ValidationResult, Value,
+        PathSegment, Request, Response, ServerError, ServerResult, ValidationResult, Value,
+        dynamic::*, extensions::*, value,
     };
 
     #[tokio::test]

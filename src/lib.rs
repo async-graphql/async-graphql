@@ -210,8 +210,8 @@ pub mod registry;
 
 pub use async_graphql_parser as parser;
 pub use async_graphql_value::{
-    from_value, to_value, value, ConstValue as Value, DeserializerError, Extensions, Name, Number,
-    SerializerError, Variables,
+    ConstValue as Value, DeserializerError, Extensions, Name, Number, SerializerError, Variables,
+    from_value, to_value, value,
 };
 #[doc(hidden)]
 pub use async_stream;

@@ -3,11 +3,11 @@ use std::fmt::{Error, Result as FmtResult, Write};
 use async_graphql_value::ConstValue;
 
 use crate::{
+    Variables,
     parser::types::{
         ExecutableDocument, FragmentDefinition, OperationType, Selection, SelectionSet,
     },
     registry::{MetaInputValue, MetaType, MetaTypeName, Registry},
-    Variables,
 };
 
 impl Registry {

@@ -3,11 +3,11 @@ use std::{
     sync::Arc,
 };
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
+    Value,
     dynamic::SchemaError,
     registry::{MetaType, Registry, ScalarValidatorFn},
-    Value,
 };
 
 /// A GraphQL scalar type
@@ -139,7 +139,7 @@ impl Scalar {
 mod tests {
     use async_graphql_parser::Pos;
 
-    use crate::{dynamic::*, value, PathSegment, ServerError};
+    use crate::{PathSegment, ServerError, dynamic::*, value};
 
     #[tokio::test]
     async fn custom_scalar() {

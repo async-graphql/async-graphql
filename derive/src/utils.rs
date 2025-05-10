@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
 use darling::FromMeta;
+use proc_macro_crate::{FoundCrate, crate_name};
 use proc_macro2::{Span, TokenStream, TokenTree};
-use proc_macro_crate::{crate_name, FoundCrate};
 use quote::quote;
 use syn::{
-    visit::Visit, visit_mut, visit_mut::VisitMut, Attribute, Error, Expr, ExprLit, ExprPath, FnArg,
-    Ident, ImplItemFn, Lifetime, Lit, LitStr, Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound,
-    TypeReference,
+    Attribute, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ImplItemFn, Lifetime, Lit, LitStr,
+    Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference, visit::Visit, visit_mut,
+    visit_mut::VisitMut,
 };
 use thiserror::Error;
 

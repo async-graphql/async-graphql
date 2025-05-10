@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use crate::{
-    extensions::ResolveFut, parser::types::Directive, registry::Registry, Context,
-    ContextDirective, ServerResult, Value,
+    Context, ContextDirective, ServerResult, Value, extensions::ResolveFut,
+    parser::types::Directive, registry::Registry,
 };
 
 #[doc(hidden)]

@@ -3,14 +3,14 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
+    ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned, ServerResult, Value,
     from_value,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
-    to_value, ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned,
-    ServerResult, Value,
+    to_value,
 };
 
 /// A scalar that can represent any JSON value.

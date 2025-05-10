@@ -1,7 +1,7 @@
 use crate::{
+    Positioned,
     parser::types::VariableDefinition,
     validation::visitor::{Visitor, VisitorContext},
-    Positioned,
 };
 
 #[derive(Default)]

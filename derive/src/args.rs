@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 use darling::{
+    FromDeriveInput, FromField, FromMeta, FromVariant,
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
-    FromDeriveInput, FromField, FromMeta, FromVariant,
 };
 use inflector::Inflector;
 use quote::format_ident;

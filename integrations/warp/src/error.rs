@@ -5,10 +5,10 @@ use std::{
 
 use async_graphql::ParseRequestError;
 use warp::{
+    Reply,
     http::{Response, StatusCode},
     hyper::Body,
     reject::Reject,
-    Reply,
 };
 
 /// Bad request error.

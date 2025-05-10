@@ -2,7 +2,7 @@
 name = "async-graphql-value"
 version = "7.0.16"
 authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
-edition = "2021"
+edition = "2024"
 description = "GraphQL value for async-graphql"
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/async-graphql/"

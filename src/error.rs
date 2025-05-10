@@ -9,7 +9,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{parser, InputType, Pos, Value};
+use crate::{InputType, Pos, Value, parser};
 
 /// Extensions to the error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]

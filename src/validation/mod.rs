@@ -9,10 +9,10 @@ mod visitor;
 mod visitors;
 
 pub use visitor::VisitorContext;
-use visitor::{visit, VisitorNil};
+use visitor::{VisitorNil, visit};
 
 use crate::{
-    parser::types::ExecutableDocument, registry::Registry, CacheControl, ServerError, Variables,
+    CacheControl, ServerError, Variables, parser::types::ExecutableDocument, registry::Registry,
 };
 
 /// Validation results.
