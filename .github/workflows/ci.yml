@@ -132,7 +132,7 @@ jobs:
       - name: Install mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
-          mdbook-version: "0.4.37"
+          mdbook-version: "0.4.49"
       - name: Extract metadata
         id: meta
         run: |
