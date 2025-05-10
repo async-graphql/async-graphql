@@ -623,7 +623,7 @@ impl Registry {
                 }
 
                 for field in fields {
-                    if let Some(ref description) = &field.description {
+                    if let Some(description) = &field.description {
                         write_description(sdl, options, 1, description);
                     }
                     write!(sdl, "{}", tab(options)).ok();

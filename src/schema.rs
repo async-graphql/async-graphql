@@ -574,7 +574,7 @@ where
         &self,
         request: impl Into<Request>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Send + Unpin + 'static {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());

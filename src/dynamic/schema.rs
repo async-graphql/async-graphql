@@ -410,7 +410,7 @@ impl Schema {
         &self,
         request: impl Into<DynamicRequest>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Send + Unpin + 'static {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
@@ -505,7 +505,7 @@ fn update_interface_possible_types(types: &mut IndexMap<String, Type>, registry:
         .values_mut()
         .filter_map(|ty| match ty {
             MetaType::Interface {
-                ref name,
+                name,
                 possible_types,
                 ..
             } => Some((name, possible_types)),
