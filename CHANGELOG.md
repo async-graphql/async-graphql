@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [Unreleased]
 
 - update MSRV to `1.86.0`
+- Allow exporting SDL with spaces [#1688](https://github.com/async-graphql/async-graphql/pull/1688)
 
 # [7.0.16] 2025-03-20
 
