@@ -6,7 +6,7 @@ const SYSTEM_SCALARS: &[&str] = &["Int", "Float", "String", "Boolean", "ID"];
 const FEDERATION_SCALARS: &[&str] = &["Any"];
 
 /// Options for SDL export
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone)]
 pub struct SDLExportOptions {
     sorted_fields: bool,
     sorted_arguments: bool,
@@ -15,6 +15,24 @@ pub struct SDLExportOptions {
     prefer_single_line_descriptions: bool,
     include_specified_by: bool,
     compose_directive: bool,
+    use_space_ident: bool,
+    indent_width: u8,
+}
+
+impl Default for SDLExportOptions {
+    fn default() -> Self {
+        Self {
+            sorted_fields: false,
+            sorted_arguments: false,
+            sorted_enum_values: false,
+            federation: false,
+            prefer_single_line_descriptions: false,
+            include_specified_by: false,
+            compose_directive: false,
+            use_space_ident: false,
+            indent_width: 2,
+        }
+    }
 }
 
 impl SDLExportOptions {
@@ -89,6 +107,23 @@ impl SDLExportOptions {
             ..self
         }
     }
+
+    /// Use spaces for indentation instead of tabs
+    pub fn use_space_ident(self) -> Self {
+        Self {
+            use_space_ident: true,
+            ..self
+        }
+    }
+
+    /// Set the number of spaces to use for each indentation level (default: 2).
+    /// Only applies when `use_space_indent` is true
+    pub fn indent_width(self, width: u8) -> Self {
+        Self {
+            indent_width: width,
+            ..self
+        }
+    }
 }
 
 impl Registry {
@@ -108,7 +143,6 @@ impl Registry {
             }
 
             self.export_type(ty, &mut sdl, &options);
-            writeln!(sdl).ok();
         }
 
         self.directives.values().for_each(|directive| {
@@ -157,8 +191,13 @@ impl Registry {
 
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
-            writeln!(sdl, "\turl: \"https://specs.apollo.dev/federation/v2.3\",").ok();
-            writeln!(sdl, "\timport: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\"]").ok();
+            writeln!(
+                sdl,
+                "{}url: \"https://specs.apollo.dev/federation/v2.3\",",
+                tab(&options)
+            )
+            .ok();
+            writeln!(sdl, "{}import: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\"]", tab(&options)).ok();
             writeln!(sdl, ")").ok();
 
             if options.compose_directive {
@@ -176,23 +215,23 @@ impl Registry {
                     });
                 for (url, directives) in compose_directives {
                     writeln!(sdl, "extend schema @link(").ok();
-                    writeln!(sdl, "\turl: \"{}\"", url).ok();
-                    writeln!(sdl, "\timport: [{}]", directives.join(",")).ok();
+                    writeln!(sdl, "{}url: \"{}\"", tab(&options), url).ok();
+                    writeln!(sdl, "{}import: [{}]", tab(&options), directives.join(",")).ok();
                     writeln!(sdl, ")").ok();
                     for name in directives {
-                        writeln!(sdl, "\t@composeDirective(name: {})", name).ok();
+                        writeln!(sdl, "{}@composeDirective(name: {})", tab(&options), name).ok();
                     }
                     writeln!(sdl).ok();
                 }
             }
         } else {
             writeln!(sdl, "schema {{").ok();
-            writeln!(sdl, "\tquery: {}", self.query_type).ok();
+            writeln!(sdl, "{}query: {}", tab(&options), self.query_type).ok();
             if let Some(mutation_type) = self.mutation_type.as_deref() {
-                writeln!(sdl, "\tmutation: {}", mutation_type).ok();
+                writeln!(sdl, "{}mutation: {}", tab(&options), mutation_type).ok();
             }
             if let Some(subscription_type) = self.subscription_type.as_deref() {
-                writeln!(sdl, "\tsubscription: {}", subscription_type).ok();
+                writeln!(sdl, "{}subscription: {}", tab(&options), subscription_type).ok();
             }
             writeln!(sdl, "}}").ok();
         }
@@ -223,7 +262,7 @@ impl Registry {
             }
 
             if !field.args.is_empty() {
-                write!(sdl, "\t{}(", field.name).ok();
+                write!(sdl, "{}{}(", tab(&options), field.name).ok();
 
                 let mut args = field.args.values().collect::<Vec<_>>();
                 if options.sorted_arguments {
@@ -243,7 +282,7 @@ impl Registry {
                     }
 
                     if need_multiline {
-                        write!(sdl, "\t\t").ok();
+                        write!(sdl, "{0}{0}", tab(options)).ok();
                     } else if i != 0 {
                         sdl.push(' ');
                     }
@@ -266,11 +305,11 @@ impl Registry {
                 }
 
                 if need_multiline {
-                    sdl.push_str("\n\t");
+                    write!(sdl, "\n{}", tab(&options)).ok();
                 }
                 write!(sdl, "): {}", field.ty).ok();
             } else {
-                write!(sdl, "\t{}: {}", field.name, field.ty).ok();
+                write!(sdl, "{}{}: {}", tab(&options), field.name, field.ty).ok();
             }
 
             write_deprecated(sdl, &field.deprecation);
@@ -352,7 +391,7 @@ impl Registry {
                         write!(sdl, " {}", directive.sdl()).ok();
                     }
 
-                    writeln!(sdl).ok();
+                    writeln!(sdl, "\n").ok();
                 }
             }
             MetaType::Object {
@@ -437,7 +476,7 @@ impl Registry {
 
                 writeln!(sdl, " {{").ok();
                 Self::export_fields(sdl, fields.values(), options);
-                writeln!(sdl, "}}").ok();
+                writeln!(sdl, "}}\n").ok();
             }
             MetaType::Interface {
                 name,
@@ -482,7 +521,7 @@ impl Registry {
 
                 writeln!(sdl, " {{").ok();
                 Self::export_fields(sdl, fields.values(), options);
-                writeln!(sdl, "}}").ok();
+                writeln!(sdl, "}}\n").ok();
             }
             MetaType::Enum {
                 name,
@@ -522,7 +561,7 @@ impl Registry {
                     if let Some(description) = &value.description {
                         write_description(sdl, options, 1, description);
                     }
-                    write!(sdl, "\t{}", value.name).ok();
+                    write!(sdl, "{}{}", tab(&options), value.name).ok();
                     write_deprecated(sdl, &value.deprecation);
 
                     if options.federation {
@@ -542,7 +581,7 @@ impl Registry {
                     writeln!(sdl).ok();
                 }
 
-                writeln!(sdl, "}}").ok();
+                writeln!(sdl, "}}\n").ok();
             }
             MetaType::InputObject {
                 name,
@@ -587,7 +626,7 @@ impl Registry {
                     if let Some(ref description) = &field.description {
                         write_description(sdl, options, 1, description);
                     }
-                    sdl.push('\t');
+                    write!(sdl, "{}", tab(options)).ok();
                     write_input_value(sdl, field);
                     if options.federation {
                         if field.inaccessible {
@@ -603,7 +642,7 @@ impl Registry {
                     writeln!(sdl).ok();
                 }
 
-                writeln!(sdl, "}}").ok();
+                writeln!(sdl, "}}\n").ok();
             }
             MetaType::Union {
                 name,
@@ -641,7 +680,7 @@ impl Registry {
                         write!(sdl, " | {}", ty).ok();
                     }
                 }
-                writeln!(sdl).ok();
+                writeln!(sdl, "\n").ok();
             }
         }
     }
@@ -670,7 +709,7 @@ fn write_description(
     level: usize,
     description: &str,
 ) {
-    let tabs = "\t".repeat(level);
+    let tabs = tab(options).repeat(level);
 
     if options.prefer_single_line_descriptions && !description.contains('\n') {
         let description = description.replace('"', r#"\""#);
@@ -728,6 +767,14 @@ fn escape_string(s: &str) -> String {
     }
 
     res
+}
+
+fn tab(options: &SDLExportOptions) -> String {
+    if options.use_space_ident {
+        " ".repeat(options.indent_width.into())
+    } else {
+        "\t".to_string()
+    }
 }
 
 #[cfg(test)]
