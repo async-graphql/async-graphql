@@ -26,7 +26,7 @@ struct GraphiQLVersion<'a>(&'a str);
 
 impl<'a> Default for GraphiQLVersion<'a> {
     fn default() -> Self {
-        Self("3")
+        Self("4")
     }
 }
 
@@ -183,13 +183,13 @@ mod tests {
       src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/graphiql@4/graphiql.min.css" />
   </head>
 
   <body>
     <div id="graphiql">Loading...</div>
     <script
-      src="https://unpkg.com/graphiql@3/graphiql.min.js"
+      src="https://unpkg.com/graphiql@4/graphiql.min.js"
       type="application/javascript"
     ></script>
     <script>
@@ -260,13 +260,13 @@ mod tests {
       src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql@3/graphiql.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/graphiql@4/graphiql.min.css" />
   </head>
 
   <body>
     <div id="graphiql">Loading...</div>
     <script
-      src="https://unpkg.com/graphiql@3/graphiql.min.js"
+      src="https://unpkg.com/graphiql@4/graphiql.min.js"
       type="application/javascript"
     ></script>
     <script>
