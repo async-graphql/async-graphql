@@ -12,18 +12,18 @@ use async_graphql_parser::types::ConstDirective;
 use async_graphql_value::{Value as InputValue, Variables};
 use fnv::FnvHashMap;
 use serde::{
-    ser::{SerializeSeq, Serializer},
     Serialize,
+    ser::{SerializeSeq, Serializer},
 };
 
 use crate::{
+    Error, InputType, Lookahead, Name, OneofObjectType, PathSegment, Pos, Positioned, Result,
+    ServerError, ServerResult, UploadValue, Value,
     extensions::Extensions,
     parser::types::{
         Directive, Field, FragmentDefinition, OperationDefinition, Selection, SelectionSet,
     },
     schema::{IntrospectionMode, SchemaEnv},
-    Error, InputType, Lookahead, Name, OneofObjectType, PathSegment, Pos, Positioned, Result,
-    ServerError, ServerResult, UploadValue, Value,
 };
 
 /// Data related functions of the context.
@@ -456,7 +456,7 @@ impl<'a, T> ContextBase<'a, T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use ::http::{header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue};
+    /// use ::http::{HeaderValue, header::ACCESS_CONTROL_ALLOW_ORIGIN};
     /// use async_graphql::*;
     ///
     /// struct Query;
@@ -720,10 +720,12 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     /// assert!(schema.execute("{ obj { a b c }}").await.is_ok());
     /// assert!(schema.execute("{ obj { a ... { b c } }}").await.is_ok());
-    /// assert!(schema
-    ///     .execute("{ obj { a ... BC }} fragment BC on MyObj { b c }")
-    ///     .await
-    ///     .is_ok());
+    /// assert!(
+    ///     schema
+    ///         .execute("{ obj { a ... BC }} fragment BC on MyObj { b c }")
+    ///         .await
+    ///         .is_ok()
+    /// );
     /// # });
     /// ```
     pub fn field(&self) -> SelectionField {

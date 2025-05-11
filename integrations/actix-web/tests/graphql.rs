@@ -1,5 +1,5 @@
 use actix_http::Method;
-use actix_web::{dev::Service, guard, test, web, web::Data, App};
+use actix_web::{App, dev::Service, guard, test, web, web::Data};
 use async_graphql::*;
 use serde_json::json;
 use test_utils::*;

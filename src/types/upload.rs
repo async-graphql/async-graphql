@@ -4,7 +4,7 @@ use std::{borrow::Cow, io::Read, ops::Deref, sync::Arc};
 use futures_util::io::AsyncRead;
 
 use crate::{
-    registry, registry::MetaTypeId, Context, InputType, InputValueError, InputValueResult, Value,
+    Context, InputType, InputValueError, InputValueResult, Value, registry, registry::MetaTypeId,
 };
 
 /// A file upload value.

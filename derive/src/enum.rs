@@ -1,13 +1,13 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error};
+use syn::{Error, ext::IdentExt};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        gen_boxed_trait, gen_deprecation, gen_directive_calls, get_crate_name, get_rustdoc,
-        visible_fn, GeneratorResult,
+        GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, get_crate_name,
+        get_rustdoc, visible_fn,
     },
 };
 

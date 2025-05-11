@@ -1,7 +1,7 @@
 use crate::{
+    Upload,
     dynamic::{Enum, InputObject, Interface, Object, Scalar, SchemaError, Subscription, Union},
     registry::Registry,
-    Upload,
 };
 
 /// A GraphQL type

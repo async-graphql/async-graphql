@@ -1,19 +1,13 @@
-
-
-
-
 extend type Product @key(fields: "upc") {
 	upc: String! @external
 	reviews: [Review!]!
 }
-
 
 type Review {
 	body: String!
 	author: User!
 	product: Product!
 }
-
 
 extend type User @key(fields: "id") {
 	id: ID! @external

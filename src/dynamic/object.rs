@@ -1,6 +1,6 @@
 use indexmap::{IndexMap, IndexSet};
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::{Field, SchemaError},
     registry::{MetaField, MetaType, Registry},
@@ -110,7 +110,7 @@ impl Object {
     /// # Examples
     ///
     /// ```
-    /// use async_graphql::{dynamic::*, Value};
+    /// use async_graphql::{Value, dynamic::*};
     ///
     /// let obj = Object::new("MyObj")
     ///     .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
@@ -137,7 +137,7 @@ impl Object {
     /// # Examples
     ///
     /// ```
-    /// use async_graphql::{dynamic::*, Value};
+    /// use async_graphql::{Value, dynamic::*};
     ///
     /// let obj = Object::new("MyObj")
     ///     .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
@@ -233,7 +233,7 @@ impl Object {
 
 #[cfg(test)]
 mod tests {
-    use crate::{dynamic::*, value, Value};
+    use crate::{Value, dynamic::*, value};
 
     #[tokio::test]
     async fn borrow_context() {

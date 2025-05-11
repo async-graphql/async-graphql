@@ -18,7 +18,7 @@ use std::{
     sync::Arc,
 };
 
-use futures_util::{future::BoxFuture, stream::BoxStream, FutureExt};
+use futures_util::{FutureExt, future::BoxFuture, stream::BoxStream};
 
 pub use self::analyzer::Analyzer;
 #[cfg(feature = "apollo_tracing")]
@@ -30,20 +30,31 @@ pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::{
-    parser::types::{ExecutableDocument, Field},
     Data, DataContext, Error, QueryPathNode, Request, Response, Result, SDLExportOptions,
     SchemaEnv, ServerError, ServerResult, ValidationResult, Value, Variables,
+    parser::types::{ExecutableDocument, Field},
 };
 
 /// Context for extension
 pub struct ExtensionContext<'a> {
-    #[doc(hidden)]
+    /// Schema-scope context data, [`Registry`], and custom directives.
     pub schema_env: &'a SchemaEnv,
 
-    #[doc(hidden)]
+    /// Extension-scoped context data shared across all extensions.
+    ///
+    /// Can be accessed only from hooks that implement the [`Extension`] trait.
+    ///
+    /// It is created with each new [`Request`] and is empty by default.
+    ///
+    /// For subscriptions, the session ends when the subscription is closed.
     pub session_data: &'a Data,
 
-    #[doc(hidden)]
+    /// Request-scoped context data shared across all resolvers.
+    ///
+    /// This is a reference to [`Request::data`](Request) field.
+    /// If the request has not initialized yet, the value is seen as `None`
+    /// inside the [`Extension::request`], [`Extension::subscribe`], and
+    /// [`Extension::prepare_request`] hooks.
     pub query_data: Option<&'a Data>,
 }
 

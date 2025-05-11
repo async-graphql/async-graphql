@@ -1,9 +1,9 @@
 use std::{fmt::Write, sync::Arc};
 
 use crate::{
+    PathSegment, Response, ServerResult, Variables,
     extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery},
     parser::types::{ExecutableDocument, OperationType, Selection},
-    PathSegment, Response, ServerResult, Variables,
 };
 
 /// Logger extension

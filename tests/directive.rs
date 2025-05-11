@@ -200,9 +200,11 @@ pub async fn test_includes_specified_by_directive() {
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-    assert!(schema
-        .sdl()
-        .contains(r#"directive @specifiedBy(url: String!) on SCALAR"#))
+    assert!(
+        schema
+            .sdl()
+            .contains(r#"directive @specifiedBy(url: String!) on SCALAR"#)
+    )
 }
 
 #[tokio::test]

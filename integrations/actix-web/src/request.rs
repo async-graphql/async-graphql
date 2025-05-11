@@ -11,16 +11,16 @@ use actix_http::{
     header::{HeaderName, HeaderValue},
 };
 use actix_web::{
+    Error, FromRequest, HttpRequest, HttpResponse, Responder, Result,
     dev::Payload,
     error::JsonPayloadError,
     http,
     http::{Method, StatusCode},
-    Error, FromRequest, HttpRequest, HttpResponse, Responder, Result,
 };
-use async_graphql::{http::MultipartOptions, ParseRequestError};
+use async_graphql::{ParseRequestError, http::MultipartOptions};
 use futures_util::{
-    future::{self, FutureExt},
     StreamExt, TryStreamExt,
+    future::{self, FutureExt},
 };
 
 /// Extractor for GraphQL request.
@@ -172,7 +172,7 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 mod cbor {
     use core::fmt;
 
-    use actix_web::{http::StatusCode, ResponseError};
+    use actix_web::{ResponseError, http::StatusCode};
 
     #[derive(Debug)]
     pub struct Error(pub serde_cbor::Error);

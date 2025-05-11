@@ -1,12 +1,12 @@
 use std::collections::HashSet;
 
 use crate::{
+    Name, Positioned, VisitorContext,
     parser::types::{
         Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
         VariableDefinition,
     },
     validation::visitor::Visitor,
-    Name, Positioned, VisitorContext,
 };
 
 #[derive(Default)]

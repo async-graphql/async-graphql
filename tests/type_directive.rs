@@ -2,7 +2,7 @@ use async_graphql::{EmptyMutation, EmptySubscription, SDLExportOptions, Schema, 
 use async_graphql_derive::{
     ComplexObject, Enum, InputObject, Interface, Object, OneofObject, SimpleObject, TypeDirective,
 };
-use futures_util::{stream, Stream};
+use futures_util::{Stream, stream};
 
 #[test]
 pub fn test_type_directive_1() {

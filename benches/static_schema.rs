@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use async_graphql::{
-    connection::{query, Connection, Edge},
-    Context, Enum, Error, Interface, Object, OutputType, Result, *,
+    Context, Enum, Error, Interface, Object, OutputType, Result,
+    connection::{Connection, Edge, query},
+    *,
 };
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use slab::Slab;
 
 pub struct StarWarsChar {

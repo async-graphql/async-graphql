@@ -2,10 +2,10 @@ use async_graphql_parser::types::{ExecutableDocument, OperationDefinition, Varia
 use async_graphql_value::Name;
 
 use crate::{
+    Positioned,
     parser::types::Field,
     registry::{MetaType, MetaTypeName},
     validation::visitor::{VisitMode, Visitor, VisitorContext},
-    Positioned,
 };
 
 pub struct ComplexityCalculate<'ctx, 'a> {
@@ -86,7 +86,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        parser::parse_query, validation::visit, EmptyMutation, Object, Schema, Subscription,
+        EmptyMutation, Object, Schema, Subscription, parser::parse_query, validation::visit,
     };
 
     struct Query;

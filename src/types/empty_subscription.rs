@@ -2,7 +2,7 @@ use std::{borrow::Cow, pin::Pin};
 
 use futures_util::stream::{self, Stream};
 
-use crate::{registry, Context, Response, ServerError, SubscriptionType};
+use crate::{Context, Response, ServerError, SubscriptionType, registry};
 
 /// Empty subscription
 ///

@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::SchemaError,
     registry::{Deprecation, MetaEnumValue, MetaType, Registry},
@@ -137,7 +137,7 @@ impl Enum {
 
 #[cfg(test)]
 mod tests {
-    use crate::{dynamic::*, value, Name, PathSegment, Pos, ServerError, Value};
+    use crate::{Name, PathSegment, Pos, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn enum_type() {

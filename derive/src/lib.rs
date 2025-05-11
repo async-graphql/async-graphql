@@ -28,7 +28,7 @@ mod validators;
 
 use darling::{FromDeriveInput, FromMeta};
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput, ItemFn, ItemImpl};
+use syn::{DeriveInput, ItemFn, ItemImpl, parse_macro_input};
 
 macro_rules! parse_nested_meta {
     ($ty:ty, $args:expr) => {{

@@ -14,7 +14,7 @@ use std::fmt::{self, Display, Formatter};
 
 use async_graphql_value::Name;
 pub use parse::{parse_query, parse_schema};
-use pest::{error::LineColLocation, RuleType};
+use pest::{RuleType, error::LineColLocation};
 pub use pos::{Pos, Positioned};
 use serde::{Serialize, Serializer};
 

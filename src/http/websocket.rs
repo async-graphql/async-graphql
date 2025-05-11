@@ -11,9 +11,9 @@ use std::{
 
 use futures_timer::Delay;
 use futures_util::{
+    FutureExt, StreamExt,
     future::{BoxFuture, Ready},
     stream::Stream,
-    FutureExt, StreamExt,
 };
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};

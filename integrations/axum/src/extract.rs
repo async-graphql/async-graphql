@@ -1,6 +1,6 @@
 use std::{io::ErrorKind, marker::PhantomData};
 
-use async_graphql::{futures_util::TryStreamExt, http::MultipartOptions, ParseRequestError};
+use async_graphql::{ParseRequestError, futures_util::TryStreamExt, http::MultipartOptions};
 use axum::{
     extract::{FromRequest, Request},
     http::{self, Method},

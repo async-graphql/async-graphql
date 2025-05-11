@@ -11,7 +11,7 @@ mod executable;
 mod service;
 
 use std::{
-    collections::{hash_map, HashMap},
+    collections::{HashMap, hash_map},
     fmt::{self, Display, Formatter, Write},
 };
 

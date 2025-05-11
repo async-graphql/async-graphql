@@ -511,8 +511,10 @@ pub async fn test_entity_inaccessible() {
     // OBJECT
     assert!(schema_sdl.contains("type MyCustomObjInaccessible @inaccessible"));
     assert!(schema_sdl.contains(r#"type MyObjInaccessible @key(fields: "id") @inaccessible"#));
-    assert!(schema_sdl
-        .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible"));
+    assert!(
+        schema_sdl
+            .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible")
+    );
     // UNION
     assert!(schema_sdl.contains("union MyUnionInaccessible @inaccessible ="));
     // ARGUMENT_DEFINITION
@@ -786,8 +788,10 @@ pub async fn test_entity_tag() {
     // FIELD_DEFINITION
     assert!(schema_sdl.contains(r#"taggedField(id: Int!): Int! @tag(name: "tagged_\"field\"")"#));
     assert!(schema_sdl.contains(r#"objFieldTaggedA: Int! @tag(name: "tagged_field")"#));
-    assert!(schema_sdl
-        .contains(r#"taggedInterfaceValue: String! @tag(name: "tagged_interface_field")"#));
+    assert!(
+        schema_sdl
+            .contains(r#"taggedInterfaceValue: String! @tag(name: "tagged_interface_field")"#)
+    );
     assert!(
         schema_sdl.contains(r#"customObjectTagged: Int! @tag(name: "tagged_custom_object_field")"#)
     );
@@ -795,8 +799,11 @@ pub async fn test_entity_tag() {
     assert!(schema_sdl.contains(r#"interface MyInterfaceTagged @tag(name: "tagged_interface")"#));
     // OBJECT
     assert!(schema_sdl.contains(r#"type MyCustomObjTagged @tag(name: "tagged") @tag(name: "object") @tag(name: "with") @tag(name: "multiple") @tag(name: "tags") {"#));
-    assert!(schema_sdl
-        .contains(r#"type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {"#));
+    assert!(
+        schema_sdl.contains(
+            r#"type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {"#
+        )
+    );
     assert!(schema_sdl.contains(
         r#"type MyInterfaceObjB implements MyInterfaceTagged @tag(name: "interface_object")"#
     ));
@@ -968,12 +975,18 @@ pub async fn test_unresolvable_entity() {
     let schema_sdl = schema.sdl_with_options(SDLExportOptions::new().federation());
 
     assert!(schema_sdl.contains(r#"type ResolvableObject @key(fields: "id")"#));
-    assert!(schema_sdl
-        .contains(r#"type SimpleExplicitUnresolvable @key(fields: "id", resolvable: false)"#));
-    assert!(schema_sdl
-        .contains(r#"type SimpleImplicitUnresolvable @key(fields: "a", resolvable: false)"#));
-    assert!(schema_sdl
-        .contains(r#"type ExplicitUnresolvable @key(fields: "id1 id2", resolvable: false)"#));
+    assert!(
+        schema_sdl
+            .contains(r#"type SimpleExplicitUnresolvable @key(fields: "id", resolvable: false)"#)
+    );
+    assert!(
+        schema_sdl
+            .contains(r#"type SimpleImplicitUnresolvable @key(fields: "a", resolvable: false)"#)
+    );
+    assert!(
+        schema_sdl
+            .contains(r#"type ExplicitUnresolvable @key(fields: "id1 id2", resolvable: false)"#)
+    );
     assert!(
         schema_sdl.contains(r#"type ImplicitUnresolvable @key(fields: "a b", resolvable: false)"#)
     );

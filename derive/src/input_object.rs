@@ -1,13 +1,13 @@
 use darling::ast::Data;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, Error};
+use syn::{Error, ext::IdentExt};
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        gen_deprecation, gen_directive_calls, generate_default, get_crate_name, get_rustdoc,
-        visible_fn, GeneratorResult,
+        GeneratorResult, gen_deprecation, gen_directive_calls, generate_default, get_crate_name,
+        get_rustdoc, visible_fn,
     },
 };
 
@@ -28,7 +28,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         _ => {
             return Err(
                 Error::new_spanned(ident, "InputObject can only be applied to an struct.").into(),
-            )
+            );
         }
     };
 

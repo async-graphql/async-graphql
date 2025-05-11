@@ -1,6 +1,6 @@
 use std::{
     borrow::Cow,
-    collections::{hash_map::RandomState, HashMap},
+    collections::{HashMap, hash_map::RandomState},
     hash::{BuildHasher, Hash},
     marker::PhantomData,
     num::NonZeroUsize,

@@ -5,7 +5,7 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-use pest::{iterators::Pair, RuleType};
+use pest::{RuleType, iterators::Pair};
 use serde::{Deserialize, Serialize};
 
 /// Original position of an element in source code.

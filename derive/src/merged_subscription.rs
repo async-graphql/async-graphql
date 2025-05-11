@@ -6,7 +6,7 @@ use syn::{Error, LitInt};
 
 use crate::{
     args::{self, RenameTarget},
-    utils::{get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    utils::{GeneratorResult, get_crate_name, get_rustdoc, visible_fn},
 };
 
 pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<TokenStream> {
@@ -35,7 +35,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                 ident,
                 "MergedSubscription can only be applied to an struct.",
             )
-            .into())
+            .into());
         }
     };
 

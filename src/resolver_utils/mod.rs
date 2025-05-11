@@ -7,6 +7,6 @@ mod list;
 mod scalar;
 
 pub use container::*;
-pub use list::*;
 pub use r#enum::*;
+pub use list::*;
 pub use scalar::*;
