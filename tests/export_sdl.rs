@@ -38,7 +38,6 @@ async fn test_spaces() {
             .sorted_fields()
             .sorted_enum_items(),
     );
-    std::fs::write("./test_space_schema.graphql", &sdl).unwrap();
 
     let expected = include_str!("schemas/test_space_schema.graphql");
     assert_eq!(sdl, expected);
