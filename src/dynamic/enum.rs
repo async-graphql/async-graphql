@@ -54,6 +54,7 @@ pub struct Enum {
     inaccessible: bool,
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
+    requires_scopes: Vec<String>,
 }
 
 impl Enum {
@@ -67,6 +68,7 @@ impl Enum {
             inaccessible: false,
             tags: Vec::new(),
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 
@@ -128,6 +130,7 @@ impl Enum {
                 tags: self.tags.clone(),
                 rust_typename: None,
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
+                requires_scopes: self.requires_scopes.clone(),
             },
         );
 

@@ -42,6 +42,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let requires_scopes = interface_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let directives =
         gen_directive_calls(&interface_args.directives, TypeDirectiveLocation::Interface);
     let gql_typename = if !interface_args.name_type {
@@ -160,6 +165,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         tags,
         override_from,
         directives,
+        requires_scopes,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -307,6 +313,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+        let requires_scopes = requires_scopes
+            .iter()
+            .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+            .collect::<Vec<_>>();
         let directives = gen_directive_calls(directives, TypeDirectiveLocation::FieldDefinition);
 
         schema_fields.push(quote! {
@@ -331,6 +341,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
                 directive_invocations: ::std::vec![ #(#directives),* ],
+                requires_scopes: ::std::vec![ #(#requires_scopes),* ],
             });
         });
 
@@ -417,7 +428,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     }
                 })
             }

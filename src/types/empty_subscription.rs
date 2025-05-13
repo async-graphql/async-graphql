@@ -33,6 +33,7 @@ impl SubscriptionType for EmptySubscription {
             is_subscription: true,
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

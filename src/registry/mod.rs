@@ -238,6 +238,10 @@ pub struct MetaField {
     pub compute_complexity: Option<ComputeComplexityFn>,
     /// Custom directive invocations
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
+    /// Indicates to composition that the target element is accessible only to
+    /// the authenticated supergraph users with the appropriate JWT scopes
+    /// when using Apollo Federation.
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -275,6 +279,7 @@ impl MetaTypeId {
                 tags: vec![],
                 specified_by_url: None,
                 directive_invocations: vec![],
+                requires_scopes: vec![],
             },
             MetaTypeId::Object => MetaType::Object {
                 name: "".to_string(),
@@ -292,6 +297,7 @@ impl MetaTypeId {
                 is_subscription: false,
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
+                requires_scopes: vec![],
             },
             MetaTypeId::Interface => MetaType::Interface {
                 name: "".to_string(),
@@ -305,6 +311,7 @@ impl MetaTypeId {
                 visible: None,
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
+                requires_scopes: vec![],
             },
             MetaTypeId::Union => MetaType::Union {
                 name: "".to_string(),
@@ -325,6 +332,7 @@ impl MetaTypeId {
                 tags: vec![],
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
+                requires_scopes: vec![],
             },
             MetaTypeId::InputObject => MetaType::InputObject {
                 name: "".to_string(),
@@ -389,6 +397,10 @@ pub enum MetaType {
         specified_by_url: Option<String>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// JWT scopes when using Apollo Federation.
+        requires_scopes: Vec<String>,
     },
     /// Object
     ///
@@ -454,6 +466,10 @@ pub enum MetaType {
         rust_typename: Option<&'static str>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
+        /// Inidicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// JWT scopes when using Apollo Federation.
+        requires_scopes: Vec<String>,
     },
     /// Interface
     ///
@@ -498,6 +514,10 @@ pub enum MetaType {
         rust_typename: Option<&'static str>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
+        /// Inidicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// JWT scopes when using Apollo Federation.
+        requires_scopes: Vec<String>,
     },
     /// Union
     ///
@@ -554,6 +574,10 @@ pub enum MetaType {
         rust_typename: Option<&'static str>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// JWT scopes when using Apollo Federation.
+        requires_scopes: Vec<String>,
     },
     /// Input object
     ///
@@ -1133,6 +1157,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     directive_invocations: vec![],
+                    requires_scopes: vec![],
                 },
             );
         }
@@ -1190,6 +1215,7 @@ impl Registry {
                         override_from: None,
                         compute_complexity: None,
                         directive_invocations: vec![],
+                        requires_scopes: vec![],
                     },
                 );
             }
@@ -1219,6 +1245,7 @@ impl Registry {
                     compute_complexity: None,
                     override_from: None,
                     directive_invocations: vec![],
+                    requires_scopes: vec![],
                 },
             );
 
@@ -1259,6 +1286,7 @@ impl Registry {
                     visible: None,
                     compute_complexity: None,
                     directive_invocations: vec![],
+                    requires_scopes: vec![],
                 },
             );
         }
@@ -1293,6 +1321,7 @@ impl Registry {
                             override_from: None,
                             compute_complexity: None,
                             directive_invocations: vec![],
+                            requires_scopes: vec![],
                         },
                     );
                     fields
@@ -1309,6 +1338,7 @@ impl Registry {
                 is_subscription: false,
                 rust_typename: Some("async_graphql::federation::Service"),
                 directive_invocations: vec![],
+                requires_scopes: vec![],
             },
         );
 
