@@ -548,3 +548,38 @@ pub async fn test_interface_with_oneof_object() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_interface_dont_strip_starting_underscore() {
+    #[derive(SimpleObject)]
+    struct MyObjA {
+        #[graphql(name = "_id")]
+        _id: i32,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = r"_id", ty = "&i32"))]
+    enum MyInterface {
+        MyObjA(MyObjA),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node(&self) -> MyInterface {
+            todo!()
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let sdl = schema.sdl();
+    
+    // Simply check that the field name _id appears in the SDL with underscore preserved
+    assert!(sdl.contains("_id: Int!"), 
+        "SDL should contain '_id: Int!' but field name underscore was stripped: {}", sdl);
+    
+    // Also verify it doesn't contain just "id" (without underscore)
+    assert!(!sdl.contains("\n\tid: Int!"), 
+        "SDL should not contain 'id: Int!' without underscore: {}", sdl);
+}
