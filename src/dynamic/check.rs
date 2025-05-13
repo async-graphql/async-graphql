@@ -177,7 +177,7 @@ impl SchemaInner {
                         let interface = ty.as_interface().ok_or_else(|| {
                             format!("Type \"{}\" is not interface", interface_name)
                         })?;
-                        check_is_valid_implementation(obj, interface)?;
+                        self.check_is_valid_implementation(obj, interface)?;
                     }
                 }
             }
@@ -339,7 +339,7 @@ impl SchemaInner {
                             let implemenented_type = ty.as_interface().ok_or_else(|| {
                                 format!("Type \"{}\" is not interface", interface_name)
                             })?;
-                            check_is_valid_implementation(interface, implemenented_type)?;
+                            self.check_is_valid_implementation(interface, implemenented_type)?;
                         }
                     }
                 }
@@ -373,28 +373,65 @@ impl SchemaInner {
 
         Ok(())
     }
-}
 
-fn check_is_valid_implementation(
-    implementing_type: &impl BaseContainer,
-    implemented_type: &Interface,
-) -> Result<(), SchemaError> {
-    for field in implemented_type.fields.values() {
-        let impl_field = implementing_type.field(&field.name).ok_or_else(|| {
-            format!(
-                "{} \"{}\" requires field \"{}\" defined by interface \"{}\"",
-                implementing_type.graphql_type(),
-                implementing_type.name(),
-                field.name,
-                implemented_type.name
-            )
-        })?;
+    fn check_is_child_type(&self, ty: &TypeRef, child: &TypeRef) -> bool {
+        if child.is_subtype(ty) {
+            return true;
+        }
 
-        for arg in field.arguments.values() {
-            let impl_arg = match impl_field.argument(&arg.name) {
-                Some(impl_arg) => impl_arg,
-                None if !arg.ty.is_nullable() => {
-                    return Err(format!(
+        fn rewrap_type(ty: &TypeRef, name: &str) -> TypeRef {
+            match ty {
+                TypeRef::Named(_cow) => TypeRef::named(name),
+                TypeRef::NonNull(type_ref) => {
+                    TypeRef::NonNull(Box::new(rewrap_type(type_ref, name)))
+                }
+                TypeRef::List(type_ref) => TypeRef::List(Box::new(rewrap_type(type_ref, name))),
+            }
+        }
+
+        match self.types.get(child.type_name()) {
+            Some(Type::Object(object)) => object.implements.iter().any(|i_ty| {
+                if let Some(i_ty) = self.types.get(i_ty) {
+                    let type_ref = rewrap_type(child, i_ty.name());
+
+                    return self.check_is_child_type(ty, &type_ref);
+                }
+                false
+            }),
+            Some(Type::Interface(interface)) => interface.implements.iter().any(|i_ty| {
+                if let Some(i_ty) = self.types.get(i_ty) {
+                    let type_ref = rewrap_type(child, i_ty.name());
+
+                    return self.check_is_child_type(ty, &type_ref);
+                }
+                false
+            }),
+            _ => false,
+        }
+    }
+
+    fn check_is_valid_implementation(
+        &self,
+        implementing_type: &impl BaseContainer,
+        implemented_type: &Interface,
+    ) -> Result<(), SchemaError> {
+        for field in implemented_type.fields.values() {
+            // Field on the implementing type
+            let impl_field = implementing_type.field(&field.name).ok_or_else(|| {
+                format!(
+                    "{} \"{}\" requires field \"{}\" defined by interface \"{}\"",
+                    implementing_type.graphql_type(),
+                    implementing_type.name(),
+                    field.name,
+                    implemented_type.name
+                )
+            })?;
+
+            for arg in field.arguments.values() {
+                let impl_arg = match impl_field.argument(&arg.name) {
+                    Some(impl_arg) => impl_arg,
+                    None if !arg.ty.is_nullable() => {
+                        return Err(format!(
                         "Field \"{}.{}\" requires argument \"{}\" defined by interface \"{}.{}\"",
                         implementing_type.name(),
                         field.name,
@@ -402,40 +439,41 @@ fn check_is_valid_implementation(
                         implemented_type.name,
                         field.name,
                     )
+                        .into());
+                    }
+                    None => continue,
+                };
+
+                if !self.check_is_child_type(&arg.ty, &impl_arg.ty) {
+                    return Err(format!(
+                        "Argument \"{}.{}.{}\" is not sub-type of \"{}.{}.{}\"",
+                        implemented_type.name,
+                        field.name,
+                        arg.name,
+                        implementing_type.name(),
+                        field.name,
+                        arg.name
+                    )
                     .into());
                 }
-                None => continue,
-            };
+            }
 
-            if !arg.ty.is_subtype(&impl_arg.ty) {
+            // field must return a type which is equal to or a sub-type of (covariant) the
+            // return type of implementedField field’s return type
+            if !self.check_is_child_type(&field.ty, &impl_field.ty()) {
                 return Err(format!(
-                    "Argument \"{}.{}.{}\" is not sub-type of \"{}.{}.{}\"",
-                    implemented_type.name,
-                    field.name,
-                    arg.name,
+                    "Field \"{}.{}\" is not sub-type of \"{}.{}\"",
                     implementing_type.name(),
                     field.name,
-                    arg.name
+                    implemented_type.name,
+                    field.name,
                 )
                 .into());
             }
         }
 
-        // field must return a type which is equal to or a sub-type of (covariant) the
-        // return type of implementedField field’s return type
-        if !impl_field.ty().is_subtype(&field.ty) {
-            return Err(format!(
-                "Field \"{}.{}\" is not sub-type of \"{}.{}\"",
-                implementing_type.name(),
-                field.name,
-                implemented_type.name,
-                field.name,
-            )
-            .into());
-        }
+        Ok(())
     }
-
-    Ok(())
 }
 
 #[cfg(test)]
