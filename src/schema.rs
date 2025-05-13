@@ -871,6 +871,7 @@ pub(crate) async fn prepare_request(
                 registry,
                 &document,
                 Some(&request.variables),
+                request.operation_name.as_deref(),
                 validation_mode,
                 complexity,
                 depth,

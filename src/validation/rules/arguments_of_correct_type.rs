@@ -15,9 +15,23 @@ use crate::{
 #[derive(Default)]
 pub struct ArgumentsOfCorrectType<'a> {
     current_args: Option<&'a IndexMap<String, MetaInputValue>>,
+    in_unselected_operation: bool,
 }
 
 impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
+    fn enter_operation_definition(
+        &mut self,
+        ctx: &mut VisitorContext<'a>,
+        name: Option<&'a Name>,
+        _operation_definition: &'a Positioned<async_graphql_parser::types::OperationDefinition>,
+    ) {
+        self.in_unselected_operation =
+            ctx.operation_name
+                .zip(name)
+                .is_some_and(|(selected_operation, current_operation)| {
+                    selected_operation != current_operation.as_str()
+                })
+    }
     fn enter_directive(
         &mut self,
         ctx: &mut VisitorContext<'a>,
@@ -52,7 +66,11 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 .node
                 .clone()
                 .into_const_with(|var_name| {
-                    ctx.variables
+                    // Don't check variables if we're in an unselected operation, since the
+                    // variables don't apply to this operation.
+                    (!self.in_unselected_operation)
+                        .then_some(ctx.variables)
+                        .flatten()
                         .and_then(|variables| variables.get(&var_name))
                         .cloned()
                         .ok_or(())
