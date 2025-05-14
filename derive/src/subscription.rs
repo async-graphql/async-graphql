@@ -277,7 +277,8 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![],
                 });
             });
 
@@ -431,7 +432,8 @@ pub fn generate(
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![],
                 })
             }
 

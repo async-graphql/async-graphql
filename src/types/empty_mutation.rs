@@ -64,6 +64,7 @@ impl OutputType for EmptyMutation {
             is_subscription: false,
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

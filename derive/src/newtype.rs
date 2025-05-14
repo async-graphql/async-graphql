@@ -62,6 +62,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 tags: ::std::vec![ #(#tags),* ],
                 specified_by_url: #specified_by_url,
                 directive_invocations: ::std::vec::Vec::new(),
+                requires_scopes: ::std::vec::Vec::new(),
             })
         }
     } else {

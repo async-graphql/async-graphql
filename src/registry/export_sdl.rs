@@ -186,18 +186,18 @@ impl Registry {
                 return;
             }
 
-            writeln!(sdl, "{}", directive.sdl()).ok();
+            writeln!(sdl, "{}", directive.sdl(&options)).ok();
         });
 
         if options.federation {
             writeln!(sdl, "extend schema @link(").ok();
             writeln!(
                 sdl,
-                "{}url: \"https://specs.apollo.dev/federation/v2.3\",",
+                "{}url: \"https://specs.apollo.dev/federation/v2.5\",",
                 tab(&options)
             )
             .ok();
-            writeln!(sdl, "{}import: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\"]", tab(&options)).ok();
+            writeln!(sdl, "{}import: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\", \"@requiresScopes\"]", tab(&options)).ok();
             writeln!(sdl, ")").ok();
 
             if options.compose_directive {
@@ -340,6 +340,10 @@ impl Registry {
                 if let Some(from) = &field.override_from {
                     write!(sdl, " @override(from: \"{}\")", from).ok();
                 }
+
+                if !&field.requires_scopes.is_empty() {
+                    write_requires_scopes(sdl, &field.requires_scopes);
+                }
             }
 
             writeln!(sdl).ok();
@@ -355,6 +359,7 @@ impl Registry {
                 tags,
                 specified_by_url,
                 directive_invocations,
+                requires_scopes,
                 ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
@@ -385,6 +390,9 @@ impl Registry {
                         for tag in tags {
                             write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                         }
+                        if !requires_scopes.is_empty() {
+                            write_requires_scopes(sdl, requires_scopes);
+                        }
                     }
 
                     for directive in directive_invocations {
@@ -406,6 +414,7 @@ impl Registry {
                 interface_object,
                 tags,
                 directive_invocations: raw_directives,
+                requires_scopes,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -472,6 +481,10 @@ impl Registry {
                     for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
+
+                    if !requires_scopes.is_empty() {
+                        write_requires_scopes(sdl, requires_scopes);
+                    }
                 }
 
                 writeln!(sdl, " {{").ok();
@@ -487,6 +500,7 @@ impl Registry {
                 inaccessible,
                 tags,
                 directive_invocations,
+                requires_scopes,
                 ..
             } => {
                 if let Some(description) = description {
@@ -511,6 +525,10 @@ impl Registry {
                     for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
                     }
+
+                    if !requires_scopes.is_empty() {
+                        write_requires_scopes(sdl, requires_scopes);
+                    }
                 }
 
                 for directive in directive_invocations {
@@ -530,6 +548,7 @@ impl Registry {
                 inaccessible,
                 tags,
                 directive_invocations,
+                requires_scopes,
                 ..
             } => {
                 if let Some(description) = description {
@@ -543,6 +562,10 @@ impl Registry {
                     }
                     for tag in tags {
                         write!(sdl, " @tag(name: \"{}\")", tag.replace('"', "\\\"")).ok();
+                    }
+
+                    if !requires_scopes.is_empty() {
+                        write_requires_scopes(sdl, requires_scopes);
                     }
                 }
 
@@ -623,7 +646,7 @@ impl Registry {
                 }
 
                 for field in fields {
-                    if let Some(ref description) = &field.description {
+                    if let Some(description) = &field.description {
                         write_description(sdl, options, 1, description);
                     }
                     write!(sdl, "{}", tab(options)).ok();
@@ -703,7 +726,7 @@ impl Registry {
     }
 }
 
-fn write_description(
+pub(super) fn write_description(
     sdl: &mut String,
     options: &SDLExportOptions,
     level: usize,
@@ -741,6 +764,26 @@ fn write_deprecated(sdl: &mut String, deprecation: &Deprecation) {
             None => write!(sdl, " @deprecated").ok(),
         };
     }
+}
+
+fn write_requires_scopes(sdl: &mut String, requires_scopes: &Vec<String>) {
+    write!(
+        sdl,
+        " @requiresScopes(scopes: [{}])",
+        requires_scopes
+            .iter()
+            .map(|x| {
+                "[".to_string()
+                    + &x.split_whitespace()
+                        .map(|y| "\"".to_string() + y + "\"")
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                    + "]"
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    )
+    .ok();
 }
 
 fn escape_string(s: &str) -> String {
@@ -794,8 +837,8 @@ mod tests {
     fn test_compose_directive_dsl() {
         let expected = r#"directive @custom_type_directive on FIELD_DEFINITION
 extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.3",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
+	url: "https://specs.apollo.dev/federation/v2.5",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject", "@requiresScopes"]
 )
 
 extend schema @link(

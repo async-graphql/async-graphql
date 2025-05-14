@@ -40,6 +40,7 @@ where
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 
@@ -99,6 +100,7 @@ where
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 
