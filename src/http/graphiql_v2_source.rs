@@ -24,7 +24,7 @@ pub enum Credentials {
 #[derive(Serialize)]
 struct GraphiQLVersion<'a>(&'a str);
 
-impl<'a> Default for GraphiQLVersion<'a> {
+impl Default for GraphiQLVersion<'_> {
     fn default() -> Self {
         Self("4")
     }
