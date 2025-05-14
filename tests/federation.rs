@@ -999,11 +999,16 @@ pub async fn test_entity_requires_scopes() {
         r#"type MyInterfaceObjB implements MyInterfaceRequiresScoped @requiresScopes(scopes: [["objB:read"]])"#
     ));
     // SCALAR
-    assert!(schema_sdl
-        .contains(r#"scalar MyNumberRequiresScoped @requiresScopes(scopes: [["scalar:read"]])"#));
+    assert!(
+        schema_sdl.contains(
+            r#"scalar MyNumberRequiresScoped @requiresScopes(scopes: [["scalar:read"]])"#
+        )
+    );
     // ENUM
-    assert!(schema_sdl
-        .contains(r#"enum MyEnumRequiresScoped @requiresScopes(scopes: [["enum:read"]])"#));
+    assert!(
+        schema_sdl
+            .contains(r#"enum MyEnumRequiresScoped @requiresScopes(scopes: [["enum:read"]])"#)
+    );
     // no trailing spaces
     assert!(!schema_sdl.contains(" \n"));
 }

@@ -766,7 +766,7 @@ fn write_deprecated(sdl: &mut String, deprecation: &Deprecation) {
     }
 }
 
-fn write_requires_scopes(sdl: &mut String, requires_scopes: &Vec<String>) {
+fn write_requires_scopes(sdl: &mut String, requires_scopes: &[String]) {
     write!(
         sdl,
         " @requiresScopes(scopes: [{}])",
