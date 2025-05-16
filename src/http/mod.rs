@@ -97,7 +97,7 @@ pub async fn receive_batch_body(
     let content_type = content_type
         .as_ref()
         .map(AsRef::as_ref)
-        .unwrap_or("application/json");
+        .unwrap_or("application/graphql-response+json");
 
     let content_type: mime::Mime = content_type.parse()?;
 
