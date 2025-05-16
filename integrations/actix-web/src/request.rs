@@ -216,7 +216,7 @@ impl Responder for GraphQLResponse {
                 },
             ),
             _ => (
-                "application/json",
+                "application/graphql-response+json",
                 match serde_json::to_vec(&self.0) {
                     Ok(body) => body,
                     Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),
