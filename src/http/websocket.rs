@@ -6,8 +6,9 @@ use std::{
     pin::Pin,
     sync::Arc,
     task::{Context, Poll},
-    time::{Duration, Instant},
 };
+
+use web_time::{Duration, Instant};
 
 use futures_timer::Delay;
 use futures_util::{
