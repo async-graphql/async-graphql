@@ -201,6 +201,7 @@ Add the extension crate [`async_graphql_apollo_studio_extension`](https://github
 - [Brevz](https://brevz.io/)
 - [thorndyke](https://www.thorndyke.ai/)
 - [My Data My Consent](https://mydatamyconsent.com/)
+- [Kamu](https://www.kamu.dev/)
 
 ## Community Showcase
 
@@ -211,6 +212,8 @@ Add the extension crate [`async_graphql_apollo_studio_extension`](https://github
 - [Diana](https://github.com/arctic-hen7/diana) Diana is a GraphQL system for Rust that's designed to work as simply as possible out of the box, without sacrificing configuration ability.
 - [cindythink](https://www.cindythink.com/)
 - [sudograph](https://github.com/sudograph/sudograph)
+- [Kamu](https://github.com/kamu-data/kamu-cli/tree/master/src/adapter/graphql)
+  Extensively uses GraphQL, covering its Type System, Field Guards, Cursor Connections, Error Extensions, and Apollo Tracing.
 
 ## Blog Posts
 
