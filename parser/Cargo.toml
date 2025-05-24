@@ -3,13 +3,13 @@ authors = ["sunli <scott_s829@163.com>", "Koxiaet"]
 categories = ["network-programming", "asynchronous"]
 description = "GraphQL query parser for async-graphql"
 documentation = "https://docs.rs/async-graphql/"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-parser"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.16"
+version = "7.0.17"
 
 [dependencies]
 async-graphql-value.workspace = true

@@ -1,20 +1,20 @@
 use std::{borrow::Cow, pin::Pin};
 
 use async_graphql_derive::SimpleObject;
-use async_graphql_parser::{types::Field, Positioned};
-use futures_util::{future::BoxFuture, Future, FutureExt};
+use async_graphql_parser::{Positioned, types::Field};
+use futures_util::{Future, FutureExt, future::BoxFuture};
 use indexmap::IndexMap;
 
 use crate::{
+    Context, ContextSelectionSet, Error, IntrospectionMode, Name, SDLExportOptions, ServerError,
+    ServerResult, Value,
     dynamic::{
-        field::FieldValueInner, FieldFuture, FieldValue, Object, ObjectAccessor, ResolverContext,
-        Schema, Type, TypeRef,
+        FieldFuture, FieldValue, Object, ObjectAccessor, ResolverContext, Schema, Type, TypeRef,
+        field::FieldValueInner,
     },
     extensions::ResolveInfo,
     parser::types::Selection,
     resolver_utils::create_value_object,
-    Context, ContextSelectionSet, Error, IntrospectionMode, Name, SDLExportOptions, ServerError,
-    ServerResult, Value,
 };
 
 /// Federation service

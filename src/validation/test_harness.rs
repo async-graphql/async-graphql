@@ -8,7 +8,7 @@ use std::sync::OnceLock;
 use crate::{
     futures_util::stream::Stream,
     parser::types::ExecutableDocument,
-    validation::visitor::{visit, RuleError, Visitor},
+    validation::visitor::{RuleError, Visitor, visit},
     *,
 };
 

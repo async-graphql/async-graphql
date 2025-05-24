@@ -1,9 +1,8 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::types::Field, registry, registry::Registry, ContextSelectionSet, InputType,
-    InputValueError, InputValueResult, OutputType, Positioned, Scalar, ScalarType, ServerResult,
-    Value,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
+    Scalar, ScalarType, ServerResult, Value, parser::types::Field, registry, registry::Registry,
 };
 
 /// The `String` scalar type represents textual data, represented as UTF-8

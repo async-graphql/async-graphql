@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use async_graphql::{
-    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
     Executor,
+    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
 };
 use futures_util::StreamExt;
 use poem::{Body, Endpoint, FromRequest, IntoResponse, Request, Response, Result};
@@ -16,7 +16,7 @@ use crate::{GraphQLBatchRequest, GraphQLBatchResponse, GraphQLRequest};
 /// ```
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
 /// use async_graphql_poem::GraphQL;
-/// use poem::{post, Route};
+/// use poem::{Route, post};
 ///
 /// struct Query;
 ///

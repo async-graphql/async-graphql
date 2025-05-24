@@ -14,13 +14,11 @@ mod multipart_subscribe;
 mod playground_source;
 mod websocket;
 
-use std::io::ErrorKind;
-
 #[cfg(feature = "altair")]
 pub use altair_source::*;
 use futures_util::io::{AsyncRead, AsyncReadExt};
 #[cfg(feature = "graphiql")]
-pub use graphiql_plugin::{graphiql_plugin_explorer, GraphiQLPlugin};
+pub use graphiql_plugin::{GraphiQLPlugin, graphiql_plugin_explorer};
 #[cfg(feature = "graphiql")]
 pub use graphiql_source::graphiql_source;
 #[cfg(feature = "graphiql")]
@@ -28,12 +26,12 @@ pub use graphiql_v2_source::{Credentials, GraphiQLSource};
 pub use multipart::MultipartOptions;
 pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart_mixed};
 #[cfg(feature = "playground")]
-pub use playground_source::{playground_source, GraphQLPlaygroundConfig};
+pub use playground_source::{GraphQLPlaygroundConfig, playground_source};
 use serde::Deserialize;
 pub use websocket::{
-    default_on_connection_init, default_on_ping, ClientMessage, DefaultOnConnInitType,
-    DefaultOnPingType, Protocols as WebSocketProtocols, WebSocket, WsMessage,
-    ALL_WEBSOCKET_PROTOCOLS,
+    ALL_WEBSOCKET_PROTOCOLS, ClientMessage, DefaultOnConnInitType, DefaultOnPingType,
+    Protocols as WebSocketProtocols, WebSocket, WsMessage, default_on_connection_init,
+    default_on_ping,
 };
 
 use crate::{BatchRequest, ParseRequestError, Request};
@@ -49,23 +47,18 @@ pub fn parse_query_string(input: &str) -> Result<Request, ParseRequestError> {
         pub extensions: Option<String>,
     }
 
-    let request: RequestSerde = serde_urlencoded::from_str(input)
-        .map_err(|err| std::io::Error::new(ErrorKind::Other, err))?;
+    let request: RequestSerde = serde_urlencoded::from_str(input).map_err(std::io::Error::other)?;
     let variables = request
         .variables
         .map(|data| serde_json::from_str(&data))
         .transpose()
-        .map_err(|err| {
-            std::io::Error::new(ErrorKind::Other, format!("invalid variables: {}", err))
-        })?
+        .map_err(|err| std::io::Error::other(format!("invalid variables: {}", err)))?
         .unwrap_or_default();
     let extensions = request
         .extensions
         .map(|data| serde_json::from_str(&data))
         .transpose()
-        .map_err(|err| {
-            std::io::Error::new(ErrorKind::Other, format!("invalid extensions: {}", err))
-        })?
+        .map_err(|err| std::io::Error::other(format!("invalid extensions: {}", err)))?
         .unwrap_or_default();
 
     Ok(Request {
@@ -97,7 +90,7 @@ pub async fn receive_batch_body(
     let content_type = content_type
         .as_ref()
         .map(AsRef::as_ref)
-        .unwrap_or("application/json");
+        .unwrap_or("application/graphql-response+json");
 
     let content_type: mime::Mime = content_type.parse()?;
 
@@ -182,7 +175,7 @@ mod tests {
     use async_graphql_value::Extensions;
 
     use super::*;
-    use crate::{value, Variables};
+    use crate::{Variables, value};
 
     #[test]
     fn test_parse_query_string() {

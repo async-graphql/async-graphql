@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.17] 2025-05-24
+
+- update MSRV to `1.86.0`
+- Allow exporting SDL with spaces [#1688](https://github.com/async-graphql/async-graphql/pull/1688)
+- Update GraphiQLSource to use React v18 [#1705](https://github.com/async-graphql/async-graphql/pull/1705)
+- fix: generate description of directives. [#1681](https://github.com/async-graphql/async-graphql/pull/1681)
+- feat: add @requiresScopes support [#1695](https://github.com/async-graphql/async-graphql/pull/1695)
+- chore: fix clippy and fmt errors [#1713](https://github.com/async-graphql/async-graphql/pull/1713)
+- use preferred mime-type [#1714](https://github.com/async-graphql/async-graphql/pull/1714)
+- Add GraphiQLSource version [#1704](https://github.com/async-graphql/async-graphql/pull/1704)
+
 # [7.0.16] 2025-03-20
 
 - dynamic: fixed `__typename` always returned `null` when introspection was disabled.
@@ -110,7 +121,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [7.0.2] 2024-02-18
 
-- Fix `#[derive(OneofObject)]` rejecting enums where the type comes from a macro subsitution [#1473](https://github.com/async-graphql/async-graphql/pull/1473)
+- Fix `#[derive(OneofObject)]` rejecting enums where the type comes from a macro substitution [#1473](https://github.com/async-graphql/async-graphql/pull/1473)
 - Optimize object proc-macro codegen [#1470](https://github.com/async-graphql/async-graphql/pull/1470)
 - Use `impl Future` instead of `async-trait` in most traits. [#1468](https://github.com/async-graphql/async-graphql/pull/1468)
 - Upgrade `base64` to `0.21` [#1466](https://github.com/async-graphql/async-graphql/pull/1466)
@@ -182,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [6.0.1] 2023-08-02
 
-- dynamic: remove `TypeRefInnner`
+- dynamic: remove `TypeRefInner`
 - update MSRV to `1.67.0`
 
 # [6.0.0] 2023-07-29
@@ -267,7 +278,7 @@ pub fn lowercase() -> impl CustomDirective {
 - dynamic schema: add boxed_any function [#1179](https://github.com/async-graphql/async-graphql/pull/1179)
 - Improve GraphiQL v2 [#1182](https://github.com/async-graphql/async-graphql/pull/1182)
 - Fix: __Type.oneOf to __Type.isOneOf [#1188](https://github.com/async-graphql/async-graphql/pull/1188)
-- Implemente From<ID> for ConstValue [#1169](https://github.com/async-graphql/async-graphql/pull/1169)
+- Implement From<ID> for ConstValue [#1169](https://github.com/async-graphql/async-graphql/pull/1169)
 - Fixes [#1192](https://github.com/async-graphql/async-graphql/issues/1192)
 
 # [5.0.4] 2022-12-17
@@ -410,7 +421,7 @@ pub fn lowercase() -> impl CustomDirective {
 # [4.0.3] 2022-6-20
 
 - Custom error type in axum request extractor [#945](https://github.com/async-graphql/async-graphql/pull/945)
-- Add nodes exposure on `ConectionType` so nesting through edges isn't always needed. [#952](https://github.com/async-graphql/async-graphql/pull/952)
+- Add nodes exposure on `ConnectionType` so nesting through edges isn't always needed. [#952](https://github.com/async-graphql/async-graphql/pull/952)
 - Make email-validator optional [#950](https://github.com/async-graphql/async-graphql/pull/950)
 
 # [4.0.2] 2022-6-10

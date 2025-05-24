@@ -4,7 +4,7 @@ use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{visit_mut::VisitMut, Error, Type};
+use syn::{Error, Type, visit_mut::VisitMut};
 
 use crate::{
     args::{
@@ -13,8 +13,8 @@ use crate::{
     },
     output_type::OutputType,
     utils::{
-        gen_boxed_trait, gen_deprecation, gen_directive_calls, generate_default, get_crate_name,
-        get_rustdoc, visible_fn, GeneratorResult, RemoveLifetime,
+        GeneratorResult, RemoveLifetime, gen_boxed_trait, gen_deprecation, gen_directive_calls,
+        generate_default, get_crate_name, get_rustdoc, visible_fn,
     },
 };
 
@@ -29,7 +29,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         _ => {
             return Err(
                 Error::new_spanned(ident, "Interface can only be applied to an enum.").into(),
-            )
+            );
         }
     };
     let extends = interface_args.extends;
@@ -41,6 +41,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .tags
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
+    let requires_scopes = interface_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
     let directives =
         gen_directive_calls(&interface_args.directives, TypeDirectiveLocation::Interface);
@@ -72,19 +77,19 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     enum_name,
                     "Only single value variants are supported",
                 )
-                .into())
+                .into());
             }
             Style::Unit => {
                 return Err(
                     Error::new_spanned(enum_name, "Empty variants are not supported").into(),
-                )
+                );
             }
             Style::Struct => {
                 return Err(Error::new_spanned(
                     enum_name,
                     "Variants with named fields are not supported",
                 )
-                .into())
+                .into());
             }
         };
 
@@ -160,6 +165,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         tags,
         override_from,
         directives,
+        requires_scopes,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -307,6 +313,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
+        let requires_scopes = requires_scopes
+            .iter()
+            .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+            .collect::<Vec<_>>();
         let directives = gen_directive_calls(directives, TypeDirectiveLocation::FieldDefinition);
 
         schema_fields.push(quote! {
@@ -331,6 +341,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 visible: #visible,
                 compute_complexity: ::std::option::Option::None,
                 directive_invocations: ::std::vec![ #(#directives),* ],
+                requires_scopes: ::std::vec![ #(#requires_scopes),* ],
             });
         });
 
@@ -417,7 +428,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         inaccessible: #inaccessible,
                         tags: ::std::vec![ #(#tags),* ],
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     }
                 })
             }

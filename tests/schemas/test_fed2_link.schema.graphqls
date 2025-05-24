@@ -1,12 +1,7 @@
-
-
-
-
 extend type Product @key(fields: "upc") {
 	upc: String! @external
 	reviews: [Review!]!
 }
-
 
 type Review {
 	body: String!
@@ -14,15 +9,20 @@ type Review {
 	product: Product!
 }
 
-
 extend type User @key(fields: "id") {
 	id: ID! @external
 	reviews: [Review!]!
 }
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.3",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
+	url: "https://specs.apollo.dev/federation/v2.5",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject", "@requiresScopes"]
 )

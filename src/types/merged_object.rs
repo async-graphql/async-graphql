@@ -3,11 +3,11 @@ use std::{borrow::Cow, pin::Pin};
 use indexmap::IndexMap;
 
 use crate::{
+    CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,
+    ServerResult, SimpleObject, SubscriptionType, Value,
     futures_util::stream::Stream,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
-    CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,
-    ServerResult, SimpleObject, SubscriptionType, Value,
 };
 
 #[doc(hidden)]
@@ -87,6 +87,7 @@ where
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }
@@ -150,6 +151,7 @@ where
                 is_subscription: false,
                 rust_typename: Some(std::any::type_name::<Self>()),
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }
@@ -189,6 +191,7 @@ impl SubscriptionType for MergedObjectTail {
             is_subscription: false,
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

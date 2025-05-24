@@ -20,7 +20,7 @@ pub async fn test_directive_skip() {
                 value5: value @skip(if: true)
                 value6: value @skip(if: false)
             }
-            
+
             query {
                 value1: value @skip(if: true)
                 value2: value @skip(if: false)
@@ -166,7 +166,13 @@ pub async fn test_includes_deprecated_directive() {
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-    assert!(schema.sdl().contains(r#"directive @deprecated(reason: String = "No longer supported") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE"#))
+    assert!(schema.sdl().contains(
+        r#"
+"""
+Marks an element of a GraphQL schema as no longer supported.
+"""
+directive @deprecated(reason: String = "No longer supported") on FIELD_DEFINITION | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION | ENUM_VALUE"#,
+    ))
 }
 
 #[tokio::test]
@@ -194,9 +200,11 @@ pub async fn test_includes_specified_by_directive() {
 
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-    assert!(schema
-        .sdl()
-        .contains(r#"directive @specifiedBy(url: String!) on SCALAR"#))
+    assert!(
+        schema
+            .sdl()
+            .contains(r#"directive @specifiedBy(url: String!) on SCALAR"#)
+    )
 }
 
 #[tokio::test]

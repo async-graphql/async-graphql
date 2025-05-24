@@ -2,7 +2,7 @@ use std::{borrow::Cow, ops::Deref};
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use crate::{registry, InputType, InputValueError, InputValueResult, Value};
+use crate::{InputType, InputValueError, InputValueResult, Value, registry};
 
 /// Similar to `Option`, but it has three states, `undefined`, `null` and `x`.
 ///

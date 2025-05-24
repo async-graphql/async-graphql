@@ -9,14 +9,14 @@ use actix::{
     StreamHandler, WrapFuture, WrapStream,
 };
 use actix_http::{error::PayloadError, ws};
-use actix_web::{web::Bytes, Error, HttpRequest, HttpResponse};
+use actix_web::{Error, HttpRequest, HttpResponse, web::Bytes};
 use actix_web_actors::ws::{CloseReason, Message, ProtocolError, WebsocketContext};
 use async_graphql::{
-    http::{
-        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
-        WebSocket, WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
-    },
     Data, Executor, Result,
+    http::{
+        ALL_WEBSOCKET_PROTOCOLS, DefaultOnConnInitType, DefaultOnPingType, WebSocket,
+        WebSocketProtocols, WsMessage, default_on_connection_init, default_on_ping,
+    },
 };
 use futures_util::stream::Stream;
 

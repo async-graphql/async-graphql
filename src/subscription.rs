@@ -3,8 +3,8 @@ use std::{borrow::Cow, pin::Pin};
 use futures_util::stream::{Stream, StreamExt};
 
 use crate::{
-    parser::types::Selection, registry, registry::Registry, Context, ContextSelectionSet,
-    PathSegment, Response, ServerError, ServerResult,
+    Context, ContextSelectionSet, PathSegment, Response, ServerError, ServerResult,
+    parser::types::Selection, registry, registry::Registry,
 };
 
 /// A GraphQL subscription object

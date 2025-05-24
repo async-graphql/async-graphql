@@ -11,16 +11,16 @@
 #[cfg(feature = "websocket")]
 mod subscription;
 
-use async_graphql::{http::MultipartOptions, Executor, ParseRequestError};
+use async_graphql::{Executor, ParseRequestError, http::MultipartOptions};
 #[cfg(feature = "websocket")]
 pub use subscription::GraphQLSubscription;
 use tide::{
+    Body, Request, Response, StatusCode,
     http::{
-        headers::{self, HeaderValue},
         Method,
+        headers::{self, HeaderValue},
     },
     utils::async_trait,
-    Body, Request, Response, StatusCode,
 };
 
 /// Create a new GraphQL endpoint with the executor.

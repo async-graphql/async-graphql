@@ -1,4 +1,4 @@
-use time::{format_description::well_known::Rfc3339, OffsetDateTime, UtcOffset};
+use time::{OffsetDateTime, UtcOffset, format_description::well_known::Rfc3339};
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -32,7 +32,7 @@ impl ScalarType for OffsetDateTime {
 
 #[cfg(test)]
 mod tests {
-    use time::{macros::datetime, OffsetDateTime};
+    use time::{OffsetDateTime, macros::datetime};
 
     use crate::{ScalarType, Value};
 

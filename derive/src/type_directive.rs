@@ -1,12 +1,12 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{ext::IdentExt, FnArg, ItemFn, Pat};
+use syn::{FnArg, ItemFn, Pat, ext::IdentExt};
 
 use crate::{
     args::{self, Argument, RenameRuleExt, RenameTarget},
     utils::{
-        gen_deprecation, generate_default, get_crate_name, get_rustdoc, parse_graphql_attrs,
-        remove_graphql_attrs, visible_fn, GeneratorResult,
+        GeneratorResult, gen_deprecation, generate_default, get_crate_name, get_rustdoc,
+        parse_graphql_attrs, remove_graphql_attrs, visible_fn,
     },
 };
 

@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::SchemaError,
     registry::{Deprecation, MetaEnumValue, MetaType, Registry},
@@ -54,6 +54,7 @@ pub struct Enum {
     inaccessible: bool,
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
+    requires_scopes: Vec<String>,
 }
 
 impl Enum {
@@ -67,6 +68,7 @@ impl Enum {
             inaccessible: false,
             tags: Vec::new(),
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 
@@ -128,6 +130,7 @@ impl Enum {
                 tags: self.tags.clone(),
                 rust_typename: None,
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
+                requires_scopes: self.requires_scopes.clone(),
             },
         );
 
@@ -137,7 +140,7 @@ impl Enum {
 
 #[cfg(test)]
 mod tests {
-    use crate::{dynamic::*, value, Name, PathSegment, Pos, ServerError, Value};
+    use crate::{Name, PathSegment, Pos, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn enum_type() {
