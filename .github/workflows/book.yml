@@ -3,9 +3,7 @@ name: Book
 on:
   push:
     branches:
-      - release
-    paths:
-      - "docs/**"
+      - d
 
 jobs:
   deploy_en:
