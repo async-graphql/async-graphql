@@ -1,4 +1,4 @@
-use std::{io, io::ErrorKind, str::FromStr};
+use std::{io, str::FromStr};
 
 use async_graphql::{BatchRequest, Executor, http::MultipartOptions};
 use futures_util::TryStreamExt;
@@ -46,7 +46,7 @@ where
             .and_then(move |content_type, body| async move {
                 async_graphql::http::receive_batch_body(
                     content_type,
-                    TryStreamExt::map_err(body, |e| io::Error::new(ErrorKind::Other, e))
+                    TryStreamExt::map_err(body, io::Error::other)
                         .map_ok(|mut buf| {
                             let remaining = Buf::remaining(&buf);
                             Buf::copy_to_bytes(&mut buf, remaining)

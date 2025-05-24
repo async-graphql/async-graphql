@@ -102,10 +102,7 @@ impl ServerError {
     /// #[Object]
     /// impl Query {
     ///     async fn value(&self) -> Result<i32> {
-    ///         Err(Error::new_with_source(std::io::Error::new(
-    ///             ErrorKind::Other,
-    ///             "my error",
-    ///         )))
+    ///         Err(Error::new_with_source(std::io::Error::other("my error")))
     ///     }
     /// }
     ///
