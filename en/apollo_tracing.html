@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="light" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -7,7 +7,7 @@
 
 
         <!-- Custom HTML head -->
-        
+
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -24,26 +24,40 @@
         <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
-    </head>
-    <body class="sidebar-visible no-js">
-    <div id="body-container">
-        <!-- Provide site root to javascript -->
-        <script>
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
-        </script>
 
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -57,24 +71,22 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            var body = document.querySelector('body');
-            body.classList.remove('no-js')
-            body.classList.add('js');
+            html.classList.add("js");
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var body = document.querySelector('body');
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -82,45 +94,25 @@
                 sidebar = 'hidden';
             }
             sidebar_toggle.checked = sidebar === 'visible';
-            body.classList.remove('sidebar-visible');
-            body.classList.add("sidebar-" + sidebar);
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> Merging Objects / Subscriptions</a></li><li class="chapter-item expanded "><a href="derived_fields.html"><strong aria-hidden="true">3.2.4.</strong> Derived fields</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="define_one_of_object.html"><strong aria-hidden="true">3.7.</strong> OneofObject</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.8.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li><li class="chapter-item expanded "><a href="sdl_export.html"><strong aria-hidden="true">4.3.</strong> SDL Export</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> Field guard</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.4.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html" class="active"><strong aria-hidden="true">5.6.</strong> Apollo Tracing</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> Query complexity and depth</a></li><li class="chapter-item expanded "><a href="visibility.html"><strong aria-hidden="true">5.8.</strong> Hide content in introspection</a></li></ol></li><li class="chapter-item expanded "><a href="extensions.html"><strong aria-hidden="true">6.</strong> Extensions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extensions_inner_working.html"><strong aria-hidden="true">6.1.</strong> How extensions are working</a></li><li class="chapter-item expanded "><a href="extensions_available.html"><strong aria-hidden="true">6.2.</strong> Available extensions</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">7.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_poem.html"><strong aria-hidden="true">7.1.</strong> Poem</a></li><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">7.2.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">7.3.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">8.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">8.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="dataloader.html"><strong aria-hidden="true">8.2.</strong> Optimizing N+1 queries</a></li><li class="chapter-item expanded "><a href="custom_directive.html"><strong aria-hidden="true">8.3.</strong> Custom directive</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">8.4.</strong> Apollo Federation</a></li></ol></li></ol>
-            </div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <!-- Track and set sidebar scroll position -->
-        <script>
-            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
-            sidebarScrollbox.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
-                }
-            }, { passive: true });
-            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
-            sessionStorage.removeItem('sidebar-scroll');
-            if (sidebarScrollTop) {
-                // preserve sidebar scroll position when navigating via links within sidebar
-                sidebarScrollbox.scrollTop = sidebarScrollTop;
-            } else {
-                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
-                var activeSection = document.querySelector('#sidebar .active');
-                if (activeSection) {
-                    activeSection.scrollIntoView({ block: 'center' });
-                }
-            }
-        </script>
-
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -130,13 +122,14 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -176,7 +169,7 @@
                         <h1 id="apollo-tracing"><a class="header" href="#apollo-tracing">Apollo Tracing</a></h1>
 <p>Apollo Tracing provides performance analysis results for each step of query. This is an extension to <code>Schema</code>, and the performance analysis results are stored in <code>QueryResponse</code>.</p>
 <p>To enable the Apollo Tracing extension, add the extension when the <code>Schema</code> is created.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;

@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html lang="en" class="light" dir="ltr">
+<html lang="en" class="light sidebar-visible" dir="ltr">
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
@@ -8,7 +8,7 @@
 
 
         <!-- Custom HTML head -->
-        
+
         <meta name="description" content="Async-graphql Book">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
@@ -25,26 +25,40 @@
         <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
-    </head>
-    <body class="sidebar-visible no-js">
-    <div id="body-container">
-        <!-- Provide site root to javascript -->
-        <script>
-            var path_to_root = "";
-            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
-        </script>
 
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="body-container">
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
         <script>
             try {
-                var theme = localStorage.getItem('mdbook-theme');
-                var sidebar = localStorage.getItem('mdbook-sidebar');
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
 
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
@@ -58,24 +72,22 @@
 
         <!-- Set the theme before any content is loaded, prevents flash -->
         <script>
-            var theme;
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
             try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
             if (theme === null || theme === undefined) { theme = default_theme; }
-            var html = document.querySelector('html');
+            const html = document.documentElement;
             html.classList.remove('light')
             html.classList.add(theme);
-            var body = document.querySelector('body');
-            body.classList.remove('no-js')
-            body.classList.add('js');
+            html.classList.add("js");
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
 
         <!-- Hide / unhide sidebar before it is displayed -->
         <script>
-            var body = document.querySelector('body');
-            var sidebar = null;
-            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
             if (document.body.clientWidth >= 1080) {
                 try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
                 sidebar = sidebar || 'visible';
@@ -83,45 +95,25 @@
                 sidebar = 'hidden';
             }
             sidebar_toggle.checked = sidebar === 'visible';
-            body.classList.remove('sidebar-visible');
-            body.classList.add("sidebar-" + sidebar);
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
-                <ol class="chapter"><li class="chapter-item expanded "><a href="introduction.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="quickstart.html"><strong aria-hidden="true">2.</strong> Quickstart</a></li><li class="chapter-item expanded "><a href="typesystem.html"><strong aria-hidden="true">3.</strong> Type System</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="define_simple_object.html"><strong aria-hidden="true">3.1.</strong> SimpleObject</a></li><li class="chapter-item expanded "><a href="define_complex_object.html"><strong aria-hidden="true">3.2.</strong> Object</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="context.html"><strong aria-hidden="true">3.2.1.</strong> Context</a></li><li class="chapter-item expanded "><a href="error_handling.html"><strong aria-hidden="true">3.2.2.</strong> Error handling</a></li><li class="chapter-item expanded "><a href="merging_objects.html"><strong aria-hidden="true">3.2.3.</strong> Merging Objects / Subscriptions</a></li><li class="chapter-item expanded "><a href="derived_fields.html"><strong aria-hidden="true">3.2.4.</strong> Derived fields</a></li></ol></li><li class="chapter-item expanded "><a href="define_enum.html"><strong aria-hidden="true">3.3.</strong> Enum</a></li><li class="chapter-item expanded "><a href="define_interface.html"><strong aria-hidden="true">3.4.</strong> Interface</a></li><li class="chapter-item expanded "><a href="define_union.html"><strong aria-hidden="true">3.5.</strong> Union</a></li><li class="chapter-item expanded "><a href="define_input_object.html"><strong aria-hidden="true">3.6.</strong> InputObject</a></li><li class="chapter-item expanded "><a href="define_one_of_object.html"><strong aria-hidden="true">3.7.</strong> OneofObject</a></li><li class="chapter-item expanded "><a href="default_value.html"><strong aria-hidden="true">3.8.</strong> Default value</a></li></ol></li><li class="chapter-item expanded "><a href="define_schema.html"><strong aria-hidden="true">4.</strong> Schema</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="query_and_mutation.html"><strong aria-hidden="true">4.1.</strong> Query and Mutation</a></li><li class="chapter-item expanded "><a href="subscription.html"><strong aria-hidden="true">4.2.</strong> Subscription</a></li><li class="chapter-item expanded "><a href="sdl_export.html"><strong aria-hidden="true">4.3.</strong> SDL Export</a></li></ol></li><li class="chapter-item expanded "><a href="utilities.html"><strong aria-hidden="true">5.</strong> Utilities</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="field_guard.html"><strong aria-hidden="true">5.1.</strong> Field guard</a></li><li class="chapter-item expanded "><a href="input_value_validators.html"><strong aria-hidden="true">5.2.</strong> Input value validators</a></li><li class="chapter-item expanded "><a href="cache_control.html"><strong aria-hidden="true">5.3.</strong> Cache control</a></li><li class="chapter-item expanded "><a href="cursor_connections.html"><strong aria-hidden="true">5.4.</strong> Cursor connections</a></li><li class="chapter-item expanded "><a href="error_extensions.html"><strong aria-hidden="true">5.5.</strong> Error extensions</a></li><li class="chapter-item expanded "><a href="apollo_tracing.html"><strong aria-hidden="true">5.6.</strong> Apollo Tracing</a></li><li class="chapter-item expanded "><a href="depth_and_complexity.html"><strong aria-hidden="true">5.7.</strong> Query complexity and depth</a></li><li class="chapter-item expanded "><a href="visibility.html"><strong aria-hidden="true">5.8.</strong> Hide content in introspection</a></li></ol></li><li class="chapter-item expanded "><a href="extensions.html"><strong aria-hidden="true">6.</strong> Extensions</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="extensions_inner_working.html"><strong aria-hidden="true">6.1.</strong> How extensions are working</a></li><li class="chapter-item expanded "><a href="extensions_available.html"><strong aria-hidden="true">6.2.</strong> Available extensions</a></li></ol></li><li class="chapter-item expanded "><a href="integrations.html"><strong aria-hidden="true">7.</strong> Integrations</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="integrations_to_poem.html"><strong aria-hidden="true">7.1.</strong> Poem</a></li><li class="chapter-item expanded "><a href="integrations_to_warp.html"><strong aria-hidden="true">7.2.</strong> Warp</a></li><li class="chapter-item expanded "><a href="integrations_to_actix_web.html"><strong aria-hidden="true">7.3.</strong> Actix-web</a></li></ol></li><li class="chapter-item expanded "><a href="advanced_topics.html"><strong aria-hidden="true">8.</strong> Advanced topics</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="custom_scalars.html"><strong aria-hidden="true">8.1.</strong> Custom scalars</a></li><li class="chapter-item expanded "><a href="dataloader.html"><strong aria-hidden="true">8.2.</strong> Optimizing N+1 queries</a></li><li class="chapter-item expanded "><a href="custom_directive.html"><strong aria-hidden="true">8.3.</strong> Custom directive</a></li><li class="chapter-item expanded "><a href="apollo_federation.html"><strong aria-hidden="true">8.4.</strong> Apollo Federation</a></li></ol></li></ol>
-            </div>
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
             </div>
         </nav>
 
-        <!-- Track and set sidebar scroll position -->
-        <script>
-            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
-            sidebarScrollbox.addEventListener('click', function(e) {
-                if (e.target.tagName === 'A') {
-                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
-                }
-            }, { passive: true });
-            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
-            sessionStorage.removeItem('sidebar-scroll');
-            if (sidebarScrollTop) {
-                // preserve sidebar scroll position when navigating via links within sidebar
-                sidebarScrollbox.scrollTop = sidebarScrollTop;
-            } else {
-                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
-                var activeSection = document.querySelector('#sidebar .active');
-                if (activeSection) {
-                    activeSection.scrollIntoView({ block: 'center' });
-                }
-            }
-        </script>
-
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar-hover-placeholder"></div>
                 <div id="menu-bar" class="menu-bar sticky">
                     <div class="left-buttons">
                         <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
@@ -131,13 +123,14 @@
                             <i class="fa fa-paint-brush"></i>
                         </button>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="default_theme">Auto</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
                             <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
                         </ul>
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <button id="search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="searchbar">
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
@@ -197,7 +190,7 @@ async-graphql-tide = "4.0" # If you need to integrate into tide
 <p>The Schema of a GraphQL contains a required Query, an optional Mutation, and an optional Subscription. These object types are described using the structure of the Rust language. The field of the structure corresponds to the field of the GraphQL object.</p>
 <p><code>Async-graphql</code> implements the mapping of common data types to GraphQL types, such as <code>i32</code>, <code>f64</code>, <code>Option&lt;T&gt;</code>, <code>Vec&lt;T&gt;</code>, etc. Also, you can <a href="custom_scalars.html">extend these base types</a>, which are called scalars in the GraphQL.</p>
 <p>Here is a simple example where we provide just one query that returns the sum of <code>a</code> and <code>b</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -214,7 +207,7 @@ impl Query {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="execute-the-query"><a class="header" href="#execute-the-query">Execute the query</a></h2>
 <p>In our example, there is only a Query without a Mutation or Subscription, so we create the Schema with <code>EmptyMutation</code> and <code>EmptySubscription</code>, and then call <code>Schema::execute</code> to execute the Query.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -243,7 +236,7 @@ cd examples &amp;&amp; cargo run --bin [name]
 <p><code>SimpleObject</code> directly maps all the fields of a struct to GraphQL object.
 If you don't require automatic mapping of fields, see <a href="define_complex_object.html">Object</a>.</p>
 <p>The example below defines an object <code>MyObject</code> which includes the fields <code>a</code> and <code>b</code>. <code>c</code> will be not mapped to GraphQL as it is labelled as <code>#[graphql(skip)]</code></p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -266,7 +259,7 @@ fields are calculated. In this case, the <a href="define_complex_object.html">Ob
 <p>The <code>ComplexObject</code> macro works in conjunction with the <code>SimpleObject</code> macro. The <code>SimpleObject</code> derive macro defines
 the non-calculated fields, where as the <code>ComplexObject</code> macro let's you write user-defined resolvers for the calculated fields.</p>
 <p>Resolvers added to <code>ComplexObject</code> adhere to the same rules as resolvers of <a href="define_complex_object.html">Object</a>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -284,63 +277,8 @@ impl MyObj {
     }
 }
 <span class="boring">}</span></code></pre></pre>
-<h2 id="generic-simpleobjects"><a class="header" href="#generic-simpleobjects">Generic <code>SimpleObject</code>s</a></h2>
-<p>If you want to reuse a <code>SimpleObject</code> for other types, you can define a generic SimpleObject
-and specify how its concrete types should be implemented.</p>
-<p>In the following example, two <code>SimpleObject</code> types are created:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span><span class="boring">extern crate async_graphql;
-</span><span class="boring">use async_graphql::*;
-</span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">struct SomeType { a: i32 }
-</span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">struct SomeOtherType { a: i32 }
-</span>#[derive(SimpleObject)]
-#[graphql(concrete(name = "SomeName", params(SomeType)))]
-#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
-pub struct SomeGenericObject&lt;T: OutputType&gt; {
-    field1: Option&lt;T&gt;,
-    field2: String
-}
-<span class="boring">}</span></code></pre></pre>
-<p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
-<p>The schema generated is:</p>
-<pre><code class="language-gql">type SomeName {
-  field1: SomeType
-  field2: String!
-}
-
-type SomeOtherName {
-  field1: SomeOtherType
-  field2: String!
-}
-</code></pre>
-<p>In your resolver method or field of another object, use as a normal generic type:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span><span class="boring">extern crate async_graphql;
-</span><span class="boring">use async_graphql::*;
-</span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">struct SomeType { a: i32 }
-</span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">struct SomeOtherType { a: i32 }
-</span><span class="boring">#[derive(SimpleObject)]
-</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
-</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
-</span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
-</span><span class="boring">    field1: Option&lt;T&gt;,
-</span><span class="boring">    field2: String,
-</span><span class="boring">}
-</span>#[derive(SimpleObject)]
-pub struct YetAnotherObject {
-    a: SomeGenericObject&lt;SomeType&gt;,
-    b: SomeGenericObject&lt;SomeOtherType&gt;,
-}
-<span class="boring">}</span></code></pre></pre>
-<p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
 <h2 id="used-for-both-input-and-output"><a class="header" href="#used-for-both-input-and-output">Used for both input and output</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -353,7 +291,7 @@ struct MyObj {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="flatten-fields"><a class="header" href="#flatten-fields">Flatten fields</a></h2>
 <p>You can flatten fields by adding <code>#[graphql(flatten)]</code>, i.e.:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -386,7 +324,7 @@ pub struct Object {
 <p>You may need access to global data in your query, for example a database connection pool.
 When creating your <code>Schema</code>, you can use <code>SchemaBuilder::data</code> to configure the global data, and <code>Context::data</code> to configure <code>Context</code> data.
 The following <code>value_from_db</code> function shows how to retrieve a database connection from <code>Context</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">struct Data { pub name: String }
@@ -428,7 +366,7 @@ impl MyObject {
 <p>You can request the data inside a query by just calling <code>ctx.data::&lt;TypeOfYourData&gt;()</code>.</p>
 <p><strong>Note that if the return value of resolver function is borrowed from <code>Context</code>, you will need to explicitly state the lifetime of the argument.</strong></p>
 <p>The following example shows how to borrow data in <code>Context</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -448,7 +386,7 @@ impl Query {
 <h3 id="schema-data"><a class="header" href="#schema-data">Schema data</a></h3>
 <p>You can put data inside the context at the creation of the schema, it's useful for data that do not change, like a connection pool.</p>
 <p>An instance of how it would be written inside an application:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -469,7 +407,7 @@ impl Query {
 <h3 id="request-data"><a class="header" href="#request-data">Request data</a></h3>
 <p>You can put data inside the context at the execution of the request, it's useful for authentication data for instance.</p>
 <p>A little example with a <code>warp</code> route:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate async_graphql_warp;
@@ -500,7 +438,7 @@ impl Query {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="headers"><a class="header" href="#headers">Headers</a></h2>
 <p>With the Context you can also insert and appends headers.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate http;
@@ -528,7 +466,7 @@ impl Query {
 <h2 id="selection--lookahead"><a class="header" href="#selection--lookahead">Selection / LookAhead</a></h2>
 <p>Sometimes you want to know what fields are requested in the subquery to optimize the processing of data. You can read fields across the query with <code>ctx.field()</code> which will give you a <code>SelectionField</code> which will allow you to navigate across the fields and subfields.</p>
 <p>If you want to perform a search across the query or the subqueries, you do not have to do this by hand with the <code>SelectionField</code>, you can use the <code>ctx.look_ahead()</code> to perform a selection</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -568,7 +506,7 @@ impl Query {
 <p>Any <code>Error</code> that implements <code>std::fmt::Display</code> can be converted to <code>Error</code> and you can extend the error message.</p>
 <p>The following example shows how to parse an input string to an integer. When parsing fails, it will return an error and attach an error message.
 See the <a href="error_extensions.html">Error Extensions</a> section of this book for more details.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use std::num::ParseIntError;
@@ -607,7 +545,7 @@ impl Query {
 <p>Instead, the <code>#[derive(MergedObject)]</code> macro allows you to split an object's resolvers across multiple modules or files by merging 2 or more <code>#[Object]</code> implementations into one.</p>
 <p><strong>Tip:</strong> Every <code>#[Object]</code> needs a unique name, even in a <code>MergedObject</code>, so make sure to give each object you're merging its own name.</p>
 <p><strong>Note:</strong> This works for queries and mutations. For subscriptions, see "Merging Subscriptions" below.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -651,7 +589,7 @@ let schema = Schema::new(
 <p>Along with <code>MergedObject</code>, you can derive <code>MergedSubscription</code> or use <code>#[MergedSubscription]</code> to merge separate <code>#[Subscription]</code> blocks.</p>
 <p>Like merging Objects, each subscription block requires a unique name.</p>
 <p>Example:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -690,7 +628,7 @@ let schema = Schema::new(
 <div style="break-before: page; page-break-before: always;"></div><h1 id="derived-fields"><a class="header" href="#derived-fields">Derived fields</a></h1>
 <p>Sometimes two fields have the same query logic, but the output type is different. In <code>async-graphql</code>, you can create a derived field for it.</p>
 <p>In the following example, you already have a <code>date_rfc2822</code> field outputting the time format in <code>RFC2822</code> format, and then reuse it to derive a new <code>date_rfc3339</code> field.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate chrono;
 </span><span class="boring">use chrono::Utc;
@@ -748,7 +686,7 @@ trait or the type for which you are implementing the trait must be defined in th
 <p>So you wouldn't be able to generate derived fields for existing wrapper type structures like <code>Vec</code> or <code>Option</code>. But when you implement a <code>From&lt;U&gt; for T</code> you should be able to derived a <code>From&lt;Vec&lt;U&gt;&gt; for Vec&lt;T&gt;</code> and a <code>From&lt;Option&lt;U&gt;&gt; for Option&lt;T&gt;</code>.
 We included a <code>with</code> parameter to help you define a function to call instead of using the <code>Into</code> trait implementation between wrapper structures.</p>
 <h3 id="example"><a class="header" href="#example">Example</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate serde;
 </span><span class="boring">use serde::{Serialize, Deserialize};
@@ -782,7 +720,7 @@ struct TestObj {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="enum"><a class="header" href="#enum">Enum</a></h1>
 <p>It's easy to define an <code>Enum</code>, here we have an example:</p>
 <p><strong>Async-graphql will automatically change the name of each item to GraphQL's CONSTANT_CASE convention. You can use <code>name</code> to rename.</strong></p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -806,7 +744,7 @@ pub enum Episode {
 trait or the type for which you are implementing the trait must be defined in the same crate as the impl, so you cannot
 expose remote enumeration types to GraphQL. In order to provide an <code>Enum</code> type, a common workaround is to create a new
 enum that has parity with the existing, remote enum type.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">mod remote_crate { pub enum RemoteEnum { A, B, C } }
@@ -832,7 +770,7 @@ impl From&lt;remote_crate::RemoteEnum&gt; for LocalEnum {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The process is tedious and requires multiple steps to keep the local and remote enums in sync. <code>Async_graphql</code> provides a handy feature to generate the <code>From&lt;remote_crate::RemoteEnum&gt; for LocalEnum</code> as well as an opposite direction of <code>From&lt;LocalEnum&gt; for remote_crate::RemoteEnum</code> via an additional attribute after deriving <code>Enum</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -857,7 +795,7 @@ If you need e.g. a snake_cased GraphQL field name, you can use both the <code>na
 <li>When <code>name</code> and <code>method</code> exist together, <code>name</code> is the GraphQL field name and the <code>method</code> is the resolver function name.</li>
 <li>When only <code>name</code> exists, <code>name.to_camel_case()</code> is the GraphQL field name and the <code>name</code> is the resolver function name.</li>
 </ul>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -917,7 +855,7 @@ enum Shape {
 <p><code>Async-graphql</code> traverses and registers all directly or indirectly referenced types from <code>Schema</code> in the initialization phase.
 If an interface is not referenced, it will not exist in the registry, as in the following example , even if <code>MyObject</code> implements <code>MyInterface</code>,
 because <code>MyInterface</code> is not referenced in <code>Schema</code>, the <code>MyInterface</code> type will not exist in the registry.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -946,7 +884,7 @@ impl Query {
 type MySchema = Schema&lt;Query, EmptyMutation, EmptySubscription&gt;;
 <span class="boring">}</span></code></pre></pre>
 <p>You need to manually register the <code>MyInterface</code> type when constructing the <code>Schema</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -967,7 +905,7 @@ Schema::build(Query, EmptyMutation, EmptySubscription)
 <p>The definition of a <code>Union</code> is similar to an <code>Interface</code>, <strong>but with no fields allowed.</strong>.
 The implementation is quite similar for <code>Async-graphql</code>; from <code>Async-graphql</code>'s perspective, <code>Union</code> is a subset of <code>Interface</code>.</p>
 <p>The following example modified the definition of <code>Interface</code> a little bit and removed fields.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1014,7 +952,7 @@ other union types. All members must be <code>Object</code>. To support nested
 unions, we can "flatten" members that are unions, bringing their members up
 into the parent union. This is done by applying <code>#[graphql(flatten)]</code> on each
 member we want to flatten.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>#[derive(async_graphql::Union)]
@@ -1051,7 +989,7 @@ pub struct D {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>The above example transforms the top-level union into this equivalent:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">#[derive(async_graphql::SimpleObject)]
@@ -1072,7 +1010,7 @@ pub enum TopLevelUnion {
 <p>The definition of <code>InputObject</code> is similar to <a href="define_simple_object.html">SimpleObject</a>, but
 <code>SimpleObject</code> can only be used as output and <code>InputObject</code> can only be used as input.</p>
 <p>You can add optional <code>#[graphql]</code> attributes to add descriptions or rename the field.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">#[derive(SimpleObject)]
@@ -1100,7 +1038,7 @@ impl Mutation {
 <p>If you want to reuse an <code>InputObject</code> for other types, you can define a generic InputObject
 and specify how its concrete types should be implemented.</p>
 <p>In the following example, two <code>InputObject</code> types are created:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1129,7 +1067,7 @@ input SomeOtherName {
 }
 </code></pre>
 <p>In your resolver method or field of another input object, use as a normal generic type:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1151,9 +1089,25 @@ pub struct YetAnotherInput {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
+<p>If you also want to implement <code>OutputType</code>, then you will need to explicitly declare the input and output type names of the concrete types like so:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span>#[derive(SimpleObject, InputObject)]
+#[graphql(concrete(
+    name = "SomeGenericTypeOut",
+    input_name = "SomeGenericTypeIn",
+    params(i32),
+))]
+pub struct SomeGenericType&lt;T: InputType + OutputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}</span></code></pre></pre>
 <h2 id="redacting-sensitive-data"><a class="header" href="#redacting-sensitive-data">Redacting sensitive data</a></h2>
 <p>If any part of your input is considered sensitive and you wish to redact it, you can mark it with <code>secret</code> directive. For example:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1166,7 +1120,7 @@ pub struct CredentialsInput {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="flattening-fields"><a class="header" href="#flattening-fields">Flattening fields</a></h2>
 <p>You can add <code>#[graphql(flatten)]</code> to a field to inline keys from the field type into it's parent. For example:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1196,7 +1150,7 @@ pub struct Input {
 <p>A <code>OneofObject</code> is a special type of <code>InputObject</code>, in which only one of its fields must be set and is not-null.
 It is especially useful when you want a user to be able to choose between several potential input types.</p>
 <p>This feature is still an <a href="https://github.com/graphql/graphql-spec/pull/825">RFC</a> and therefore not yet officially part of the GraphQL spec, but <code>Async-graphql</code> already supports it!</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">#[derive(SimpleObject)]
@@ -1233,7 +1187,7 @@ impl Query {
 <p>You can define default values for input value types.
 Below are some examples.</p>
 <h2 id="object-field"><a class="header" href="#object-field">Object field</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1257,7 +1211,7 @@ impl Query {
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="interface-field"><a class="header" href="#interface-field">Interface field</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">fn my_default() -&gt; i32 { 5 }
@@ -1281,7 +1235,7 @@ enum MyInterface {
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="input-object-field"><a class="header" href="#input-object-field">Input object field</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">fn my_default() -&gt; i32 { 5 }
@@ -1299,13 +1253,105 @@ struct MyInputObject {
     value3: i32,
 }
 <span class="boring">}</span></code></pre></pre>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="generics"><a class="header" href="#generics">Generics</a></h1>
+<p>It is possible to define reusable objects using generics; however
+each concrete instantiation of a generic object must be given a unique GraphQL type name.
+There are two ways of specifying these concrete names: concrete instantiation and the <code>TypeName</code> trait.</p>
+<h2 id="concrete-instantiation"><a class="header" href="#concrete-instantiation">Concrete Instantiation</a></h2>
+<p>In the following example, two <code>SimpleObject</code> types are created:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
+</span>#[derive(SimpleObject)]
+#[graphql(concrete(name = "SomeName", params(SomeType)))]
+#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+pub struct SomeGenericObject&lt;T: OutputType&gt; {
+    field1: Option&lt;T&gt;,
+    field2: String
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Note: Each generic parameter must implement <code>OutputType</code>, as shown above.</p>
+<p>The schema generated is:</p>
+<pre><code class="language-gql"># SomeGenericObject&lt;SomeType&gt;
+type SomeName {
+  field1: SomeType
+  field2: String!
+}
+
+# SomeGenericObject&lt;SomeOtherType&gt;
+type SomeOtherName {
+  field1: SomeOtherType
+  field2: String!
+}
+</code></pre>
+<p>In your resolver method or field of another object, use as a normal generic type:</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">struct SomeOtherType { a: i32 }
+</span><span class="boring">#[derive(SimpleObject)]
+</span><span class="boring">#[graphql(concrete(name = "SomeName", params(SomeType)))]
+</span><span class="boring">#[graphql(concrete(name = "SomeOtherName", params(SomeOtherType)))]
+</span><span class="boring">pub struct SomeGenericObject&lt;T: OutputType&gt; {
+</span><span class="boring">    field1: Option&lt;T&gt;,
+</span><span class="boring">    field2: String,
+</span><span class="boring">}
+</span>#[derive(SimpleObject)]
+pub struct YetAnotherObject {
+    a: SomeGenericObject&lt;SomeType&gt;,
+    b: SomeGenericObject&lt;SomeOtherType&gt;,
+}
+<span class="boring">}</span></code></pre></pre>
+<p>You can pass multiple generic types to <code>params()</code>, separated by a comma.</p>
+<h2 id="typename-trait"><a class="header" href="#typename-trait"><code>TypeName</code> trait</a></h2>
+<p>Some type names can be derived.</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span><span class="boring">extern crate async_graphql;
+</span><span class="boring">use async_graphql::*;
+</span><span class="boring">use std::borrow::Cow;
+</span>#[derive(SimpleObject)]
+#[graphql(name_type)] // Use `TypeName` trait
+struct Bag&lt;T: OutputType&gt; {
+    content: Vec&lt;T&gt;,
+    len: usize,
+}
+
+impl&lt;T: OutputType&gt; TypeName for Bag&lt;T&gt; {
+    fn type_name() -&gt; Cow&lt;'static, str&gt; {
+        format!("{}Bag", &lt;T as OutputType&gt;::type_name()).into()
+    }
+}
+<span class="boring">}</span></code></pre></pre>
+<p>Using <code>bool</code> and <code>String</code> the generated schema is:</p>
+<pre><code class="language-gql"># Bag&lt;bool&gt;
+type BooleanBag {
+    content: [Boolean!]!
+    len: Int!
+}
+
+# Bag&lt;String&gt;
+type StringBag {
+    content: [String!]!
+    len: Int!
+}
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="schema"><a class="header" href="#schema">Schema</a></h1>
 <p>After defining the basic types, you need to define a schema to combine them. The schema consists of three types: a query object, a mutation object, and a subscription object, where the mutation object and subscription object are optional.</p>
 <p>When the schema is created, <code>Async-graphql</code> will traverse all object graphs and register all types. This means that if a GraphQL object is defined but never referenced, this object will not be exposed in the schema.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="query-and-mutation"><a class="header" href="#query-and-mutation">Query and Mutation</a></h1>
 <h2 id="query-root-object"><a class="header" href="#query-root-object">Query root object</a></h2>
 <p>The query root object is a GraphQL object with a definition similar to other objects. Resolver functions for all fields of the query object are executed concurrently.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1326,7 +1372,7 @@ impl Query {
 <h2 id="mutation-root-object"><a class="header" href="#mutation-root-object">Mutation root object</a></h2>
 <p>The mutation root object is also a GraphQL object, but it executes sequentially. One mutation following from another will only be executed only after the first mutation is completed.</p>
 <p>The following mutation root object provides an example of user registration and login:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1349,7 +1395,7 @@ impl Mutation {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="subscription"><a class="header" href="#subscription">Subscription</a></h1>
 <p>The definition of the subscription root object is slightly different from other root objects. Its resolver function always returns a <a href="https://docs.rs/futures-core/~0.3/futures_core/stream/trait.Stream.html">Stream</a> or <code>Result&lt;Stream&gt;</code>, and the field parameters are usually used as data filtering conditions.</p>
 <p>The following example subscribes to an integer stream, which generates one integer per second. The parameter <code>step</code> specifies the integer step size with a default of 1.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use std::time::Duration;
@@ -1375,7 +1421,7 @@ impl Subscription {
 <span class="boring">}</span></code></pre></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="sdl-export"><a class="header" href="#sdl-export">SDL Export</a></h1>
 <p>You can export your schema in Schema Definition Language (SDL) by using the <code>Schema::sdl()</code> method.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1397,7 +1443,7 @@ println!("{}", &amp;schema.sdl());
 <div style="break-before: page; page-break-before: always;"></div><h1 id="utilities"><a class="header" href="#utilities">Utilities</a></h1>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="field-guard"><a class="header" href="#field-guard">Field Guard</a></h1>
 <p>You can define a <code>guard</code> for the fields of <code>Object</code>, <code>SimpleObject</code>, <code>ComplexObject</code> and <code>Subscription</code>, it will be executed before calling the resolver function, and an error will be returned if it fails.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1428,7 +1474,7 @@ impl Guard for RoleGuard {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Use it with the <code>guard</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1449,7 +1495,7 @@ struct Query {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="use-parameter-value"><a class="header" href="#use-parameter-value">Use parameter value</a></h2>
 <p>Sometimes guards need to use field parameters, you need to pass the parameter value when creating the guard like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1500,8 +1546,9 @@ impl Query {
 <li><strong>url</strong> is valid url.</li>
 <li><strong>ip</strong> is valid ip address.</li>
 <li><strong>regex=RE</strong> is match for the regex.</li>
+<li><strong>uuid=V</strong> the string or ID is a valid UUID with version <code>V</code>. You may omit <code>V</code> to accept any UUID version.</li>
 </ul>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1518,7 +1565,7 @@ impl Query {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="check-every-member-of-the-list"><a class="header" href="#check-every-member-of-the-list">Check every member of the list</a></h2>
 <p>You can enable the <code>list</code> attribute, and the validator will check all members in list:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1533,7 +1580,7 @@ impl Query {
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="custom-validator"><a class="header" href="#custom-validator">Custom validator</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1578,7 +1625,7 @@ impl Query {
 <p>You can use <code>max_age</code> parameters to control the age of the cache (in seconds), and you can also use <code>public</code> and <code>private</code> to control the scope of the cache. When you do not specify it, the scope will default to <code>public</code>.</p>
 <p>when querying multiple resolvers, the results of all cache control parameters will be combined and the <code>max_age</code> minimum value will be taken. If the scope of any object or field is <code>private</code>, the result will be <code>private</code>.</p>
 <p>We can use <code>QueryResponse</code> to get a merged cache control result from a query result, and call <code>CacheControl::value</code> to get the corresponding HTTP header.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1613,7 +1660,7 @@ impl Query {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="cursor-connections"><a class="header" href="#cursor-connections">Cursor connections</a></h1>
 <p>Relay's cursor connection specification is designed to provide a consistent method for query paging. For more details on the specification see the <a href="https://facebook.github.io/relay/graphql/connections.htm">GraphQL Cursor Connections Specification</a>。</p>
 <p>Defining a cursor connection in <code>async-graphql</code> is very simple, you just call the <code>connection::query</code> function and query data in the closure.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1667,7 +1714,7 @@ its contents.</p>
 <p>In <code>async-graphql</code> all user-facing errors are cast to the <code>Error</code> type which by default provides
 the error message exposed by <code>std::fmt::Display</code>. However, <code>Error</code> actually provides an additional information that can extend the error.</p>
 <p>A resolver looks like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1699,7 +1746,7 @@ two convenience traits for casting your errors to the appropriate <code>Error</c
 extensions.</p>
 <p>The easiest way to provide extensions to any error is by calling <code>extend_with</code> on the error.
 This will on the fly convert any error into a <code>Error</code> with the given extension.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1717,7 +1764,7 @@ This will on the fly convert any error into a <code>Error</code> with the given 
 <h3 id="implementing-errorextensions-for-custom-errors"><a class="header" href="#implementing-errorextensions-for-custom-errors">Implementing ErrorExtensions for custom errors.</a></h3>
 <p>If you find yourself attaching extensions to your errors all over the place you might want to consider
 implementing the trait on your custom error type directly.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -1748,7 +1795,7 @@ impl ErrorExtensions for MyError {
 <span class="boring">}</span></code></pre></pre>
 <p>This way you only need to call <code>extend</code> on your error to deliver the error message alongside the provided extensions.
 Or further extend your error through <code>extend_with</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate thiserror;
@@ -1805,7 +1852,7 @@ Or further extend your error through <code>extend_with</code>.</p>
 <h3 id="chained-extensions"><a class="header" href="#chained-extensions">Chained extensions</a></h3>
 <p>Since <code>ErrorExtensions</code> and <code>ResultExt</code> are implemented for any type <code>&amp;E where E: std::fmt::Display</code>
 we can chain the extension together.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1860,7 +1907,7 @@ The disadvantage is that the below code does <strong>NOT</strong> compile:</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="apollo-tracing"><a class="header" href="#apollo-tracing">Apollo Tracing</a></h1>
 <p>Apollo Tracing provides performance analysis results for each step of query. This is an extension to <code>Schema</code>, and the performance analysis results are stored in <code>QueryResponse</code>.</p>
 <p>To enable the Apollo Tracing extension, add the extension when the <code>Schema</code> is created.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -1918,7 +1965,7 @@ a way to prevent such queries.</p>
 </code></pre>
 <p>You can limit the depth when creating <code>Schema</code>. If the query exceeds this limit, an error will occur and the
 message <code>Query is nested too deep</code> will be returned.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1942,7 +1989,7 @@ query with a complexity of <code>6</code>.</p>
 </code></pre>
 <p>You can limit the complexity when creating the <code>Schema</code>. If the query exceeds this limit, an error will occur
 and <code>Query is too complex</code> will be returned.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1958,7 +2005,7 @@ and <code>Query is too complex</code> will be returned.</p>
 <p>In the following code, the complexity of the <code>value</code> field is <code>5</code>. The complexity of the <code>values</code> field is <code>count * child_complexity</code>,
 <code>child_complexity</code> is a special variable that represents the complexity of the subquery, and <code>count</code> is the parameter of the field,
 used to calculate the complexity of the <code>values</code> field, and the type of the return value must be <code>usize</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -1981,7 +2028,7 @@ impl Query {
 so you don't have to worry about partial execution of over-limit queries.</strong></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="hide-content-in-introspection"><a class="header" href="#hide-content-in-introspection">Hide content in introspection</a></h1>
 <p>By default, all types and fields are visible in introspection. But maybe you want to hide some content according to different users to avoid unnecessary misunderstandings. You can add the <code>visible</code> attribute to the type or field to do it.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -2047,7 +2094,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 <h3 id="request"><a class="header" href="#request">request</a></h3>
 <p>First, when we receive a request, if it's not a subscription, the first function to be called will be <code>request</code>, it's the first step, it's the function called at the incoming request, and it's also the function which will output the response to the user.</p>
 <p>Default implementation for <code>request</code>:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2061,7 +2108,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <p>Depending on where you put your logic code, it'll be executed at the beginning or at the end of the query being processed.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2079,7 +2126,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="prepare_request"><a class="header" href="#prepare_request">prepare_request</a></h3>
 <p>Just after the <code>request</code>, we will have the <code>prepare_request</code> lifecycle, which will be hooked.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2094,7 +2141,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
     request: Request,
     next: NextPrepareRequest&lt;'_&gt;,
 ) -&gt; ServerResult&lt;Request&gt; {
-    // The code here will be un before the prepare_request is executed, just after the request lifecycle hook.
+    // The code here will be run before the prepare_request is executed, just after the request lifecycle hook.
     let result = next.run(ctx, request).await;
     // The code here will be run just after the prepare_request
     result
@@ -2103,7 +2150,7 @@ fn is_admin(ctx: &amp;Context&lt;'_&gt;) -&gt; bool {
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="parse_query"><a class="header" href="#parse_query">parse_query</a></h3>
 <p>The <code>parse_query</code> will create a GraphQL <code>ExecutableDocument</code> on your query, it'll check if the query is valid for the GraphQL Spec. Usually the implemented spec in <code>async-graphql</code> tends to be the last stable one (October2021).</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2128,7 +2175,7 @@ async fn parse_query(
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="validation"><a class="header" href="#validation">validation</a></h3>
 <p>The <code>validation</code> step will check (depending on your <code>validation_mode</code>) rules the query should abide to and give the client data about why the query is not valid.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2148,7 +2195,7 @@ async fn validation(
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="execute"><a class="header" href="#execute">execute</a></h3>
 <p>The <code>execution</code> step is a huge one, it'll start the execution of the query by calling each resolver concurrently for a <code>Query</code> and serially for a <code>Mutation</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2172,7 +2219,7 @@ async fn execute(
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="resolve"><a class="header" href="#resolve">resolve</a></h3>
 <p>The <code>resolve</code> step is launched for each field.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2195,8 +2242,8 @@ async fn resolve(
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h3 id="subscribe"><a class="header" href="#subscribe">subscribe</a></h3>
-<p>The <code>subscribe</code> lifecycle has the same behavior as the <code>request</code> but for a <code>Subscritpion</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<p>The <code>subscribe</code> lifecycle has the same behavior as the <code>request</code> but for a <code>Subscription</code>.</p>
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2225,7 +2272,7 @@ fn subscribe&lt;'s&gt;(
 <p><em>Available in the repository</em></p>
 <p>To improve network performance for large queries, you can enable this Persisted Queries extension. With this extension enabled, each unique query is associated to a unique identifier, so clients can send this identifier instead of the corresponding query string to reduce requests sizes.</p>
 <p>This extension doesn't force you to use some cache strategy, you can choose the caching strategy you want, you'll just have to implement the <code>CacheStorage</code> trait:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2265,7 +2312,7 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 <p><strong>Even if the server you are currently using is not in the above list, it is quite simple to implement similar functionality yourself.</strong></p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="poem"><a class="header" href="#poem">Poem</a></h1>
 <h2 id="request-example"><a class="header" href="#request-example">Request example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_poem;
 </span><span class="boring">extern crate async_graphql;
@@ -2281,7 +2328,7 @@ let app = Route::new()
     .at("/ws", GraphQL::new(schema));
 <span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example"><a class="header" href="#subscription-example">Subscription example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_poem;
 </span><span class="boring">extern crate async_graphql;
@@ -2304,7 +2351,7 @@ let app = Route::new()
 You can combine other filters later, or directly call <code>Schema::execute</code> to execute the query.</p>
 <p><code>graphql_subscription</code> is used to implement WebSocket subscriptions. It outputs <code>warp::Reply</code>.</p>
 <h2 id="request-example-1"><a class="header" href="#request-example-1">Request example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_warp;
 </span><span class="boring">extern crate async_graphql;
@@ -2330,7 +2377,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <span class="boring">}
 </span><span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example-1"><a class="header" href="#subscription-example-1">Subscription example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_warp;
 </span><span class="boring">extern crate async_graphql;
@@ -2360,7 +2407,7 @@ warp::serve(filter).run(([0, 0, 0, 0], 8000)).await;
 <div style="break-before: page; page-break-before: always;"></div><h1 id="actix-web"><a class="header" href="#actix-web">Actix-web</a></h1>
 <h2 id="request-example-2"><a class="header" href="#request-example-2">Request example</a></h2>
 <p>When you define your <code>actix_web::App</code> you need to pass in the Schema as data.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_actix_web;
 </span><span class="boring">extern crate async_graphql;
@@ -2380,7 +2427,7 @@ async fn index(
 }
 <span class="boring">}</span></code></pre></pre>
 <h2 id="subscription-example-2"><a class="header" href="#subscription-example-2">Subscription example</a></h2>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql_actix_web;
 </span><span class="boring">extern crate async_graphql;
@@ -2406,7 +2453,7 @@ async fn index_ws(
 <p>In <code>Async-graphql</code> most common scalar types are built in, but you can also create your own scalar types.</p>
 <p>Using <code>async-graphql::Scalar</code>, you can add support for a scalar when you implement it. You only need to implement parsing and output functions.</p>
 <p>The following example defines a 64-bit integer scalar where its input and output are strings.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span>use async_graphql::*;
@@ -2432,7 +2479,7 @@ impl ScalarType for StringNumber {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="use-scalar-macro-to-define-scalar"><a class="header" href="#use-scalar-macro-to-define-scalar">Use <code>scalar!</code> macro to define scalar</a></h2>
 <p>If your type implemented <code>serde::Serialize</code> and <code>serde::Deserialize</code>, then you can use this macro to define a scalar more simply.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">extern crate serde;
@@ -2586,7 +2633,7 @@ impl Loader&lt;TodoId&gt; for PostgresLoader {
 <p>To create a custom executable directive, you need to implement the <code>CustomDirective</code> trait, and then use the <code>Directive</code> macro to
 generate a factory function that receives the parameters of the directive and returns an instance of the directive.</p>
 <p>Currently <code>async-graphql</code> only supports custom executable directives located at <code>FIELD</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2612,7 +2659,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Register the directive when building the schema:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2632,7 +2679,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="type-system-directives"><a class="header" href="#type-system-directives">Type system directives</a></h2>
 <p>To create a custom type system directive, you can use the <code>#[TypeDirective]</code> macro on a function:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2643,7 +2690,7 @@ fn concat(value: String) -&gt; impl CustomDirective {
 fn testDirective(scope: String, input: u32, opt: Option&lt;u64&gt;) {}
 <span class="boring">}</span></code></pre></pre>
 <p>Current only the <code>FieldDefinition</code> and <code>Object</code> locations are supported, you can select one or both. After declaring the directive, you can apply it to a relevant location (after importing the function) like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2678,7 +2725,7 @@ directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINIT
 </blockquote>
 <h2 id="enabling-federation-support"><a class="header" href="#enabling-federation-support">Enabling federation support</a></h2>
 <p><code>async-graphql</code> supports all the functionality of Apollo Federation v2. Support will be enabled automatically if any <code>#[graphql(entity)]</code> resolvers are found in the schema. To enable it manually, use the <code>enable_federation</code> method on the <code>SchemaBuilder</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">extern crate async_graphql;
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
 </span><span class="boring">struct Query;
 </span><span class="boring">#[Object]
@@ -2698,7 +2745,7 @@ directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINIT
 <p>Even though a reference resolver looks up an individual entity, it is <strong>crucial that you use a <a href="dataloader.html">dataloader</a></strong> in the implementation. The federation router will look up entities in batches, which can quickly lead the N+1 performance issues.</p>
 </blockquote>
 <h3 id="example-2"><a class="header" href="#example-2">Example</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2750,7 +2797,7 @@ type User @key(fields: "id") @key(fields: "id username") {
 <h3 id="defining-a-compound-primary-key"><a class="header" href="#defining-a-compound-primary-key">Defining a compound primary key</a></h3>
 <p>A single primary key can consist of multiple fields, and even nested fields, you can use <code>InputObject</code> to implements a nested primary key.</p>
 <p>In the following example, the primary key of the <code>User</code> object is <code>key { a b }</code>.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2794,7 +2841,7 @@ type Key {
 <h3 id="creating-unresolvable-entities"><a class="header" href="#creating-unresolvable-entities">Creating unresolvable entities</a></h3>
 <p>There are certain times when you need to reference an entity, but not add any fields to it. This is particularly useful when you want to link data from separate subgraphs together, but neither subgraph has all the data.</p>
 <p>If you wanted to implement the <a href="https://www.apollographql.com/docs/federation/entities/#referencing-an-entity-without-contributing-fields">products and reviews subgraphs example</a> from the Apollo Docs, you would create the following types for the reviews subgraph:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2812,7 +2859,7 @@ struct Product {
 <span class="boring">}</span></code></pre></pre>
 <p>This will add the <code>@key(fields: "id", resolvable: false)</code> directive to the <code>Product</code> type in the reviews subgraph.</p>
 <p>For more complex entity keys, such as ones with nested fields in compound keys, you can override the fields in the directive as so:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2832,7 +2879,7 @@ struct Organization {
 <h2 id="shareable"><a class="header" href="#shareable"><code>@shareable</code></a></h2>
 <p>Apply the <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#shareable"><code>@shareable</code> directive</a> to a type or field to indicate that multiple subgraphs can resolve it.</p>
 <h3 id="shareable-fields"><a class="header" href="#shareable-fields"><code>@shareable</code> fields</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2858,7 +2905,7 @@ impl Position {
 }
 </code></pre>
 <h3 id="shareable-type"><a class="header" href="#shareable-type"><code>@shareable</code> type</a></h3>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2877,7 +2924,7 @@ struct Position {
 </code></pre>
 <h2 id="inaccessible"><a class="header" href="#inaccessible"><code>@inaccessible</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#inaccessible"><code>@inaccessible</code> directive</a> is used to omit something from the supergraph schema (e.g., if it's not yet added to all subgraphs which share a <code>@shareable</code> type).</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2900,7 +2947,7 @@ struct Position {
 <h2 id="override"><a class="header" href="#override"><code>@override</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#override"><code>@override</code> directive</a> is used to take ownership of a field from another subgraph. This is useful for migrating a field from one subgraph to another.</p>
 <p>For example, if you add a new "Inventory" subgraph which should take over responsibility for the <code>inStock</code> field currently provided by the "Products" subgraph, you might have something like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2919,7 +2966,7 @@ struct Product {
 </code></pre>
 <h2 id="external"><a class="header" href="#external"><code>@external</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#external"><code>@external</code> directive</a> is used to indicate that a field is usually provided by another subgraph, but is sometimes required by this subgraph (when combined with <code>@requires</code>) or provided by this subgraph (when combined with <code>@provides</code>).</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -2940,7 +2987,7 @@ struct Product {
 </code></pre>
 <h2 id="provides"><a class="header" href="#provides"><code>@provides</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federated-types/federated-directives#provides"><code>@provides</code> directive</a> is used to indicate that a field is provided by this subgraph, but only sometimes.</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -3005,7 +3052,7 @@ type Query {
 }
 </code></pre>
 <p>In order to implement this in Rust, we can use the <code>#[graphql(requires)]</code> attribute:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -3029,7 +3076,7 @@ impl Product {
 }
 <span class="boring">}</span></code></pre></pre>
 <p>Note that we use the GraphQL field name <code>weightInPounds</code>, not the Rust field name <code>weight_in_pounds</code> in <code>requires</code>. To populate those external fields, we add them as arguments in the entity resolver:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -3063,7 +3110,7 @@ impl Query {
 <p>We have to put <em>something</em> in place for <code>size</code> and <code>weight_in_pounds</code> as they are still required fields on the type, so we use <code>unwrap_or_default()</code> to provide a default value. This looks a little funny, as we're populating the fields with nonsense values, but we have confidence that they will not be needed if they were not provided.  <strong>Make sure to use <code>@requires</code> if you are consuming <code>@external</code> fields, or your code will be wrong.</strong></p>
 <h3 id="nested-requires"><a class="header" href="#nested-requires">Nested <code>@requires</code></a></h3>
 <p>A case where the <code>@requires</code> directive can be confusing is when there are nested entities. For example, if we had an <code>Order</code> type which contained a <code>Product</code>, then we would need an entity resolver like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -3087,7 +3134,7 @@ impl Query {
 }
 </code></pre>
 <p>You can write code like this:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
@@ -3100,7 +3147,7 @@ struct User {
 <span class="boring">}</span></code></pre></pre>
 <h2 id="composedirective"><a class="header" href="#composedirective"><code>@composeDirective</code></a></h2>
 <p>The <a href="https://www.apollographql.com/docs/federation/federation-spec/#composedirective"><code>@composeDirective</code> directive</a> is used to add a custom type system directive to the supergraph schema. Without <code>@composeDirective</code>, and <a href="./custom_directive#type-system-directives">custom type system directives</a> are omitted from the composed supergraph schema. To include a custom type system directive as a composed directive, just add the <code>composable</code> attribute to the <code>#[TypeDirective]</code> macro:</p>
-<pre><pre class="playground"><code class="language-rust edition2021"><span class="boring">#![allow(unused)]
+<pre><pre class="playground"><code class="language-rust edition2024"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span><span class="boring">extern crate async_graphql;
 </span><span class="boring">use async_graphql::*;
