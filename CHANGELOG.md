@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update MSRV to `1.86.0`
 - Allow exporting SDL with spaces [#1688](https://github.com/async-graphql/async-graphql/pull/1688)
 - Update GraphiQLSource to use React v18 [#1705](https://github.com/async-graphql/async-graphql/pull/1705)
+- fix: generate description of directives. [#1681](https://github.com/async-graphql/async-graphql/pull/1681)
+- feat: add @requiresScopes support [#1695](https://github.com/async-graphql/async-graphql/pull/1695)
+- chore: fix clippy and fmt errors [#1713](https://github.com/async-graphql/async-graphql/pull/1713)
+- use preferred mime-type [#1714](https://github.com/async-graphql/async-graphql/pull/1714)
+- Add GraphiQLSource version [#1704](https://github.com/async-graphql/async-graphql/pull/1704)
 
 # [7.0.16] 2025-03-20
 
