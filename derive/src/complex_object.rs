@@ -32,7 +32,7 @@ pub fn generate(
     let mut resolvers = Vec::new();
     let mut schema_fields = Vec::new();
 
-    // Computation of the derivated fields
+    // Computation of the derived fields
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
         if let ImplItem::Fn(method) = item {

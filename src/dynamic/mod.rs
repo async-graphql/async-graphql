@@ -1,4 +1,4 @@
-//! Suppport for dynamic schema
+//! Support for dynamic schema
 //!
 //! # Create a simple GraphQL schema
 //!

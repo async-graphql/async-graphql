@@ -34,7 +34,7 @@
     ></script>
     <link rel="icon" href="https://graphql.org/favicon.ico">
     <link rel="stylesheet" href="https://unpkg.com/graphiql@{{ version }}/graphiql.min.css" />
-    {{! plugins head assests }}
+    {{! plugins head assets }}
     {{#if plugins}}
       {{#each plugins}}
         {{#if head_assets}}
@@ -42,7 +42,7 @@
         {{/if}}
       {{/each}}
     {{/if}}
-    {{! end plugins head assests }}
+    {{! end plugins head assets }}
   </head>
 
   <body>
@@ -51,7 +51,7 @@
       src="https://unpkg.com/graphiql@{{ version }}/graphiql.min.js"
       type="application/javascript"
     ></script>
-    {{! plugins body assests }}
+    {{! plugins body assets }}
     {{#if plugins}}
       {{#each plugins}}
         {{#if body_assets}}
@@ -59,7 +59,7 @@
         {{/if}}
       {{/each}}
     {{/if}}
-    {{! end plugins body assests }}
+    {{! end plugins body assets }}
     <script>
       customFetch = (url, opts = {}) => {
         return fetch(url, {...opts, credentials: '{{ credentials }}'})

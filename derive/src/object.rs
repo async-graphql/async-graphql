@@ -76,7 +76,7 @@ pub fn generate(
 
     let mut unresolvable_key = String::new();
 
-    // Computation of the derivated fields
+    // Computation of the derived fields
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
         if let ImplItem::Fn(method) = item {

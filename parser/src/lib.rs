@@ -157,7 +157,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// An iterator over the positions inside an error.
 ///
-/// Constructed from the `Error::postions` function.
+/// Constructed from the `Error::positions` function.
 #[derive(Debug, Clone)]
 pub struct ErrorPositions(ErrorPositionsInner);
 

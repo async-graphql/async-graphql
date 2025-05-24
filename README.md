@@ -186,7 +186,7 @@ This crate offers the following features. Most are not activated by default, exc
 ### Observability
 
 One of the tools used to monitor your graphql server in production is Apollo Studio. Apollo Studio is a cloud platform that helps you build, monitor, validate, and secure your organization's data graph.
-Add the extension crate [`async_graphql_apollo_studio_extension`](https://github.com/async-graphql/async_graphql_apollo_studio_extension) to make this avaliable.
+Add the extension crate [`async_graphql_apollo_studio_extension`](https://github.com/async-graphql/async_graphql_apollo_studio_extension) to make this available.
 
 ## Who's using `async-graphql` in production?
 

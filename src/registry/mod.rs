@@ -155,7 +155,7 @@ pub struct MetaInputValue {
     /// Arbitrary string metadata that will be propagated to the supergraph when
     /// using Apollo Federation. This attribute is repeatable
     pub tags: Vec<String>,
-    /// Indicate that an input obnject is secret
+    /// Indicate that an input object is secret
     pub is_secret: bool,
     /// Custom directive invocations
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
@@ -466,7 +466,7 @@ pub enum MetaType {
         rust_typename: Option<&'static str>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
-        /// Inidicates to composition that the target element is accessible only
+        /// Indicates to composition that the target element is accessible only
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,
@@ -514,7 +514,7 @@ pub enum MetaType {
         rust_typename: Option<&'static str>,
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
-        /// Inidicates to composition that the target element is accessible only
+        /// Indicates to composition that the target element is accessible only
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,

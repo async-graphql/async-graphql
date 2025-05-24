@@ -83,7 +83,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
     let mut processed_fields: Vec<SimpleObjectFieldGenerator> = vec![];
 
-    // Before processing the fields, we generate the derivated fields
+    // Before processing the fields, we generate the derived fields
     for field in &s.fields {
         processed_fields.push(SimpleObjectFieldGenerator {
             field,
