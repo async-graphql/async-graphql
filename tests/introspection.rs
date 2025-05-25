@@ -160,7 +160,10 @@ impl Mutation {
     /// simple_mutation description
     /// line2
     /// line3
-    async fn simple_mutation(&self, _input: SimpleInput) -> SimpleObject {
+    async fn simple_mutation(
+        &self,
+        #[graphql(name = "input")] _input: SimpleInput,
+    ) -> SimpleObject {
         unimplemented!()
     }
 }
@@ -1539,7 +1542,7 @@ pub async fn test_introspection_directives() {
           }
         }
       }
-      
+
       fragment InputValue on __InputValue {
         name
         type {
@@ -1547,7 +1550,7 @@ pub async fn test_introspection_directives() {
         }
         defaultValue
       }
-      
+
       fragment TypeRef on __Type {
         kind
         name
