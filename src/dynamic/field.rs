@@ -5,14 +5,14 @@ use std::{
     ops::Deref,
 };
 
-use futures_util::{future::BoxFuture, Future, FutureExt};
+use futures_util::{Future, FutureExt, future::BoxFuture};
 use indexmap::IndexMap;
 
 use super::Directive;
 use crate::{
+    Context, Error, Result, Value,
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
-    Context, Error, Result, Value,
 };
 
 /// A value returned from the resolver function
