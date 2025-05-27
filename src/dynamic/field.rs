@@ -5,14 +5,14 @@ use std::{
     ops::Deref,
 };
 
-use futures_util::{Future, FutureExt, future::BoxFuture};
+use futures_util::{future::BoxFuture, Future, FutureExt};
 use indexmap::IndexMap;
 
 use super::Directive;
 use crate::{
-    Context, Error, Result, Value,
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
+    Context, Error, Result, Value,
 };
 
 /// A value returned from the resolver function
@@ -210,6 +210,7 @@ impl<'a> FieldValue<'a> {
     pub fn as_value(&self) -> Option<&Value> {
         match &self.0 {
             FieldValueInner::Value(value) => Some(value),
+            FieldValueInner::WithType { value, .. } => value.as_value(),
             _ => None,
         }
     }
@@ -227,6 +228,7 @@ impl<'a> FieldValue<'a> {
     pub fn as_list(&self) -> Option<&[FieldValue]> {
         match &self.0 {
             FieldValueInner::List(values) => Some(values),
+            FieldValueInner::WithType { value, .. } => value.as_list(),
             _ => None,
         }
     }
