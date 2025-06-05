@@ -12,7 +12,7 @@ use super::Directive;
 use crate::{
     Context, Error, Result, Value,
     dynamic::{InputValue, ObjectAccessor, TypeRef},
-    registry::Deprecation,
+    registry::{ComputeComplexityFn, Deprecation},
 };
 
 /// A value returned from the resolver function
@@ -334,6 +334,7 @@ pub struct Field {
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
     pub(crate) requires_scopes: Vec<String>,
+    pub(crate) compute_complexity: Option<ComputeComplexityFn>,
 }
 
 impl Debug for Field {
@@ -374,6 +375,7 @@ impl Field {
             override_from: None,
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            compute_complexity: None,
         }
     }
 
@@ -393,5 +395,94 @@ impl Field {
     pub fn argument(mut self, input_value: InputValue) -> Self {
         self.arguments.insert(input_value.name.clone(), input_value);
         self
+    }
+
+    /// Set a custom complexity function for the field
+    #[inline]
+    pub fn compute_complexity(mut self, f: ComputeComplexityFn) -> Self {
+        self.compute_complexity = Some(f);
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use async_graphql_value::ConstValue;
+
+    use crate::{
+        Value,
+        dynamic::{Field, FieldFuture, Object, Schema, TypeRef},
+        extensions::Analyzer,
+    };
+
+    #[tokio::test]
+    async fn test_field_complexity() {
+        let field = Field::new("world", TypeRef::named(TypeRef::INT), |_| {
+            FieldFuture::new(async move { Ok(Some(Value::from(123))) })
+        })
+        .compute_complexity(|_ctx, _variables, _field, _child_complexity| Ok(50));
+
+        let my_obj = Object::new("World").field(field);
+        let query = Object::new("Query").field(
+            Field::new("hello", TypeRef::named_nn(my_obj.type_name()), |_| {
+                FieldFuture::from_value(Some(ConstValue::Null))
+            })
+            .compute_complexity(|_ctx, _variables, _field, child_complexity| {
+                Ok(child_complexity * 2 + 1)
+            }),
+        );
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .register(my_obj)
+            .limit_complexity(100)
+            .finish()
+            .unwrap();
+
+        let result = schema.execute("{ hello { world } }").await.into_result();
+
+        assert!(result.is_err());
+        assert_eq!(result.err().unwrap()[0].message, "Query is too complex.");
+    }
+
+    #[tokio::test]
+    async fn test_field_complexity_calculation() {
+        let world_field = Field::new("world", TypeRef::named(TypeRef::STRING), |_| {
+            FieldFuture::new(async move { Ok(Some(Value::from("Hello, World!"))) })
+        })
+        .compute_complexity(|_ctx, _variables, _field, _child_complexity| Ok(50));
+
+        let foo_field = Field::new("foo", TypeRef::named(TypeRef::STRING), |_| {
+            FieldFuture::new(async move { Ok(Some(Value::from("foo"))) })
+        })
+        .compute_complexity(|_ctx, _variables, _field, _child_complexity| Ok(49));
+
+        let world_obj = Object::new("World").field(foo_field).field(world_field);
+        let query = Object::new("Query").field(
+            Field::new("hello", TypeRef::named_nn(world_obj.type_name()), |_| {
+                FieldFuture::from_value(Some(ConstValue::Null))
+            })
+            .compute_complexity(|_ctx, _variables, _field, child_complexity| {
+                Ok(child_complexity * 2 + 3)
+            }),
+        );
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .register(world_obj)
+            .extension(Analyzer {})
+            .finish()
+            .unwrap();
+
+        let result = schema
+            .execute("{ hello { world, foo } }")
+            .await
+            .into_result()
+            .unwrap();
+
+        assert_eq!(
+            serde_json::to_string(&result).unwrap(),
+            "{\"data\":{\"hello\":{\"world\":\"Hello, World!\",\"foo\":\"foo\"}},\"extensions\":{\"analyzer\":{\"complexity\":201,\"depth\":2}}}"
+        );
     }
 }

@@ -161,7 +161,7 @@ pub struct MetaInputValue {
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
-type ComputeComplexityFn = fn(
+pub(crate) type ComputeComplexityFn = fn(
     &VisitorContext<'_>,
     &[Positioned<VariableDefinition>],
     &Field,

@@ -189,7 +189,7 @@ impl Object {
                     inaccessible: field.inaccessible,
                     tags: field.tags.clone(),
                     override_from: field.override_from.clone(),
-                    compute_complexity: None,
+                    compute_complexity: field.compute_complexity.clone(),
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                     requires_scopes: field.requires_scopes.clone(),
                 },
