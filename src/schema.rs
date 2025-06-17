@@ -1,5 +1,5 @@
 use std::{
-    any::Any,
+    any::{Any, TypeId},
     collections::{HashMap, HashSet},
     ops::Deref,
     sync::Arc,
@@ -647,6 +647,15 @@ where
         request: impl Into<Request>,
     ) -> impl Stream<Item = Response> + Send + Unpin {
         self.execute_stream_with_session_data(request, Default::default())
+    }
+
+    /// Access global data stored in the Schema
+    pub fn data<D: Any + Send + Sync>(&self) -> Option<&D> {
+        self.0
+            .env
+            .data
+            .get(&TypeId::of::<D>())
+            .and_then(|d| d.downcast_ref::<D>())
     }
 }
 
