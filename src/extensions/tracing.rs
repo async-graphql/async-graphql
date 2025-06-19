@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use futures_util::{TryFutureExt, stream::BoxStream};
-use tracing_futures::Instrument;
 use tracing::{Level, span};
+use tracing_futures::Instrument;
 
 use crate::{
     Response, ServerError, ServerResult, ValidationResult, Value, Variables,
