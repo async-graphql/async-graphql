@@ -300,6 +300,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let schema_ty = oty.value_type();
 
         methods.push(quote! {
+            #[allow(missing_docs)]
             #[inline]
             pub async fn #method_name<'ctx>(&self, #(#decl_params),*) -> #crate_name::Result<#ty> {
                 match self {
