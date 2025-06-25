@@ -1,11 +1,11 @@
 #![allow(dead_code)]
 
+use convert_case::{Case, Casing};
 use darling::{
     FromDeriveInput, FromField, FromMeta, FromVariant,
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
 };
-use inflector::Inflector;
 use quote::format_ident;
 use syn::{
     Attribute, Expr, GenericParam, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type,
@@ -859,12 +859,12 @@ pub enum RenameRule {
 impl RenameRule {
     fn rename(&self, name: impl AsRef<str>) -> String {
         match self {
-            Self::Lower => name.as_ref().to_lowercase(),
-            Self::Upper => name.as_ref().to_uppercase(),
-            Self::Pascal => name.as_ref().to_pascal_case(),
-            Self::Camel => name.as_ref().to_camel_case(),
-            Self::Snake => name.as_ref().to_snake_case(),
-            Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
+            Self::Lower => name.as_ref().to_case(Case::Lower),
+            Self::Upper => name.as_ref().to_case(Case::Upper),
+            Self::Pascal => name.as_ref().to_case(Case::Pascal),
+            Self::Camel => name.as_ref().to_case(Case::Camel),
+            Self::Snake => name.as_ref().to_case(Case::Snake),
+            Self::ScreamingSnake => name.as_ref().to_case(Case::UpperSnake),
         }
     }
 }
