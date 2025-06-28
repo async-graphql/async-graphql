@@ -28,3 +28,6 @@ quote = "1.0.35"
 syn = { version = "2.0", features = ["extra-traits", "visit-mut", "visit"] }
 thiserror.workspace = true
 strum = { version = "0.26.2", features = ["derive"] }
+
+[dev-dependencies]
+Inflector = "0.11.4"

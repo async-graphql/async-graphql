@@ -859,12 +859,57 @@ pub enum RenameRule {
 impl RenameRule {
     fn rename(&self, name: impl AsRef<str>) -> String {
         match self {
-            Self::Lower => name.as_ref().to_case(Case::Lower),
-            Self::Upper => name.as_ref().to_case(Case::Upper),
+            Self::Lower => name.as_ref().to_lowercase(),
+            Self::Upper => name.as_ref().to_uppercase(),
             Self::Pascal => name.as_ref().to_case(Case::Pascal),
             Self::Camel => name.as_ref().to_case(Case::Camel),
             Self::Snake => name.as_ref().to_case(Case::Snake),
             Self::ScreamingSnake => name.as_ref().to_case(Case::UpperSnake),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test_rename_rule_transition_to_convert_case {
+    use super::RenameRule;
+    use inflector::Inflector;
+
+    impl RenameRule {
+        /// Before `convert_case`, the `Inflector` crate was used for renames,
+        /// and this was the previous implementation of `RenameRule::rename`.
+        fn rename_with_inflector(&self, name: impl AsRef<str>) -> String {
+            match self {
+                Self::Lower => name.as_ref().to_lowercase(),
+                Self::Upper => name.as_ref().to_uppercase(),
+                Self::Pascal => name.as_ref().to_pascal_case(),
+                Self::Camel => name.as_ref().to_camel_case(),
+                Self::Snake => name.as_ref().to_snake_case(),
+                Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
+            }
+        }
+    }
+
+    #[test]
+    fn test_convert_case_vs_inflector() {
+        let inputs = [
+            "foobar", "foo_bar", "FooBar", "fooBar", "FOOBAR", "FOO_BAR", "foo-bar", "FOO-BAR",
+            "Foo-Bar", "foo bar", "Foo Bar",
+        ];
+        let rules = [
+            RenameRule::Lower,
+            RenameRule::Upper,
+            RenameRule::Pascal,
+            RenameRule::Camel,
+            RenameRule::Snake,
+            RenameRule::ScreamingSnake,
+        ];
+
+        for input in inputs {
+            for rule in rules {
+                let expected = rule.rename_with_inflector(input);
+                let observed = rule.rename(input);
+                assert_eq!(expected, observed, "input {:?}; rule {:?}", input, rule);
+            }
         }
     }
 }
