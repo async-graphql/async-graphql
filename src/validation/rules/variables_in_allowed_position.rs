@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use async_graphql_value::Value;
 
 use crate::{
+    Name, Pos, Positioned,
     parser::types::{
         ExecutableDocument, FragmentDefinition, FragmentSpread, OperationDefinition,
         VariableDefinition,
@@ -12,7 +13,6 @@ use crate::{
         utils::Scope,
         visitor::{Visitor, VisitorContext},
     },
-    Name, Pos, Positioned,
 };
 
 #[derive(Default)]

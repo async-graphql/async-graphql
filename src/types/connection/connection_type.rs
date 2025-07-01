@@ -2,12 +2,12 @@ use std::{borrow::Cow, marker::PhantomData};
 
 use super::{DisableNodesField, EnableNodesField, NodesFieldSwitcherSealed};
 use crate::{
+    Object, ObjectType, OutputType, TypeName,
     connection::{
-        edge::Edge, ConnectionNameType, DefaultConnectionName, DefaultEdgeName, EdgeNameType,
-        PageInfo,
+        ConnectionNameType, DefaultConnectionName, DefaultEdgeName, EdgeNameType, PageInfo,
+        edge::Edge,
     },
     types::connection::{CursorType, EmptyFields},
-    Object, ObjectType, OutputType, TypeName,
 };
 
 /// Connection type

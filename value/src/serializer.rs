@@ -2,8 +2,8 @@ use std::{error::Error, fmt};
 
 use indexmap::IndexMap;
 use serde::{
-    ser::{self, Impossible},
     Serialize,
+    ser::{self, Impossible},
 };
 
 use crate::{ConstValue, Name, Number};

@@ -1,14 +1,14 @@
 use std::{borrow::Cow, collections::BTreeMap, fmt::Display, str::FromStr};
 
-use async_graphql_parser::{types::Field, Positioned};
+use async_graphql_parser::{Positioned, types::Field};
 use async_graphql_value::{from_value, to_value};
 use indexmap::IndexMap;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
-    registry::{MetaType, MetaTypeId, Registry},
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
     ServerResult, Value,
+    registry::{MetaType, MetaTypeId, Registry},
 };
 
 impl<K, V> InputType for BTreeMap<K, V>
@@ -33,6 +33,7 @@ where
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 
@@ -91,6 +92,7 @@ where
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

@@ -99,11 +99,11 @@ pub async fn test_field_visible() {
 
     #[derive(Debug, Deserialize)]
     struct TypeResponse {
-        fields: Vec<FieldResposne>,
+        fields: Vec<FieldResponse>,
     }
 
     #[derive(Debug, Deserialize)]
-    struct FieldResposne {
+    struct FieldResponse {
         name: String,
     }
 

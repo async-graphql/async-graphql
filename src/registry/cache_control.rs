@@ -117,11 +117,7 @@ impl CacheControl {
             value += "private";
         }
 
-        if !value.is_empty() {
-            Some(value)
-        } else {
-            None
-        }
+        if !value.is_empty() { Some(value) } else { None }
     }
 }
 

@@ -4,8 +4,8 @@ use futures_util::FutureExt;
 use indexmap::IndexMap;
 
 use crate::{
-    extensions::ResolveInfo, parser::types::Selection, Context, ContextBase, ContextSelectionSet,
-    Error, Name, OutputType, ServerError, ServerResult, Value,
+    Context, ContextBase, ContextSelectionSet, Error, Name, OutputType, ServerError, ServerResult,
+    Value, extensions::ResolveInfo, parser::types::Selection,
 };
 
 /// Represents a GraphQL container object.

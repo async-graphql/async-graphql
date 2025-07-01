@@ -19,14 +19,14 @@ use std::{
 };
 
 use bytes::Bytes;
-pub use deserializer::{from_value, DeserializerError};
+pub use deserializer::{DeserializerError, from_value};
 pub use extensions::Extensions;
 #[doc(hidden)]
 pub use indexmap;
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub use serde_json::Number;
-pub use serializer::{to_value, SerializerError};
+pub use serializer::{SerializerError, to_value};
 #[cfg(feature = "raw_value")]
 pub use value_serde::RAW_VALUE_TOKEN;
 pub use variables::Variables;

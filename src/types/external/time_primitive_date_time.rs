@@ -1,4 +1,4 @@
-use time::{format_description::FormatItem, macros::format_description, PrimitiveDateTime};
+use time::{PrimitiveDateTime, format_description::FormatItem, macros::format_description};
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
@@ -28,7 +28,7 @@ impl ScalarType for PrimitiveDateTime {
 
 #[cfg(test)]
 mod tests {
-    use time::{macros::datetime, PrimitiveDateTime};
+    use time::{PrimitiveDateTime, macros::datetime};
 
     use crate::{ScalarType, Value};
 

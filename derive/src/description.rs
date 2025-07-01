@@ -3,7 +3,7 @@ use quote::quote;
 
 use crate::{
     args,
-    utils::{get_crate_name, get_rustdoc, GeneratorResult},
+    utils::{GeneratorResult, get_crate_name, get_rustdoc},
 };
 
 pub fn generate(desc_args: &args::Description) -> GeneratorResult<TokenStream> {

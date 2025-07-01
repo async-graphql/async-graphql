@@ -116,21 +116,25 @@ pub async fn test_interface_exports_interfaces_on_object_type() {
 
     assert_eq!(resp.ty.name, "ObjectA");
     assert_eq!(resp.ty.kind, "OBJECT");
-    assert!(resp
-        .ty
-        .interfaces
-        .iter()
-        .any(|i| i.name == "ExplicitInterface"));
-    assert!(resp
-        .ty
-        .interfaces
-        .iter()
-        .any(|i| i.name == "ImplicitInterface"));
-    assert!(!resp
-        .ty
-        .interfaces
-        .iter()
-        .any(|i| i.name == "InvisibleInterface"));
+    assert!(
+        resp.ty
+            .interfaces
+            .iter()
+            .any(|i| i.name == "ExplicitInterface")
+    );
+    assert!(
+        resp.ty
+            .interfaces
+            .iter()
+            .any(|i| i.name == "ImplicitInterface")
+    );
+    assert!(
+        !resp
+            .ty
+            .interfaces
+            .iter()
+            .any(|i| i.name == "InvisibleInterface")
+    );
 }
 
 #[tokio::test]

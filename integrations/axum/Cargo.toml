@@ -3,13 +3,13 @@ authors = ["sunli <scott_s829@163.com>"]
 categories = ["network-programming", "asynchronous"]
 description = "async-graphql for axum"
 documentation = "https://docs.rs/async-graphql-axum/"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql", "axum"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-axum"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.16"
+version = "7.0.17"
 
 [dependencies]
 async-graphql.workspace = true

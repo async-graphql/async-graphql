@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use crate::{
-    parser::types::Field, registry, ContextSelectionSet, InputType, InputValueError,
-    InputValueResult, OutputType, Positioned, ServerResult, Value,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
+    ServerResult, Value, parser::types::Field, registry,
 };
 
 impl<T: InputType> InputType for Option<T> {

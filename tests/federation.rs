@@ -511,8 +511,10 @@ pub async fn test_entity_inaccessible() {
     // OBJECT
     assert!(schema_sdl.contains("type MyCustomObjInaccessible @inaccessible"));
     assert!(schema_sdl.contains(r#"type MyObjInaccessible @key(fields: "id") @inaccessible"#));
-    assert!(schema_sdl
-        .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible"));
+    assert!(
+        schema_sdl
+            .contains("type MyInterfaceObjB implements MyInterfaceInaccessible @inaccessible")
+    );
     // UNION
     assert!(schema_sdl.contains("union MyUnionInaccessible @inaccessible ="));
     // ARGUMENT_DEFINITION
@@ -786,8 +788,10 @@ pub async fn test_entity_tag() {
     // FIELD_DEFINITION
     assert!(schema_sdl.contains(r#"taggedField(id: Int!): Int! @tag(name: "tagged_\"field\"")"#));
     assert!(schema_sdl.contains(r#"objFieldTaggedA: Int! @tag(name: "tagged_field")"#));
-    assert!(schema_sdl
-        .contains(r#"taggedInterfaceValue: String! @tag(name: "tagged_interface_field")"#));
+    assert!(
+        schema_sdl
+            .contains(r#"taggedInterfaceValue: String! @tag(name: "tagged_interface_field")"#)
+    );
     assert!(
         schema_sdl.contains(r#"customObjectTagged: Int! @tag(name: "tagged_custom_object_field")"#)
     );
@@ -795,8 +799,11 @@ pub async fn test_entity_tag() {
     assert!(schema_sdl.contains(r#"interface MyInterfaceTagged @tag(name: "tagged_interface")"#));
     // OBJECT
     assert!(schema_sdl.contains(r#"type MyCustomObjTagged @tag(name: "tagged") @tag(name: "object") @tag(name: "with") @tag(name: "multiple") @tag(name: "tags") {"#));
-    assert!(schema_sdl
-        .contains(r#"type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {"#));
+    assert!(
+        schema_sdl.contains(
+            r#"type MyObjTagged @key(fields: "id") @tag(name: "tagged_simple_object") {"#
+        )
+    );
     assert!(schema_sdl.contains(
         r#"type MyInterfaceObjB implements MyInterfaceTagged @tag(name: "interface_object")"#
     ));
@@ -827,6 +834,183 @@ pub async fn test_entity_tag() {
         std::fs::write(path, schema_sdl).unwrap();
         panic!("schema was not up-to-date. rerun")
     }
+}
+
+#[tokio::test]
+pub async fn test_entity_requires_scopes() {
+    struct MyCustomObjRequiresScoped;
+
+    #[Object(
+        requires_scopes = "requires scopes with",
+        requires_scopes = "multiple scopes"
+    )]
+    impl MyCustomObjRequiresScoped {
+        async fn a(&self) -> i32 {
+            todo!()
+        }
+
+        #[graphql(requires_scopes = "custom:field")]
+        async fn custom_object_requires_scoped(&self) -> i32 {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct MyObjFieldRequiresScoped {
+        #[graphql(
+            requires_scopes = "fielda:scoped read:all",
+            requires_scopes = "read:others"
+        )]
+        obj_field_requires_scoped_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(requires_scopes = "myobj:read")]
+    struct MyObjRequiresScoped {
+        a: i32,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    #[graphql(requires_scopes = "enum:read")]
+    enum MyEnumRequiresScoped {
+        OptionA,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyInterfaceObjA {
+        requires_scoped_interface_value: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(requires_scopes = "objB:read")]
+    struct MyInterfaceObjB {
+        requires_scoped_interface_value: String,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(
+        name = "requires_scoped_interface_value",
+        ty = "String",
+        requires_scopes = "read:interface"
+    ))]
+    #[graphql(requires_scopes = "read:all")]
+    enum MyInterfaceRequiresScoped {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    struct MyNumberRequiresScoped(i32);
+
+    #[Scalar(requires_scopes = "scalar:read")]
+    impl ScalarType for MyNumberRequiresScoped {
+        fn parse(_value: Value) -> InputValueResult<Self> {
+            todo!()
+        }
+
+        fn to_value(&self) -> Value {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyComplexObjRequiresScoped {
+        complex_a: i32,
+    }
+
+    #[ComplexObject]
+    impl MyComplexObjRequiresScoped {
+        #[graphql(requires_scopes = "read:complex")]
+        async fn complex_b(&self) -> i32 {
+            self.complex_a
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(requires_scopes = "scoped:field")]
+        async fn requires_scoped_field(&self, _id: i32) -> i32 {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_field_requires_scoped(&self, _id: i32) -> MyObjFieldRequiresScoped {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_requires_scoped(&self, _id: i32) -> MyObjRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_enum(&self, _id: i32) -> MyEnumRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_interface(&self) -> MyInterfaceRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_scalar(&self) -> MyNumberRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_custom_object(&self) -> MyCustomObjRequiresScoped {
+            todo!()
+        }
+
+        async fn requires_scoped_complex_object(&self) -> MyComplexObjRequiresScoped {
+            MyComplexObjRequiresScoped { complex_a: 10 }
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    // FIELD_DEFINITION
+    assert!(schema_sdl.contains(
+        r#"requiresScopedField(id: Int!): Int! @requiresScopes(scopes: [["scoped:field"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"objFieldRequiresScopedA: Int! @requiresScopes(scopes: [["fielda:scoped", "read:all"], ["read:others"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"requiresScopedInterfaceValue: String! @requiresScopes(scopes: [["read:interface"]])"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"customObjectRequiresScoped: Int! @requiresScopes(scopes: [["custom:field"]])"#
+    ));
+    assert!(schema_sdl.contains(r#"complexB: Int! @requiresScopes(scopes: [["read:complex"]])"#));
+    // INTERFACE
+    assert!(schema_sdl.contains(
+        r#"interface MyInterfaceRequiresScoped @requiresScopes(scopes: [["read:all"]])"#
+    ));
+    // OBJECT
+    assert!(schema_sdl
+        .contains(r#"type MyCustomObjRequiresScoped @requiresScopes(scopes: [["requires", "scopes", "with"], ["multiple", "scopes"]]) {"#));
+    assert!(schema_sdl.contains(
+        r#"type MyObjRequiresScoped @key(fields: "id") @requiresScopes(scopes: [["myobj:read"]]) {"#
+    ));
+    assert!(schema_sdl.contains(
+        r#"type MyInterfaceObjB implements MyInterfaceRequiresScoped @requiresScopes(scopes: [["objB:read"]])"#
+    ));
+    // SCALAR
+    assert!(
+        schema_sdl.contains(
+            r#"scalar MyNumberRequiresScoped @requiresScopes(scopes: [["scalar:read"]])"#
+        )
+    );
+    // ENUM
+    assert!(
+        schema_sdl
+            .contains(r#"enum MyEnumRequiresScoped @requiresScopes(scopes: [["enum:read"]])"#)
+    );
+    // no trailing spaces
+    assert!(!schema_sdl.contains(" \n"));
 }
 
 #[tokio::test]
@@ -968,12 +1152,18 @@ pub async fn test_unresolvable_entity() {
     let schema_sdl = schema.sdl_with_options(SDLExportOptions::new().federation());
 
     assert!(schema_sdl.contains(r#"type ResolvableObject @key(fields: "id")"#));
-    assert!(schema_sdl
-        .contains(r#"type SimpleExplicitUnresolvable @key(fields: "id", resolvable: false)"#));
-    assert!(schema_sdl
-        .contains(r#"type SimpleImplicitUnresolvable @key(fields: "a", resolvable: false)"#));
-    assert!(schema_sdl
-        .contains(r#"type ExplicitUnresolvable @key(fields: "id1 id2", resolvable: false)"#));
+    assert!(
+        schema_sdl
+            .contains(r#"type SimpleExplicitUnresolvable @key(fields: "id", resolvable: false)"#)
+    );
+    assert!(
+        schema_sdl
+            .contains(r#"type SimpleImplicitUnresolvable @key(fields: "a", resolvable: false)"#)
+    );
+    assert!(
+        schema_sdl
+            .contains(r#"type ExplicitUnresolvable @key(fields: "id1 id2", resolvable: false)"#)
+    );
     assert!(
         schema_sdl.contains(r#"type ImplicitUnresolvable @key(fields: "a b", resolvable: false)"#)
     );

@@ -1,4 +1,4 @@
-use crate::{dynamic::FieldValue, Request};
+use crate::{Request, dynamic::FieldValue};
 
 /// GraphQL request for dynamic schema.
 pub struct DynamicRequest {

@@ -7,8 +7,8 @@ use syn::{Error, LitInt};
 use crate::{
     args::{self, RenameTarget, TypeDirectiveLocation},
     utils::{
-        gen_boxed_trait, gen_directive_calls, get_crate_name, get_rustdoc, visible_fn,
-        GeneratorResult,
+        GeneratorResult, gen_boxed_trait, gen_directive_calls, get_crate_name, get_rustdoc,
+        visible_fn,
     },
 };
 
@@ -45,9 +45,11 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     let s = match &object_args.data {
         Data::Struct(e) => e,
         _ => {
-            return Err(
-                Error::new_spanned(ident, "MergedObject can only be applied to an struct.").into(),
+            return Err(Error::new_spanned(
+                ident,
+                "MergedObject can only be applied to an struct.",
             )
+            .into());
         }
     };
 
@@ -132,6 +134,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         is_subscription: false,
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![],
                     }
                 })
             }

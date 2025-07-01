@@ -262,11 +262,7 @@ async fn test_optional_output_with_try() {
         async fn obj(&self, ctx: &Context<'_>) -> Option<u32> {
             let x = ctx.data_unchecked::<B>();
 
-            if x.some? {
-                Some(300)
-            } else {
-                None
-            }
+            if x.some? { Some(300) } else { None }
         }
     }
 

@@ -5,14 +5,14 @@ use std::{
     ops::Deref,
 };
 
-use futures_util::{future::BoxFuture, Future, FutureExt};
+use futures_util::{Future, FutureExt, future::BoxFuture};
 use indexmap::IndexMap;
 
 use super::Directive;
 use crate::{
+    Context, Error, Result, Value,
     dynamic::{InputValue, ObjectAccessor, TypeRef},
     registry::Deprecation,
-    Context, Error, Result, Value,
 };
 
 /// A value returned from the resolver function
@@ -333,6 +333,7 @@ pub struct Field {
     pub(crate) tags: Vec<String>,
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
+    pub(crate) requires_scopes: Vec<String>,
 }
 
 impl Debug for Field {
@@ -372,6 +373,7 @@ impl Field {
             tags: Vec::new(),
             override_from: None,
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 

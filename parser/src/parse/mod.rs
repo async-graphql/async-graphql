@@ -2,18 +2,18 @@
 //!
 //! This module's structure mirrors `types`.
 
-use std::collections::{hash_map, HashMap};
+use std::collections::{HashMap, hash_map};
 
 use pest::{
-    iterators::{Pair, Pairs},
     Parser,
+    iterators::{Pair, Pairs},
 };
 use utils::*;
 
 use crate::{
+    Error, Result,
     pos::{PositionCalculator, Positioned},
     types::*,
-    Error, Result,
 };
 
 mod executable;

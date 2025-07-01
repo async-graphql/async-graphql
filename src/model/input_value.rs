@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{model::__Type, registry, Object};
+use crate::{Object, model::__Type, registry};
 
 pub struct __InputValue<'a> {
     pub registry: &'a registry::Registry,

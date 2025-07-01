@@ -1,18 +1,17 @@
 use std::{future::Future, str::FromStr, time::Duration};
 
 use async_graphql::{
-    http::{
-        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
-        WebSocketProtocols, WsMessage,
-    },
     Data, Executor, Result,
+    http::{
+        DefaultOnConnInitType, DefaultOnPingType, WebSocketProtocols, WsMessage,
+        default_on_connection_init, default_on_ping,
+    },
 };
 use futures_util::{
-    future,
+    Sink, Stream, StreamExt, future,
     stream::{SplitSink, SplitStream},
-    Sink, Stream, StreamExt,
 };
-use warp::{filters::ws, ws::Message, Error, Filter, Rejection, Reply};
+use warp::{Error, Filter, Rejection, Reply, filters::ws, ws::Message};
 
 /// GraphQL subscription filter
 ///
@@ -106,7 +105,7 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
 /// use async_graphql::*;
 /// use async_graphql_warp::*;
 /// use futures_util::stream::{Stream, StreamExt};
-/// use warp::{ws, Filter};
+/// use warp::{Filter, ws};
 ///
 /// struct QueryRoot;
 ///

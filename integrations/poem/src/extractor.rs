@@ -1,8 +1,8 @@
 use async_graphql::http::MultipartOptions;
 use poem::{
-    error::BadRequest,
-    http::{header, Method},
     FromRequest, Request, RequestBody, Result,
+    error::BadRequest,
+    http::{Method, header},
 };
 use tokio_util::compat::TokioAsyncReadCompatExt;
 
@@ -18,11 +18,10 @@ use tokio_util::compat::TokioAsyncReadCompatExt;
 /// use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
 /// use async_graphql_poem::GraphQLRequest;
 /// use poem::{
-///     handler,
+///     EndpointExt, Route, handler,
 ///     middleware::AddData,
 ///     post,
 ///     web::{Data, Json},
-///     EndpointExt, Route,
 /// };
 ///
 /// struct Query;

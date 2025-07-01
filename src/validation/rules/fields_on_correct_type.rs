@@ -1,11 +1,11 @@
 use crate::{
+    Positioned,
     parser::types::Field,
     registry,
     validation::{
         suggestion::make_suggestion,
         visitor::{Visitor, VisitorContext},
     },
-    Positioned,
 };
 
 #[derive(Default)]

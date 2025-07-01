@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use http::{HeaderName, HeaderValue};
-use poem::{web::Json, IntoResponse, Response};
+use poem::{IntoResponse, Response, web::Json};
 
 /// Response for `async_graphql::Request`.
 pub struct GraphQLResponse(pub async_graphql::Response);

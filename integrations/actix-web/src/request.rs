@@ -11,16 +11,16 @@ use actix_http::{
     header::{HeaderName, HeaderValue},
 };
 use actix_web::{
+    Error, FromRequest, HttpRequest, HttpResponse, Responder, Result,
     dev::Payload,
     error::JsonPayloadError,
     http,
     http::{Method, StatusCode},
-    Error, FromRequest, HttpRequest, HttpResponse, Responder, Result,
 };
-use async_graphql::{http::MultipartOptions, ParseRequestError};
+use async_graphql::{ParseRequestError, http::MultipartOptions};
 use futures_util::{
-    future::{self, FutureExt},
     StreamExt, TryStreamExt,
+    future::{self, FutureExt},
 };
 
 /// Extractor for GraphQL request.
@@ -81,7 +81,7 @@ impl FromRequest for GraphQLBatchRequest {
 
         if req.method() == Method::GET {
             let res = async_graphql::http::parse_query_string(req.query_string())
-                .map_err(|err| io::Error::new(ErrorKind::Other, err));
+                .map_err(io::Error::other);
             Box::pin(async move { Ok(Self(async_graphql::BatchRequest::Single(res?))) })
         } else if req.method() == Method::POST {
             let content_type = req
@@ -120,13 +120,13 @@ impl FromRequest for GraphQLBatchRequest {
                                 "a payload reached size limit",
                             ),
                             PayloadError::UnknownLength => {
-                                io::Error::new(ErrorKind::Other, "a payload length is unknown")
+                                io::Error::other("a payload length is unknown")
                             }
                             #[cfg(feature = "http2")]
                             PayloadError::Http2Payload(e) if e.is_io() => e.into_io().unwrap(),
                             #[cfg(feature = "http2")]
-                            PayloadError::Http2Payload(e) => io::Error::new(ErrorKind::Other, e),
-                            _ => io::Error::new(ErrorKind::Other, e),
+                            PayloadError::Http2Payload(e) => io::Error::other(e),
+                            _ => io::Error::other(e),
                         })
                         .into_async_read(),
                         config,
@@ -172,7 +172,7 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
 mod cbor {
     use core::fmt;
 
-    use actix_web::{http::StatusCode, ResponseError};
+    use actix_web::{ResponseError, http::StatusCode};
 
     #[derive(Debug)]
     pub struct Error(pub serde_cbor::Error);
@@ -216,7 +216,7 @@ impl Responder for GraphQLResponse {
                 },
             ),
             _ => (
-                "application/json",
+                "application/graphql-response+json",
                 match serde_json::to_vec(&self.0) {
                     Ok(body) => body,
                     Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),

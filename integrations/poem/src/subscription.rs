@@ -1,21 +1,21 @@
 use std::{io::Error as IoError, str::FromStr, time::Duration};
 
 use async_graphql::{
-    http::{
-        default_on_connection_init, default_on_ping, DefaultOnConnInitType, DefaultOnPingType,
-        WebSocketProtocols, WsMessage, ALL_WEBSOCKET_PROTOCOLS,
-    },
     Data, Executor,
+    http::{
+        ALL_WEBSOCKET_PROTOCOLS, DefaultOnConnInitType, DefaultOnPingType, WebSocketProtocols,
+        WsMessage, default_on_connection_init, default_on_ping,
+    },
 };
 use futures_util::{
+    Future, Sink, SinkExt, Stream, StreamExt,
     future::{self},
     stream::{SplitSink, SplitStream},
-    Future, Sink, SinkExt, Stream, StreamExt,
 };
 use poem::{
+    Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
     http::StatusCode,
     web::websocket::{Message, WebSocket},
-    Endpoint, Error, FromRequest, IntoResponse, Request, RequestBody, Response, Result,
 };
 
 /// A GraphQL protocol extractor.
@@ -46,8 +46,8 @@ impl<'a> FromRequest<'a> for GraphQLProtocol {
 /// ```
 /// use async_graphql::{EmptyMutation, Object, Schema, Subscription};
 /// use async_graphql_poem::GraphQLSubscription;
-/// use futures_util::{stream, Stream};
-/// use poem::{get, Route};
+/// use futures_util::{Stream, stream};
+/// use poem::{Route, get};
 ///
 /// struct Query;
 ///

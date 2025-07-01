@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
+    Positioned,
     parser::types::{Field, Selection, SelectionSet},
     validation::visitor::{Visitor, VisitorContext},
-    Positioned,
 };
 
 #[derive(Default)]

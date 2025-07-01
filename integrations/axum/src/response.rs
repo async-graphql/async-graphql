@@ -29,7 +29,7 @@ impl IntoResponse for GraphQLResponse {
         let mut resp = Response::new(body);
         resp.headers_mut().insert(
             http::header::CONTENT_TYPE,
-            HeaderValue::from_static("application/json"),
+            HeaderValue::from_static("application/graphql-response+json"),
         );
         if self.0.is_ok() {
             if let Some(cache_control) = self.0.cache_control().value() {

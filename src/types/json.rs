@@ -3,14 +3,14 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
+    ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned, ServerResult, Value,
     from_value,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
-    to_value, ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned,
-    ServerResult, Value,
+    to_value,
 };
 
 /// A scalar that can represent any JSON value.
@@ -58,6 +58,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 
@@ -90,6 +91,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             tags: Default::default(),
             specified_by_url: None,
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 
@@ -120,6 +122,7 @@ impl InputType for serde_json::Value {
                 tags: Default::default(),
                 specified_by_url: None,
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }
@@ -154,6 +157,7 @@ impl OutputType for serde_json::Value {
                 tags: Default::default(),
                 specified_by_url: None,
                 directive_invocations: Default::default(),
+                requires_scopes: Default::default(),
             }
         })
     }

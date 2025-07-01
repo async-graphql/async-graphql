@@ -1,6 +1,6 @@
 use std::sync::{
-    atomic::{AtomicI32, Ordering},
     Arc,
+    atomic::{AtomicI32, Ordering},
 };
 
 use async_graphql::{
@@ -13,7 +13,7 @@ use async_graphql::{
     *,
 };
 use async_graphql_value::ConstValue;
-use futures_util::{lock::Mutex, stream::Stream, StreamExt};
+use futures_util::{StreamExt, lock::Mutex, stream::Stream};
 
 #[tokio::test]
 pub async fn test_extension_ctx() {
@@ -465,7 +465,7 @@ pub async fn subscription_execute_with_data() {
     impl Outer {
         async fn inner(&self, ctx: &Context<'_>) -> Inner {
             if let Some(logs) = ctx.data_opt::<Logs>() {
-                logs.lock().await.push(LogElement::OuterAccess(self.0 .0));
+                logs.lock().await.push(LogElement::OuterAccess(self.0.0));
             }
             self.0
         }

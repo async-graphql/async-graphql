@@ -1,10 +1,6 @@
-
-
-
 input InputType @a @b {
 	a: String! @input_a(test: 5)
 }
-
 
 type OutputType implements TestInterface @type {
 	id: String! @test
@@ -24,7 +20,6 @@ type Query {
 	scalar: TestScalar
 }
 
-
 enum TestEnum @oneOf {
 	A
 	B @default
@@ -40,7 +35,13 @@ scalar TestScalar @json
 
 union TestUnion @wrap = OutputType | OutputType2
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 schema {
 	query: Query

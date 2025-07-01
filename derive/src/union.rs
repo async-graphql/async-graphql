@@ -4,12 +4,12 @@ use std::collections::HashSet;
 use darling::ast::{Data, Style};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{visit::Visit, visit_mut::VisitMut, Error, LifetimeParam, Type};
+use syn::{Error, LifetimeParam, Type, visit::Visit, visit_mut::VisitMut};
 
 use crate::{
     args::{self, RenameTarget},
     utils::{
-        gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn, GeneratorResult, RemoveLifetime,
+        GeneratorResult, RemoveLifetime, gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn,
     },
 };
 
@@ -66,19 +66,19 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                     enum_name,
                     "Only single value variants are supported",
                 )
-                .into())
+                .into());
             }
             Style::Unit => {
                 return Err(
                     Error::new_spanned(enum_name, "Empty variants are not supported").into(),
-                )
+                );
             }
             Style::Struct => {
                 return Err(Error::new_spanned(
                     enum_name,
                     "Variants with named fields are not supported",
                 )
-                .into())
+                .into());
             }
         };
 

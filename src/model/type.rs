@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use crate::{
+    Context, Object,
     model::{__EnumValue, __Field, __InputValue, __TypeKind},
     registry,
     registry::is_visible,
-    Context, Object,
 };
 
 enum TypeDetail<'a> {

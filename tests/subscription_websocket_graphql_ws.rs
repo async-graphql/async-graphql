@@ -10,8 +10,8 @@ use async_graphql::{
 };
 use futures_channel::mpsc;
 use futures_util::{
-    stream::{BoxStream, Stream, StreamExt},
     SinkExt,
+    stream::{BoxStream, Stream, StreamExt},
 };
 
 #[tokio::test]
@@ -827,9 +827,11 @@ pub async fn test_keepalive_timeout_1() {
         }),
     );
 
-    assert!(tokio::time::timeout(Duration::from_secs(2), stream.next())
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .is_err()
+    );
 
     assert_eq!(
         tokio::time::timeout(Duration::from_secs(2), stream.next()).await,
@@ -900,9 +902,11 @@ pub async fn test_keepalive_timeout_2() {
         }),
     );
 
-    assert!(tokio::time::timeout(Duration::from_secs(2), stream.next())
-        .await
-        .is_err());
+    assert!(
+        tokio::time::timeout(Duration::from_secs(2), stream.next())
+            .await
+            .is_err()
+    );
 
     assert_eq!(
         tokio::time::timeout(Duration::from_secs(2), stream.next()).await,

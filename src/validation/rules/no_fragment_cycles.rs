@@ -1,9 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
+    Name, Pos, Positioned,
     parser::types::{ExecutableDocument, FragmentDefinition, FragmentSpread},
     validation::visitor::{RuleError, Visitor, VisitorContext},
-    Name, Pos, Positioned,
 };
 
 struct CycleDetector<'a> {
