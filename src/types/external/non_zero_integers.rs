@@ -1,6 +1,6 @@
 use std::num::{
-    NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU16, NonZeroU32,
-    NonZeroU64, NonZeroU8, NonZeroUsize,
+    NonZeroI8, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroIsize, NonZeroU8, NonZeroU16, NonZeroU32,
+    NonZeroU64, NonZeroUsize,
 };
 
 use crate::{InputValueError, InputValueResult, Number, Scalar, ScalarType, Value};

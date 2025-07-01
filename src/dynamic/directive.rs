@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::{registry::MetaDirectiveInvocation, Value};
+use crate::{Value, registry::MetaDirectiveInvocation};
 
 /// A GraphQL directive
 #[derive(Debug, Clone)]

@@ -1,8 +1,8 @@
 use async_graphql::{http::WebSocketProtocols, *};
 use futures_channel::mpsc;
 use futures_util::{
-    stream::{Stream, StreamExt},
     SinkExt,
+    stream::{Stream, StreamExt},
 };
 
 #[tokio::test]

@@ -81,7 +81,7 @@ fn parse_schema_definition(
                     root: operation_type.node,
                     schema: pos,
                     pos: operation_type.pos,
-                })
+                });
             }
         }
 

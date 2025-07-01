@@ -36,7 +36,7 @@ pub fn parse_query<T: AsRef<str>>(input: T) -> Result<ExecutableDocument> {
                             return Err(Error::MultipleOperations {
                                 anonymous: anonymous.pos,
                                 operation: item.pos,
-                            })
+                            });
                         }
                         DocumentOperations::Multiple(operations) => operations,
                     };

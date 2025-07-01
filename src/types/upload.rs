@@ -4,7 +4,7 @@ use std::{borrow::Cow, io::Read, ops::Deref, sync::Arc};
 use futures_util::io::AsyncRead;
 
 use crate::{
-    registry, registry::MetaTypeId, Context, InputType, InputValueError, InputValueResult, Value,
+    Context, InputType, InputValueError, InputValueResult, Value, registry, registry::MetaTypeId,
 };
 
 /// A file upload value.
@@ -168,6 +168,7 @@ impl InputType for Upload {
                 "https://github.com/jaydenseric/graphql-multipart-request-spec".to_string(),
             ),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

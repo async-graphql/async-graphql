@@ -1,13 +1,13 @@
 use std::borrow::Cow;
 
 use crate::{
+    Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
+    ServerResult, SimpleObject, Value,
     model::{__Schema, __Type},
     parser::types::Field,
     registry::{self, SDLExportOptions},
-    resolver_utils::{resolve_container, ContainerType},
+    resolver_utils::{ContainerType, resolve_container},
     schema::IntrospectionMode,
-    Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, SimpleObject, Value,
 };
 
 /// Federation service

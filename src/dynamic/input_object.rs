@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::InputValue,
     registry::{MetaInputValue, MetaType, Registry},
@@ -149,7 +149,7 @@ impl InputObject {
 
 #[cfg(test)]
 mod tests {
-    use crate::{dynamic::*, value, Pos, ServerError, Value};
+    use crate::{Pos, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn input_object() {

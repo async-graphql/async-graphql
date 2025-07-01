@@ -1,4 +1,4 @@
-use crate::{registry, Object};
+use crate::{Object, registry};
 
 pub struct __EnumValue<'a> {
     pub value: &'a registry::MetaEnumValue,

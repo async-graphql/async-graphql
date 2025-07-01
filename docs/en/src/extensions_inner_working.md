@@ -198,7 +198,7 @@ async fn resolve(
 
 ### subscribe
 
-The `subscribe` lifecycle has the same behavior as the `request` but for a `Subscritpion`.
+The `subscribe` lifecycle has the same behavior as the `request` but for a `Subscription`.
 
 ```rust
 # extern crate async_graphql;

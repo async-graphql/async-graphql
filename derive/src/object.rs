@@ -4,18 +4,18 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
-    ext::IdentExt, punctuated::Punctuated, Attribute, Block, Error, Expr, FnArg, ImplItem,
-    ItemImpl, Pat, PatIdent, ReturnType, Token, Type, TypeReference,
+    Attribute, Block, Error, Expr, FnArg, ImplItem, ItemImpl, Pat, PatIdent, ReturnType, Token,
+    Type, TypeReference, ext::IdentExt, punctuated::Punctuated,
 };
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, Resolvability, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
+        GeneratorResult, extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
         generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
         get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
-        visible_fn, GeneratorResult,
+        visible_fn,
     },
     validators::Validators,
 };
@@ -37,6 +37,11 @@ pub fn generate(
         .tags
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+        .collect::<Vec<_>>();
+    let requires_scopes = object_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
     let directives = gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
     let gql_typename = if !object_args.name_type {
@@ -71,7 +76,7 @@ pub fn generate(
 
     let mut unresolvable_key = String::new();
 
-    // Computation of the derivated fields
+    // Computation of the derived fields
     let mut derived_impls = vec![];
     for item in &mut item_impl.items {
         if let ImplItem::Fn(method) = item {
@@ -177,7 +182,7 @@ pub fn generate(
                             &method.sig.output,
                             "Resolver must have a return type",
                         )
-                        .into())
+                        .into());
                     }
                 };
 
@@ -298,7 +303,7 @@ pub fn generate(
                                 &method.sig.output,
                                 "Flatten resolver must have a return type",
                             )
-                            .into())
+                            .into());
                         }
                     };
                     let ty = ty.value_type();
@@ -339,6 +344,11 @@ pub fn generate(
                     .tags
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
+                    .collect::<Vec<_>>();
+                let requires_scopes = method_args
+                    .requires_scopes
+                    .iter()
+                    .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
                     .collect::<Vec<_>>();
 
                 unresolvable_key.push_str(&field_name);
@@ -468,7 +478,7 @@ pub fn generate(
                             &method.sig.output,
                             "Resolver must have a return type",
                         )
-                        .into())
+                        .into());
                     }
                 };
                 let schema_ty = ty.value_type();
@@ -539,7 +549,8 @@ pub fn generate(
                         override_from: #override_from,
                         visible: #visible,
                         compute_complexity: #complexity,
-                        directive_invocations: ::std::vec![ #(#directives),* ]
+                        directive_invocations: ::std::vec![ #(#directives),* ],
+                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     });
                 });
 
@@ -703,7 +714,8 @@ pub fn generate(
                             visible: #visible,
                             is_subscription: false,
                             rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                            directive_invocations: ::std::vec![ #(#directives),* ]
+                            directive_invocations: ::std::vec![ #(#directives),* ],
+                            requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*
@@ -757,6 +769,7 @@ pub fn generate(
                             is_subscription: false,
                             rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                             directive_invocations: ::std::vec![ #(#directives),* ],
+                            requires_scopes: ::std::vec![],
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*

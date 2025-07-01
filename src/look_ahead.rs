@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    parser::types::{Field, FragmentDefinition, Selection, SelectionSet},
     Context, Name, Positioned, SelectionField,
+    parser::types::{Field, FragmentDefinition, Selection, SelectionSet},
 };
 
 /// A selection performed by a query.
@@ -177,44 +177,51 @@ mod tests {
 
         let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 1) {
                 a
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 1) {
                 k:a
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 3) {
                 detail {
                     c
                 }
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 2) {
                 detail {
                     d
@@ -225,37 +232,43 @@ mod tests {
                 }
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 4) {
                 b
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 1) {
                 ... {
                     a
                 }
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 3) {
                 ... {
                     detail {
@@ -264,13 +277,15 @@ mod tests {
                 }
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 2) {
                 ... {
                     detail {
@@ -283,13 +298,15 @@ mod tests {
                 }
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 1) {
                 ... A
             }
@@ -298,13 +315,15 @@ mod tests {
         fragment A on MyObj {
             a
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 3) {
                 ... A
             }
@@ -315,13 +334,15 @@ mod tests {
                 c
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
 
-        assert!(schema
-            .execute(
-                r#"{
+        assert!(
+            schema
+                .execute(
+                    r#"{
             obj(n: 2) {
                 ... A
                 ... B
@@ -339,8 +360,9 @@ mod tests {
                 c
             }
         }"#,
-            )
-            .await
-            .is_ok());
+                )
+                .await
+                .is_ok()
+        );
     }
 }

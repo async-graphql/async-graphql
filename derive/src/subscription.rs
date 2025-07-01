@@ -1,18 +1,18 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    ext::IdentExt, Block, Error, ImplItem, ItemImpl, ReturnType, Type, TypeImplTrait,
-    TypeParamBound,
+    Block, Error, ImplItem, ItemImpl, ReturnType, Type, TypeImplTrait, TypeParamBound,
+    ext::IdentExt,
 };
 
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, SubscriptionField, TypeDirectiveLocation},
     output_type::OutputType,
     utils::{
-        extract_input_args, gen_deprecation, gen_directive_calls, generate_default,
-        generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc, get_type_path_and_name,
-        parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs, visible_fn,
-        GeneratorResult,
+        GeneratorResult, extract_input_args, gen_deprecation, gen_directive_calls,
+        generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
+        get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
+        visible_fn,
     },
 };
 
@@ -178,7 +178,7 @@ pub fn generate(
                         &method.sig.output,
                         "Resolver must have a return type",
                     )
-                    .into())
+                    .into());
                 }
             };
             let res_ty = ty.value_type();
@@ -277,7 +277,8 @@ pub fn generate(
                     inaccessible: false,
                     tags: ::std::default::Default::default(),
                     compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![],
                 });
             });
 
@@ -431,7 +432,8 @@ pub fn generate(
                     tags: ::std::default::Default::default(),
                     is_subscription: true,
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                    directive_invocations: ::std::vec![ #(#directives),* ]
+                    directive_invocations: ::std::vec![ #(#directives),* ],
+                    requires_scopes: ::std::vec![],
                 })
             }
 

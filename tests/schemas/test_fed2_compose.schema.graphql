@@ -1,7 +1,3 @@
-
-
-
-
 type Query @testDirective(scope: "object type", input: 3) {
 	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
 	anotherValue: SimpleValue!
@@ -11,19 +7,24 @@ type SimpleValue @testDirective(scope: "simple object type", input: 1, opt: 3) {
 	someData: String! @testDirective(scope: "field and param with \" symbol", input: 2, opt: 3)
 }
 
-
 type Subscription @testDirective(scope: "object type", input: 3) {
 	value: String! @testDirective(scope: "object field", input: 4) @noArgsDirective
 	anotherValue: SimpleValue!
 }
 
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
 directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @noArgsDirective on FIELD_DEFINITION
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
 directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 directive @testDirective(scope: String!, input: Int!, opt: Int) on FIELD_DEFINITION | OBJECT
 extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.3",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject"]
+	url: "https://specs.apollo.dev/federation/v2.5",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject", "@requiresScopes"]
 )
 
 extend schema @link(

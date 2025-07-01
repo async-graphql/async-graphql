@@ -1,8 +1,8 @@
 use crate::{
+    Positioned,
     parser::types::{Directive, Field},
     registry::MetaTypeName,
     validation::visitor::{Visitor, VisitorContext},
-    Positioned,
 };
 
 #[derive(Default)]

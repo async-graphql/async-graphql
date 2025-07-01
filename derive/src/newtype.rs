@@ -5,7 +5,7 @@ use syn::Error;
 
 use crate::{
     args::{self, NewTypeName, RenameTarget},
-    utils::{gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn, GeneratorResult},
+    utils::{GeneratorResult, gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn},
 };
 
 pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
@@ -34,7 +34,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         _ => {
             return Err(
                 Error::new_spanned(ident, "NewType can only be applied to an struct.").into(),
-            )
+            );
         }
     };
 
@@ -62,6 +62,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
                 tags: ::std::vec![ #(#tags),* ],
                 specified_by_url: #specified_by_url,
                 directive_invocations: ::std::vec::Vec::new(),
+                requires_scopes: ::std::vec::Vec::new(),
             })
         }
     } else {

@@ -6,4 +6,4 @@ language = "zh-CN"
 title = "Async-graphql教程"
 
 [rust]
-edition = "2021"
+edition = "2024"

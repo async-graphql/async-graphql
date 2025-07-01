@@ -1,13 +1,13 @@
 use async_graphql_parser::types::BaseType;
 
 use crate::{
+    Positioned, QueryPathSegment,
     context::QueryPathNode,
     parser::types::VariableDefinition,
     validation::{
         utils::is_valid_input_value,
         visitor::{Visitor, VisitorContext},
     },
-    Positioned, QueryPathSegment,
 };
 
 pub struct DefaultValuesOfCorrectType;

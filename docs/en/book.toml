@@ -6,4 +6,4 @@ language = "en"
 title = "Async-graphql Book"
 
 [rust]
-edition = "2021"
+edition = "2024"
