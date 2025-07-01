@@ -1,4 +1,4 @@
-use zxcvbn::{zxcvbn, ZxcvbnError};
+use zxcvbn::{ZxcvbnError, zxcvbn};
 
 use crate::{InputType, InputValueError};
 

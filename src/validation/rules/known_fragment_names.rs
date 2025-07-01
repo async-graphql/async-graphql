@@ -1,7 +1,7 @@
 use crate::{
+    Positioned,
     parser::types::FragmentSpread,
     validation::visitor::{Visitor, VisitorContext},
-    Positioned,
 };
 
 #[derive(Default)]

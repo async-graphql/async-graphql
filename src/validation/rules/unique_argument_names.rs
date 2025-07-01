@@ -3,9 +3,9 @@ use std::collections::HashSet;
 use async_graphql_value::Value;
 
 use crate::{
+    Name, Positioned,
     parser::types::{Directive, Field},
     validation::visitor::{Visitor, VisitorContext},
-    Name, Positioned,
 };
 
 #[derive(Default)]

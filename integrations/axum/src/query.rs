@@ -5,22 +5,22 @@ use std::{
 };
 
 use async_graphql::{
-    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
     Executor,
+    http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
 };
 use axum::{
+    BoxError,
     body::{Body, HttpBody},
     extract::FromRequest,
     http::{Request as HttpRequest, Response as HttpResponse},
     response::IntoResponse,
-    BoxError,
 };
 use bytes::Bytes;
-use futures_util::{future::BoxFuture, StreamExt};
+use futures_util::{StreamExt, future::BoxFuture};
 use tower_service::Service;
 
 use crate::{
-    extract::rejection::GraphQLRejection, GraphQLBatchRequest, GraphQLRequest, GraphQLResponse,
+    GraphQLBatchRequest, GraphQLRequest, GraphQLResponse, extract::rejection::GraphQLRejection,
 };
 
 /// A GraphQL service.

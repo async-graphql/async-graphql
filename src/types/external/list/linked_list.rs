@@ -1,8 +1,8 @@
 use std::{borrow::Cow, collections::LinkedList};
 
 use crate::{
-    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
-    InputValueError, InputValueResult, OutputType, Positioned, ServerResult, Value,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
+    ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
 };
 
 impl<T: InputType> InputType for LinkedList<T> {

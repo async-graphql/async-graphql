@@ -3,13 +3,13 @@ authors = ["vkill <vkill.net@gmail.com>", "sunli <scott_s829@163.com>"]
 categories = ["network-programming", "asynchronous"]
 description = "async-graphql for tide"
 documentation = "https://docs.rs/async-graphql-tide/"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-tide"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.15"
+version = "7.0.17"
 
 [features]
 default = ["websocket"]

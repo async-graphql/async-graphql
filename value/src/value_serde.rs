@@ -2,9 +2,9 @@ use std::fmt::{self, Formatter};
 
 use indexmap::IndexMap;
 use serde::{
+    Deserialize, Deserializer, Serialize, Serializer,
     de::{Error as DeError, MapAccess, SeqAccess, Visitor},
     ser::SerializeMap,
-    Deserialize, Deserializer, Serialize, Serializer,
 };
 
 use crate::{ConstValue, Name, Number, Value};

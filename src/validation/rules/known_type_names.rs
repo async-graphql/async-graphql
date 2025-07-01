@@ -1,8 +1,8 @@
 use crate::{
+    Name, Pos, Positioned,
     parser::types::{FragmentDefinition, InlineFragment, TypeCondition, VariableDefinition},
     registry::MetaTypeName,
     validation::visitor::{Visitor, VisitorContext},
-    Name, Pos, Positioned,
 };
 
 #[derive(Default)]

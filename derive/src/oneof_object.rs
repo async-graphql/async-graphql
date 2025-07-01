@@ -6,8 +6,8 @@ use syn::{Error, Type};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        gen_deprecation, gen_directive_calls, get_crate_name, get_rustdoc, visible_fn,
-        GeneratorResult,
+        GeneratorResult, gen_deprecation, gen_directive_calls, get_crate_name, get_rustdoc,
+        visible_fn,
     },
 };
 
@@ -41,7 +41,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
         _ => {
             return Err(
                 Error::new_spanned(ident, "InputObject can only be applied to an enum.").into(),
-            )
+            );
         }
     };
 
@@ -73,19 +73,19 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
                     enum_name,
                     "Only single value variants are supported",
                 )
-                .into())
+                .into());
             }
             Style::Unit => {
                 return Err(
                     Error::new_spanned(enum_name, "Empty variants are not supported").into(),
-                )
+                );
             }
             Style::Struct => {
                 return Err(Error::new_spanned(
                     enum_name,
                     "Variants with named fields are not supported",
                 )
-                .into())
+                .into());
             }
         };
 

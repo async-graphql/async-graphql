@@ -1,6 +1,6 @@
 use indexmap::{IndexMap, IndexSet};
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::{InputValue, SchemaError, TypeRef},
     registry::{Deprecation, MetaField, MetaType, Registry},
@@ -97,6 +97,7 @@ pub struct InterfaceField {
     pub(crate) tags: Vec<String>,
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
+    pub(crate) requires_scopes: Vec<String>,
 }
 
 impl InterfaceField {
@@ -116,6 +117,7 @@ impl InterfaceField {
             tags: Vec::new(),
             override_from: None,
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 
@@ -150,6 +152,7 @@ pub struct Interface {
     inaccessible: bool,
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
+    requires_scopes: Vec<String>,
 }
 
 impl Interface {
@@ -166,6 +169,7 @@ impl Interface {
             inaccessible: false,
             tags: Vec::new(),
             directives: Vec::new(),
+            requires_scopes: Vec::new(),
         }
     }
 
@@ -248,6 +252,7 @@ impl Interface {
                     override_from: field.override_from.clone(),
                     compute_complexity: None,
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
+                    requires_scopes: field.requires_scopes.clone(),
                 },
             );
         }
@@ -270,6 +275,7 @@ impl Interface {
                 tags: self.tags.clone(),
                 rust_typename: None,
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
+                requires_scopes: self.requires_scopes.clone(),
             },
         );
 
@@ -281,7 +287,7 @@ impl Interface {
 mod tests {
     use async_graphql_parser::Pos;
 
-    use crate::{dynamic::*, value, PathSegment, ServerError, Value};
+    use crate::{PathSegment, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn basic_interface() {

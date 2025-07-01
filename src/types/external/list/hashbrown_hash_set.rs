@@ -3,8 +3,8 @@ use std::{borrow::Cow, collections::HashSet as StdHashSet, hash::Hash};
 use hashbrown::HashSet;
 
 use crate::{
-    parser::types::Field, registry, resolver_utils::resolve_list, ContextSelectionSet, InputType,
-    InputValueError, InputValueResult, OutputType, Positioned, Result, ServerResult, Value,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
+    Result, ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
 };
 
 impl<T: InputType + Hash + Eq> InputType for HashSet<T> {

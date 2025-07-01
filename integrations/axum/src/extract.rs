@@ -1,6 +1,6 @@
-use std::{io::ErrorKind, marker::PhantomData};
+use std::marker::PhantomData;
 
-use async_graphql::{futures_util::TryStreamExt, http::MultipartOptions, ParseRequestError};
+use async_graphql::{ParseRequestError, futures_util::TryStreamExt, http::MultipartOptions};
 use axum::{
     extract::{FromRequest, Request},
     http::{self, Method},
@@ -101,10 +101,10 @@ where
             let uri = req.uri();
             let res = async_graphql::http::parse_query_string(uri.query().unwrap_or_default())
                 .map_err(|err| {
-                    ParseRequestError::Io(std::io::Error::new(
-                        ErrorKind::Other,
-                        format!("failed to parse graphql request from uri query: {}", err),
-                    ))
+                    ParseRequestError::Io(std::io::Error::other(format!(
+                        "failed to parse graphql request from uri query: {}",
+                        err
+                    )))
                 });
             Ok(Self(async_graphql::BatchRequest::Single(res?), PhantomData))
         } else {
@@ -116,7 +116,7 @@ where
             let body_stream = req
                 .into_body()
                 .into_data_stream()
-                .map_err(|err| std::io::Error::new(ErrorKind::Other, err.to_string()));
+                .map_err(|err| std::io::Error::other(err.to_string()));
             let body_reader = tokio_util::io::StreamReader::new(body_stream).compat();
             Ok(Self(
                 async_graphql::http::receive_batch_body(

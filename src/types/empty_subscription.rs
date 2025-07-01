@@ -2,7 +2,7 @@ use std::{borrow::Cow, pin::Pin};
 
 use futures_util::stream::{self, Stream};
 
-use crate::{registry, Context, Response, ServerError, SubscriptionType};
+use crate::{Context, Response, ServerError, SubscriptionType, registry};
 
 /// Empty subscription
 ///
@@ -33,6 +33,7 @@ impl SubscriptionType for EmptySubscription {
             is_subscription: true,
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
+            requires_scopes: Default::default(),
         })
     }
 

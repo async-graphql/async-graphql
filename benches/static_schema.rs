@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use async_graphql::{
-    connection::{query, Connection, Edge},
-    Context, Enum, Error, Interface, Object, OutputType, Result, *,
+    Context, Enum, Error, Interface, Object, OutputType, Result,
+    connection::{Connection, Edge, query},
+    *,
 };
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use slab::Slab;
 
 pub struct StarWarsChar {
@@ -174,7 +175,7 @@ pub struct Human<'a>(&'a StarWarsChar);
 
 /// A humanoid creature in the Star Wars universe.
 #[Object]
-impl<'a> Human<'a> {
+impl Human<'_> {
     /// The id of the human.
     async fn id(&self) -> &str {
         self.0.id
@@ -216,7 +217,7 @@ pub struct Droid<'a>(&'a StarWarsChar);
 
 /// A mechanical creature in the Star Wars universe.
 #[Object]
-impl<'a> Droid<'a> {
+impl Droid<'_> {
     /// The id of the droid.
     async fn id(&self) -> &str {
         self.0.id

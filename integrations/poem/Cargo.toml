@@ -3,13 +3,13 @@ authors = ["sunli <scott_s829@163.com>"]
 categories = ["network-programming", "asynchronous"]
 description = "async-graphql for poem"
 documentation = "https://docs.rs/async-graphql-poem/"
-edition = "2021"
+edition = "2024"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql", "poem"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-poem"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.15"
+version = "7.0.17"
 
 [dependencies]
 async-graphql.workspace = true

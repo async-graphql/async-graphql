@@ -1,6 +1,6 @@
 use crate::{
-    extensions::ResolveInfo, parser::types::Field, ContextSelectionSet, OutputType, Positioned,
-    ServerResult, Value,
+    ContextSelectionSet, OutputType, Positioned, ServerResult, Value, extensions::ResolveInfo,
+    parser::types::Field,
 };
 
 /// Resolve an list by executing each of the items concurrently.

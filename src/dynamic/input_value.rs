@@ -1,8 +1,8 @@
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
+    Value,
     dynamic::TypeRef,
     registry::{Deprecation, MetaInputValue},
-    Value,
 };
 
 /// A GraphQL input value type

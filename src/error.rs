@@ -9,7 +9,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::{parser, InputType, Pos, Value};
+use crate::{InputType, Pos, Value, parser};
 
 /// Extensions to the error.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -53,7 +53,7 @@ pub struct ServerError {
 }
 
 fn error_extensions_is_empty(values: &Option<ErrorExtensionValues>) -> bool {
-    values.as_ref().map_or(true, |values| values.0.is_empty())
+    values.as_ref().is_none_or(|values| values.0.is_empty())
 }
 
 impl Debug for ServerError {
@@ -102,10 +102,7 @@ impl ServerError {
     /// #[Object]
     /// impl Query {
     ///     async fn value(&self) -> Result<i32> {
-    ///         Err(Error::new_with_source(std::io::Error::new(
-    ///             ErrorKind::Other,
-    ///             "my error",
-    ///         )))
+    ///         Err(Error::new_with_source(std::io::Error::other("my error")))
     ///     }
     /// }
     ///

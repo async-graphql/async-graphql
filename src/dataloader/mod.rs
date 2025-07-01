@@ -66,8 +66,8 @@ use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
@@ -78,7 +78,7 @@ use futures_channel::oneshot;
 use futures_timer::Delay;
 use futures_util::future::BoxFuture;
 #[cfg(feature = "tracing")]
-use tracing::{info_span, instrument, Instrument};
+use tracing::{Instrument, info_span, instrument};
 #[cfg(feature = "tracing")]
 use tracinglib as tracing;
 

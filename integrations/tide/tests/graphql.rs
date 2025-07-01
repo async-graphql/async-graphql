@@ -5,7 +5,7 @@ mod test_utils;
 use std::io::Read;
 
 use async_graphql::*;
-use reqwest::{header, StatusCode};
+use reqwest::{StatusCode, header};
 use serde_json::json;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;

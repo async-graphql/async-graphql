@@ -2,13 +2,13 @@ use async_graphql_value::Value;
 use indexmap::map::IndexMap;
 
 use crate::{
+    Name, Positioned,
     parser::types::{Directive, Field},
     registry::MetaInputValue,
     validation::{
         suggestion::make_suggestion,
         visitor::{Visitor, VisitorContext},
     },
-    Name, Positioned,
 };
 
 enum ArgsType<'a> {

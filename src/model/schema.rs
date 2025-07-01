@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 
 use crate::{
+    Object,
     model::{__Directive, __Type},
-    registry, Object,
+    registry,
 };
 
 pub struct __Schema<'a> {
@@ -27,7 +28,9 @@ impl<'a> __Schema<'a> {
     /// description of __Schema for newer graphiql introspection schema
     /// requirements
     async fn description(&self) -> String {
-        String::from("A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.")
+        String::from(
+            "A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.",
+        )
     }
 
     /// A list of all types supported by this server.

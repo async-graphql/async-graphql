@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use secrecy::{zeroize::Zeroize, ExposeSecret, SecretBox, SecretString};
+use secrecy::{ExposeSecret, SecretBox, SecretString, zeroize::Zeroize};
 
-use crate::{registry, InputType, InputValueError, InputValueResult, Value};
+use crate::{InputType, InputValueError, InputValueResult, Value, registry};
 
 impl<T: InputType + Zeroize> InputType for SecretBox<T> {
     type RawValueType = T::RawValueType;

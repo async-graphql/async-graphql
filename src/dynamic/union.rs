@@ -1,6 +1,6 @@
 use indexmap::IndexSet;
 
-use super::{directive::to_meta_directive_invocation, Directive};
+use super::{Directive, directive::to_meta_directive_invocation};
 use crate::{
     dynamic::SchemaError,
     registry::{MetaType, Registry},
@@ -142,7 +142,7 @@ impl Union {
 mod tests {
     use async_graphql_parser::Pos;
 
-    use crate::{dynamic::*, value, PathSegment, Request, ServerError, Value};
+    use crate::{PathSegment, Request, ServerError, Value, dynamic::*, value};
 
     #[tokio::test]
     async fn basic_union() {

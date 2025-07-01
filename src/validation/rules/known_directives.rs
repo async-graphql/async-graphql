@@ -1,11 +1,11 @@
 use crate::{
+    Name, Positioned,
     model::__DirectiveLocation,
     parser::types::{
         Directive, Field, FragmentDefinition, FragmentSpread, InlineFragment, OperationDefinition,
         OperationType,
     },
     validation::visitor::{Visitor, VisitorContext},
-    Name, Positioned,
 };
 
 #[derive(Default)]

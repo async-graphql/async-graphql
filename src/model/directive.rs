@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{model::__InputValue, registry, Enum, Object};
+use crate::{Enum, Object, model::__InputValue, registry};
 
 /// A Directive can be adjacent to many parts of the GraphQL language, a
 /// __DirectiveLocation describes one such possible adjacencies.

@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
 use darling::{
+    FromDeriveInput, FromField, FromMeta, FromVariant,
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
-    FromDeriveInput, FromField, FromMeta, FromVariant,
 };
 use inflector::Inflector;
 use quote::format_ident;
@@ -235,6 +235,8 @@ pub struct SimpleObjectField {
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
     pub complexity: Option<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromDeriveInput)]
@@ -286,6 +288,8 @@ pub struct SimpleObject {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -335,6 +339,8 @@ pub struct Object {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -361,6 +367,8 @@ pub struct ObjectField {
     pub flatten: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -402,6 +410,8 @@ pub struct Enum {
     pub tags: Vec<String>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromVariant)]
@@ -656,6 +666,8 @@ pub struct InterfaceField {
     pub override_from: Option<String>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromVariant)]
@@ -697,6 +709,8 @@ pub struct Interface {
     // for OneofObject
     #[darling(default)]
     pub input_name: Option<String>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -712,6 +726,8 @@ pub struct Scalar {
     #[darling(multiple, rename = "tag")]
     pub tags: Vec<String>,
     pub specified_by_url: Option<String>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]
@@ -982,6 +998,8 @@ pub struct ComplexObjectField {
     pub flatten: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(default, multiple)]
+    pub requires_scopes: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]

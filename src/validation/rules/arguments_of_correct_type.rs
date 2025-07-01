@@ -2,6 +2,7 @@ use async_graphql_value::Value;
 use indexmap::map::IndexMap;
 
 use crate::{
+    Name, Positioned, QueryPathSegment,
     context::QueryPathNode,
     parser::types::{Directive, Field},
     registry::MetaInputValue,
@@ -9,7 +10,6 @@ use crate::{
         utils::is_valid_input_value,
         visitor::{Visitor, VisitorContext},
     },
-    Name, Positioned, QueryPathSegment,
 };
 
 #[derive(Default)]

@@ -16,7 +16,7 @@
 use core::any::Any;
 use std::io::Cursor;
 
-use async_graphql::{http::MultipartOptions, Executor, ParseRequestError};
+use async_graphql::{Executor, ParseRequestError, http::MultipartOptions};
 use rocket::{
     data::{self, Data, FromData, ToByteUnit},
     form::FromForm,

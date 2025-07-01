@@ -5,8 +5,8 @@ use syn::ItemImpl;
 use crate::{
     args::{self, RenameTarget},
     utils::{
-        gen_boxed_trait, get_crate_name, get_rustdoc, get_type_path_and_name, visible_fn,
-        GeneratorResult,
+        GeneratorResult, gen_boxed_trait, get_crate_name, get_rustdoc, get_type_path_and_name,
+        visible_fn,
     },
 };
 
@@ -45,6 +45,11 @@ pub fn generate(
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
+    let requires_scopes = scalar_args
+        .requires_scopes
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let specified_by_url = match &scalar_args.specified_by_url {
         Some(specified_by_url) => {
             quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#specified_by_url)) }
@@ -73,6 +78,7 @@ pub fn generate(
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
                     directive_invocations: ::std::vec::Vec::new(),
+                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 })
             }
 
@@ -105,7 +111,8 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
-                    directive_invocations: ::std::vec::Vec::new()
+                    directive_invocations: ::std::vec::Vec::new(),
+                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 })
             }
 
