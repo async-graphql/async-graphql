@@ -1,7 +1,7 @@
 use std::{any::Any, collections::HashMap, fmt::Debug, sync::Arc};
 
 use async_graphql_parser::types::OperationType;
-use futures_util::{Stream, StreamExt, TryFutureExt, stream::BoxStream};
+use futures_util::{StreamExt, TryFutureExt, stream::BoxStream};
 use indexmap::IndexMap;
 
 use crate::{
@@ -410,7 +410,7 @@ impl Schema {
         &self,
         request: impl Into<DynamicRequest>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin + 'static {
+    ) -> BoxStream<'static, Response> {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
@@ -473,7 +473,7 @@ impl Schema {
     pub fn execute_stream(
         &self,
         request: impl Into<DynamicRequest>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> BoxStream<'static, Response> {
         self.execute_stream_with_session_data(request, Default::default())
     }
 
@@ -495,7 +495,6 @@ impl Executor for Schema {
         session_data: Option<Arc<Data>>,
     ) -> BoxStream<'static, Response> {
         Schema::execute_stream_with_session_data(self, request, session_data.unwrap_or_default())
-            .boxed()
     }
 }
 
