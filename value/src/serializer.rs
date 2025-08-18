@@ -77,6 +77,11 @@ impl ser::Serializer for Serializer {
         Ok(ConstValue::Number(v.into()))
     }
 
+    #[cfg(feature = "arbitrary_precision")]
+    fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
+        Ok(ConstValue::Number(v.into()))
+    }
+
     #[inline]
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
         Ok(ConstValue::Number(v.into()))
@@ -94,6 +99,11 @@ impl ser::Serializer for Serializer {
 
     #[inline]
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
+        Ok(ConstValue::Number(v.into()))
+    }
+
+    #[cfg(feature = "arbitrary_precision")]
+    fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
         Ok(ConstValue::Number(v.into()))
     }
 

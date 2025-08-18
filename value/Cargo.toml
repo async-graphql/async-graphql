@@ -19,3 +19,4 @@ indexmap.workspace = true
 
 [features]
 raw_value = ["serde_json/raw_value"]
+arbitrary_precision = ["serde_json/arbitrary_precision"]

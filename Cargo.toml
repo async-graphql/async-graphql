@@ -35,6 +35,7 @@ raw_value = ["async-graphql-value/raw_value"]
 uuid-validator = ["uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 custom-error-conversion = []
+arbitrary_precision = ["async-graphql-value/arbitrary_precision"]
 
 [[bench]]
 harness = false
