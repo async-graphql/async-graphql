@@ -178,6 +178,9 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[cfg(feature = "tracing")]
+extern crate tracinglib as tracing;
+
 mod base;
 mod custom_directive;
 mod error;
