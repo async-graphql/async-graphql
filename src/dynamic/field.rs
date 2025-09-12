@@ -224,7 +224,7 @@ impl<'a> FieldValue<'a> {
     /// If the FieldValue is a list, returns the associated
     /// vector. Returns `None` otherwise.
     #[inline]
-    pub fn as_list(&self) -> Option<&[FieldValue]> {
+    pub fn as_list(&'_ self) -> Option<&'_ [FieldValue<'_>]> {
         match &self.0 {
             FieldValueInner::List(values) => Some(values),
             _ => None,
@@ -233,7 +233,7 @@ impl<'a> FieldValue<'a> {
 
     /// Like `as_list`, but returns `Result`.
     #[inline]
-    pub fn try_to_list(&self) -> Result<&[FieldValue]> {
+    pub fn try_to_list(&'_ self) -> Result<&'_ [FieldValue<'_>]> {
         self.as_list()
             .ok_or_else(|| Error::new(format!("internal: \"{:?}\" not a List", self)))
     }
