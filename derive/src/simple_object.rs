@@ -227,7 +227,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     name: ::std::borrow::ToOwned::to_owned(#field_name),
                     description: #field_desc,
                     args: ::std::default::Default::default(),
-                    ty: <#ty as #crate_name::OutputType>::create_type_info(registry),
+                    ty: <#ty as #crate_name::OutputTypeMarker>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: #cache_control,
                     external: #external,
@@ -245,7 +245,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             });
         } else {
             schema_fields.push(quote! {
-                <#ty as #crate_name::OutputType>::create_type_info(registry);
+                <#ty as #crate_name::OutputTypeMarker>::create_type_info(registry);
                 if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                     registry.create_fake_output_type::<#ty>() {
                     fields.extend(obj_fields);
@@ -390,9 +390,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     }
 
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
     };
 
     let expanded = if object_args.concretes.is_empty() {
@@ -413,8 +413,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             }
 
             #[allow(clippy::all, clippy::pedantic)]
-            #boxed_trait
-            impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+            impl #impl_generics #crate_name::OutputTypeMarker for #ident #ty_generics #where_clause {
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                     #gql_typename
                 }
@@ -443,6 +442,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         directive_invocations: ::std::vec![ #(#object_directives),* ],
                         requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                     })
+                }
+            }
+
+            #[allow(clippy::all, clippy::pedantic)]
+            #boxed_trait
+            impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+                fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                    <Self as #crate_name::OutputTypeMarker>::type_name()
+                }
+
+                fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                    <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
                 }
 
                 async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
@@ -543,8 +554,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 }
 
                 #[allow(clippy::all, clippy::pedantic)]
-                #boxed_trait
-                impl #def_bounds #crate_name::OutputType for #concrete_type {
+                impl #def_bounds #crate_name::OutputTypeMarker for #concrete_type {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
@@ -553,6 +563,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                         let mut fields = #crate_name::indexmap::IndexMap::new();
                         #concat_complex_fields
                         Self::__internal_create_type_info_simple_object(registry, #gql_typename, fields)
+                    }
+                }
+
+                #[allow(clippy::all, clippy::pedantic)]
+                #boxed_trait
+                impl #def_bounds #crate_name::OutputType for #concrete_type {
+                    fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                        <Self as #crate_name::OutputTypeMarker>::type_name()
+                    }
+
+                    fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                        <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
                     }
 
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {

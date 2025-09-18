@@ -404,7 +404,7 @@ pub async fn test_both_input_output() {
     );
 
     assert_eq!(<MyObject as InputType>::type_name(), "MyObjectInput");
-    assert_eq!(<MyObject as OutputType>::type_name(), "MyObject");
+    assert_eq!(<MyObject as OutputType>::type_name(&MyObject{ a: 0 , b: true, c: "".to_string()}), "MyObject");
 }
 
 #[tokio::test]
@@ -413,7 +413,7 @@ pub async fn test_both_input_output_generic() {
     #[graphql(concrete(name = "MyObjectU32", params(u32)))]
     #[graphql(concrete(name = "MyObjectString", params(String)))]
     #[allow(dead_code)]
-    struct MyObject<T: InputType + OutputType> {
+    struct MyObject<T> where T: InputType + OutputType + OutputTypeMarker, MyObject<T>: async_graphql::OutputTypeMarker {
         a: T,
     }
 
@@ -444,13 +444,15 @@ pub async fn test_both_input_output_generic() {
     );
 
     assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
-    assert_eq!(<MyObject<u32> as OutputType>::type_name(), "MyObjectU32");
+    assert_eq!(<MyObject<u32> as OutputType>::type_name(&MyObject { a: 0 }), "MyObjectU32");
     assert_eq!(
         <MyObject<String> as InputType>::type_name(),
         "MyObjectString"
     );
     assert_eq!(
-        <MyObject<String> as OutputType>::type_name(),
+        <MyObject<String> as OutputType>::type_name(&MyObject {
+            a: "".to_string()
+        }),
         "MyObjectString"
     );
 }
@@ -471,7 +473,7 @@ pub async fn test_both_input_output_generic_with_nesting() {
         params(MyEnum)
     ))]
     #[allow(dead_code)]
-    struct MyObject<T: InputType + OutputType> {
+    struct MyObject<T> where T: InputType + OutputType + OutputTypeMarker, MyObject<T>: async_graphql::OutputTypeMarker {
         a: T,
     }
 
@@ -500,13 +502,13 @@ pub async fn test_both_input_output_generic_with_nesting() {
     );
 
     assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
-    assert_eq!(<MyObject<u32> as OutputType>::type_name(), "MyObjectU32");
+    assert_eq!(<MyObject<u32> as OutputType>::type_name(&MyObject { a: 0 }), "MyObjectU32");
     assert_eq!(
         <MyObject<MyEnum> as InputType>::type_name(),
         "MyObjectMyEnumInput"
     );
     assert_eq!(
-        <MyObject<MyEnum> as OutputType>::type_name(),
+        <MyObject<MyEnum> as OutputType>::type_name(&MyObject { a: MyEnum::Option1 }),
         "MyObjectMyEnum"
     );
 }
@@ -525,7 +527,7 @@ pub async fn test_both_input_output_2() {
     }
 
     assert_eq!(<MyObject as InputType>::type_name(), "MyObjectInput");
-    assert_eq!(<MyObject as OutputType>::type_name(), "MyObj");
+    assert_eq!(<MyObject as OutputType>::type_name(&MyObject { a: 0, b: false, c: "".to_string() }), "MyObj");
 }
 
 #[test]

@@ -224,13 +224,23 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             }
         }
 
-        #boxed_trait
-        impl #crate_name::OutputType for #ident {
+         impl #crate_name::OutputTypeMarker for #ident {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 Self::__type_name()
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
+                Self::__create_type_info(registry)
+            }
+         }
+
+        #boxed_trait
+        impl #crate_name::OutputType for #ident {
+            fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                Self::__type_name()
+            }
+
+            fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 Self::__create_type_info(registry)
             }
 

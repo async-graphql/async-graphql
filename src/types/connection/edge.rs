@@ -1,9 +1,7 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
-    ComplexObject, ObjectType, OutputType, SimpleObject, TypeName,
-    connection::{DefaultEdgeName, EmptyFields},
-    types::connection::{CursorType, EdgeNameType},
+    ComplexObject, ObjectType, OutputType, OutputTypeMarker, SimpleObject, TypeName, connection::{DefaultEdgeName, EmptyFields}, types::connection::{CursorType, EdgeNameType}
 };
 
 /// An edge in a connection.
@@ -12,8 +10,8 @@ use crate::{
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
-    EdgeFields: ObjectType,
+    Node: OutputType + OutputTypeMarker,
+    EdgeFields: ObjectType + OutputTypeMarker,
     Name: EdgeNameType,
 {
     #[graphql(skip)]
@@ -31,8 +29,8 @@ where
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
-    EdgeFields: ObjectType,
+    Node: OutputType + OutputTypeMarker,
+    EdgeFields: ObjectType + OutputTypeMarker,
     Name: EdgeNameType,
 {
     /// A cursor for use in pagination
@@ -44,8 +42,8 @@ where
 impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
-    EdgeFields: ObjectType,
+    Node: OutputType + OutputTypeMarker,
+    EdgeFields: ObjectType + OutputTypeMarker,
     Name: EdgeNameType,
 {
     #[inline]
@@ -58,8 +56,8 @@ impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
-    EdgeFields: ObjectType,
+    Node: OutputType + OutputTypeMarker,
+    EdgeFields: ObjectType + OutputTypeMarker,
 {
     /// Create a new edge, it can have some additional fields.
     #[inline]
@@ -80,7 +78,7 @@ where
 impl<Cursor, Node, Name> Edge<Cursor, Node, EmptyFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     Name: EdgeNameType,
 {
     /// Create a new edge.

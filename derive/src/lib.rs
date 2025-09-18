@@ -60,6 +60,7 @@ pub fn Object(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(SimpleObject, attributes(graphql))]
+#[proc_macro_error::proc_macro_error]
 pub fn derive_simple_object(input: TokenStream) -> TokenStream {
     let object_args =
         match args::SimpleObject::from_derive_input(&parse_macro_input!(input as DeriveInput)) {
@@ -109,6 +110,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(Interface, attributes(graphql))]
+
 pub fn derive_interface(input: TokenStream) -> TokenStream {
     let interface_args =
         match args::Interface::from_derive_input(&parse_macro_input!(input as DeriveInput)) {

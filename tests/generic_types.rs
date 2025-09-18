@@ -153,7 +153,12 @@ pub async fn test_generic_simple_object() {
     #[derive(SimpleObject)]
     #[graphql(concrete(name = "MyObjIntString", params(i32, String)))]
     #[graphql(concrete(name = "MyObji64f32", params(i64, u8)))]
-    struct MyObj<A: OutputType, B: OutputType> {
+    struct MyObj<A, B>
+    where
+        A: OutputType + OutputTypeMarker,
+        B: OutputType + OutputTypeMarker,
+        MyObj<A, B>: async_graphql::OutputTypeMarker,
+    {
         a: A,
         b: B,
     }
@@ -258,7 +263,7 @@ pub async fn test_generic_subscription() {
     }
 
     #[Subscription]
-    impl<T: OutputType> MySubscription<T>
+    impl<T: OutputType + OutputTypeMarker> MySubscription<T>
     where
         T: Clone + Send + Sync + Unpin,
     {
@@ -300,7 +305,12 @@ pub async fn test_concrete_object() {
         concrete(name = "Obj_i32i64", params(i32, i64)),
         concrete(name = "Obj_f32f64", params(f32, f64))
     )]
-    impl<A: OutputType, B: OutputType> GbObject<A, B> {
+    impl<A, B> GbObject<A, B>
+    where
+        A: OutputType + OutputTypeMarker,
+        B: OutputType + OutputTypeMarker,
+        GbObject<A, B>: async_graphql::OutputTypeMarker,
+    {
         async fn a(&self) -> &A {
             &self.0
         }
@@ -310,8 +320,14 @@ pub async fn test_concrete_object() {
         }
     }
 
-    assert_eq!(GbObject::<i32, i64>::type_name(), "Obj_i32i64");
-    assert_eq!(GbObject::<f32, f64>::type_name(), "Obj_f32f64");
+    assert_eq!(
+        <GbObject::<i32, i64> as OutputTypeMarker>::type_name(),
+        "Obj_i32i64"
+    );
+    assert_eq!(
+        <GbObject::<f32, f64> as OutputTypeMarker>::type_name(),
+        "Obj_f32f64"
+    );
 
     struct Query;
 
@@ -356,7 +372,8 @@ pub async fn test_concrete_object_with_lifetime() {
     #[graphql(concrete(name = "Bar1", params(i64)))]
     struct Foo<'a, T>
     where
-        T: Sync + OutputType + 'a,
+        T: Sync + OutputType + OutputTypeMarker + 'a,
+        Foo<'a, T>: async_graphql::OutputTypeMarker,
     {
         data: &'a T,
     }

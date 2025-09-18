@@ -4,11 +4,12 @@ use crate::{Enum, Object, model::__InputValue, registry};
 
 /// A Directive can be adjacent to many parts of the GraphQL language, a
 /// __DirectiveLocation describes one such possible adjacencies.
-#[derive(Debug, Enum, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Enum, Copy, Clone, Eq, PartialEq, Default)]
 #[graphql(internal, name = "__DirectiveLocation")]
 #[allow(non_camel_case_types)]
 pub enum __DirectiveLocation {
     /// Location adjacent to a query operation.
+    #[default]
     QUERY,
 
     /// Location adjacent to a mutation operation.

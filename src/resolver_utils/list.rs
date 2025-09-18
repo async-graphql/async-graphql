@@ -4,10 +4,10 @@ use crate::{
 };
 
 /// Resolve an list by executing each of the items concurrently.
-pub async fn resolve_list<'a, T: OutputType + 'a>(
+pub async fn resolve_list<'a>(
     ctx: &ContextSelectionSet<'a>,
     field: &Positioned<Field>,
-    iter: impl IntoIterator<Item = T>,
+    iter: impl IntoIterator<Item = &dyn OutputType>,
     len: Option<usize>,
 ) -> ServerResult<Value> {
     let extensions = &ctx.query_env.extensions;
@@ -22,8 +22,8 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
 
                     let resolve_info = ResolveInfo {
                         path_node: ctx_idx.path_node.as_ref().unwrap(),
-                        parent_type: &Vec::<T>::type_name(),
-                        return_type: &T::qualified_type_name(),
+                        parent_type: &item.type_name(),
+                        return_type: &item.qualified_type_name(),
                         name: field.node.name.node.as_str(),
                         alias: field.node.alias.as_ref().map(|alias| alias.node.as_str()),
                         is_for_introspection: ctx_idx.is_for_introspection,

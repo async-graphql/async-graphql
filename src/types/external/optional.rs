@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
-    ServerResult, Value, parser::types::Field, registry,
+    ServerResult, Value, base::OutputTypeMarker, parser::types::Field, registry,
 };
 
 impl<T: InputType> InputType for Option<T> {
@@ -45,8 +45,7 @@ impl<T: InputType> InputType for Option<T> {
     }
 }
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<T: OutputType + Sync> OutputType for Option<T> {
+impl<T: OutputTypeMarker + Sync> OutputTypeMarker for Option<T> {
     fn type_name() -> Cow<'static, str> {
         T::type_name()
     }
@@ -58,6 +57,23 @@ impl<T: OutputType + Sync> OutputType for Option<T> {
     fn create_type_info(registry: &mut registry::Registry) -> String {
         T::create_type_info(registry);
         T::type_name().to_string()
+    }
+}
+
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<T: OutputType + Sync + OutputTypeMarker> OutputType for Option<T> {
+    fn type_name(&self) -> Cow<'static, str> {
+        <Self as OutputTypeMarker>::type_name()
+    }
+
+    fn qualified_type_name(&self) -> String {
+        <Self as OutputTypeMarker>::qualified_type_name()
+    }
+
+    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
+        <Self as OutputTypeMarker>::create_type_info(registry);
+        self.type_name().to_string()
     }
 
     async fn resolve(

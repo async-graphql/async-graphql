@@ -188,7 +188,7 @@ pub async fn test_complex_object_with_generic_concrete_type() {
     #[graphql(concrete(name = "MyObjIntString", params(i32, String)))]
     #[graphql(concrete(name = "MyObji64f32", params(i64, u8)))]
     #[graphql(complex)]
-    struct MyObj<A: OutputType, B: OutputType> {
+    struct MyObj<A, B> where A: OutputType + OutputTypeMarker, B: OutputType + OutputTypeMarker, MyObj<A, B>: async_graphql::OutputTypeMarker {
         a: A,
         b: B,
     }

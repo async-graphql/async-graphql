@@ -1,8 +1,11 @@
 use std::borrow::Cow;
 
 use crate::{
-    Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError, ServerResult,
-    Value, parser::types::Field, registry, registry::MetaTypeId, resolver_utils::ContainerType,
+    Context, ContextSelectionSet, ObjectType, OutputType, OutputTypeMarker, Positioned,
+    ServerError, ServerResult, Value,
+    parser::types::Field,
+    registry::{self, MetaTypeId},
+    resolver_utils::ContainerType,
 };
 
 /// Empty mutation
@@ -32,7 +35,7 @@ pub struct EmptyMutation;
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl ContainerType for EmptyMutation {
-    fn is_empty() -> bool {
+    fn is_empty(&self) -> bool {
         true
     }
 
@@ -40,9 +43,7 @@ impl ContainerType for EmptyMutation {
         Ok(None)
     }
 }
-
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl OutputType for EmptyMutation {
+impl OutputTypeMarker for EmptyMutation {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("EmptyMutation")
     }
@@ -66,6 +67,16 @@ impl OutputType for EmptyMutation {
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
         })
+    }
+}
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl OutputType for EmptyMutation {
+    fn type_name(&self) -> Cow<'static, str> {
+        <Self as OutputTypeMarker>::type_name()
+    }
+
+    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
+        <Self as OutputTypeMarker>::create_type_info(registry)
     }
 
     async fn resolve(

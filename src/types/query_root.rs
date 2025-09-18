@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use crate::{
-    Any, Context, ContextSelectionSet, ObjectType, OutputType, Positioned, ServerError,
-    ServerResult, SimpleObject, Value,
+    Any, Context, ContextSelectionSet, ObjectType, OutputType, OutputTypeMarker, Positioned,
+    ServerError, ServerResult, SimpleObject, Value,
     model::{__Schema, __Type},
     parser::types::Field,
     registry::{self, SDLExportOptions},
@@ -103,14 +103,33 @@ impl<T: ObjectType> ContainerType for QueryRoot<T> {
     }
 }
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<T: ObjectType> OutputType for QueryRoot<T> {
+impl<T: OutputTypeMarker> OutputTypeMarker for QueryRoot<T> {
     fn type_name() -> Cow<'static, str> {
-        T::type_name()
+        <T as OutputTypeMarker>::type_name()
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        let root = T::create_type_info(registry);
+        let root = <T as OutputTypeMarker>::create_type_info(registry);
+
+        if matches!(
+            registry.introspection_mode,
+            IntrospectionMode::Enabled | IntrospectionMode::IntrospectionOnly
+        ) {
+            registry.create_introspection_types();
+        }
+
+        root
+    }
+}
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<T: ObjectType> OutputType for QueryRoot<T> {
+    fn type_name(&self) -> Cow<'static, str> {
+        self.inner.type_name()
+    }
+
+    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
+        let root = self.inner.create_type_info(registry);
 
         if matches!(
             registry.introspection_mode,

@@ -28,3 +28,4 @@ quote = "1.0.35"
 syn = { version = "2.0", features = ["extra-traits", "visit-mut", "visit"] }
 thiserror.workspace = true
 strum = { version = "0.26.2", features = ["derive"] }
+proc-macro-error = "1"

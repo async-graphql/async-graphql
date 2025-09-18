@@ -3,8 +3,7 @@ use std::{borrow::Cow, collections::HashSet as StdHashSet, hash::Hash};
 use hashbrown::HashSet;
 
 use crate::{
-    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
-    Result, ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, OutputTypeMarker, Positioned, Result, ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list
 };
 
 impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
@@ -47,17 +46,17 @@ impl<T: InputType + Hash + Eq> InputType for HashSet<T> {
 }
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<T: OutputType + Hash + Eq> OutputType for HashSet<T> {
-    fn type_name() -> Cow<'static, str> {
-        <StdHashSet<T> as OutputType>::type_name()
+impl<T: OutputType + Hash + Eq +  OutputTypeMarker> OutputType for HashSet<T> {
+    fn type_name(&self) -> Cow<'static, str> {
+        <StdHashSet<T> as OutputTypeMarker>::type_name()
     }
 
-    fn qualified_type_name() -> String {
-        <StdHashSet<T> as OutputType>::qualified_type_name()
+    fn qualified_type_name(&self) -> String {
+        <StdHashSet<T> as OutputTypeMarker>::qualified_type_name()
     }
 
-    fn create_type_info(registry: &mut registry::Registry) -> String {
-        <StdHashSet<T> as OutputType>::create_type_info(registry)
+    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
+        <StdHashSet<T> as OutputTypeMarker>::create_type_info(registry)
     }
 
     async fn resolve(
@@ -65,6 +64,6 @@ impl<T: OutputType + Hash + Eq> OutputType for HashSet<T> {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(ctx, field, self, Some(self.len())).await
+        resolve_list(ctx, field, self.iter().map(|item| item as &dyn OutputType), Some(self.len())).await
     }
 }

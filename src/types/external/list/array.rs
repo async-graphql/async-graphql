@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
 use crate::{
-    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
-    ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    OutputTypeMarker, Positioned, ServerResult, Value, parser::types::Field, registry,
+    resolver_utils::resolve_list,
 };
 
 impl<T: InputType, const N: usize> InputType for [T; N] {
@@ -53,18 +54,33 @@ impl<T: InputType, const N: usize> InputType for [T; N] {
 }
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<T: OutputType, const N: usize> OutputType for [T; N] {
+impl<T: OutputTypeMarker, const N: usize> OutputTypeMarker for [T; N] {
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+        <T as OutputTypeMarker>::type_name()
     }
 
     fn qualified_type_name() -> String {
-        format!("[{}]!", T::qualified_type_name())
+        format!("[{}]!", <T as OutputTypeMarker>::qualified_type_name())
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
+        <T as OutputTypeMarker>::create_type_info(registry);
         Self::qualified_type_name()
+    }
+}
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<T: OutputType + OutputTypeMarker, const N: usize> OutputType for [T; N] {
+    fn type_name(&self) -> Cow<'static, str> {
+        <Self as OutputTypeMarker>::type_name()
+    }
+
+    fn qualified_type_name(&self) -> String {
+        <Self as OutputTypeMarker>::qualified_type_name()
+    }
+
+    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
+        <Self as OutputTypeMarker>::create_type_info(registry)
     }
 
     async fn resolve(
@@ -72,6 +88,12 @@ impl<T: OutputType, const N: usize> OutputType for [T; N] {
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(ctx, field, self.iter(), Some(self.len())).await
+        resolve_list(
+            ctx,
+            field,
+            self.iter().map(|item| item as &dyn OutputType),
+            Some(self.len()),
+        )
+        .await
     }
 }

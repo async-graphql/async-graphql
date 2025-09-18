@@ -199,9 +199,8 @@ macro_rules! scalar_internal {
 #[doc(hidden)]
 macro_rules! scalar_internal_output {
     ($ty:ty, $name:expr, $desc:expr, $specified_by_url:expr) => {
-        #[$crate::async_trait::async_trait]
-        impl $crate::OutputType for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+        impl $crate::OutputTypeMarker for $ty {
+           fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
             }
 
@@ -223,6 +222,20 @@ macro_rules! scalar_internal_output {
                         requires_scopes: ::std::vec::Vec::new(),
                     }
                 })
+            }
+
+        }
+        #[$crate::async_trait::async_trait]
+        impl $crate::OutputType for $ty {
+            fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                <Self as $crate::OutputTypeMarker>::type_name()
+            }
+
+            fn create_type_info(
+                &self,
+                registry: &mut $crate::registry::Registry,
+            ) -> ::std::string::String {
+                <Self as $crate::OutputTypeMarker>::create_type_info(registry)
             }
 
             async fn resolve(
