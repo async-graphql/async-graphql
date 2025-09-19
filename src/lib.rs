@@ -219,9 +219,8 @@ pub use async_stream;
 pub use async_trait;
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,
-    OneofObjectType, OutputType, TypeName, UnionType,
+    OneofObjectType, OutputType, OutputTypeMarker, TypeName, UnionType,
 };
-pub use base::OutputTypeMarker;
 #[doc(hidden)]
 pub use context::ContextSelectionSet;
 pub use context::*;

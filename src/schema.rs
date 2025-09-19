@@ -194,7 +194,6 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
         mut self,
         desc: &'static str,
     ) -> Self {
-
         self.registry.set_description(&*T::type_name(), desc);
         self
     }
@@ -335,8 +334,8 @@ impl<Query, Mutation, Subscription> Clone for Schema<Query, Mutation, Subscripti
 
 impl<Query, Mutation, Subscription> Default for Schema<Query, Mutation, Subscription>
 where
-    Query: Default + ObjectType + OutputTypeMarker + 'static,
-    Mutation: Default + ObjectType + OutputTypeMarker + 'static,
+    Query: Default + ObjectType + 'static,
+    Mutation: Default + ObjectType + 'static,
     Subscription: Default + SubscriptionType + 'static,
 {
     fn default() -> Self {
@@ -350,8 +349,8 @@ where
 
 impl<Query, Mutation, Subscription> Schema<Query, Mutation, Subscription>
 where
-    Query: ObjectType + OutputTypeMarker + 'static,
-    Mutation: ObjectType + OutputTypeMarker + 'static,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
     /// Create a schema builder
@@ -423,8 +422,8 @@ where
             enable_suggestions: true,
         };
         registry.add_system_types();
-        <QueryRoot::<Query> as OutputTypeMarker>::create_type_info(&mut registry);
-        
+        <QueryRoot<Query> as OutputTypeMarker>::create_type_info(&mut registry);
+
         if !Option::<Mutation>::is_empty(&None) {
             <Mutation as OutputTypeMarker>::create_type_info(&mut registry);
         }
@@ -657,8 +656,8 @@ where
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<Query, Mutation, Subscription> Executor for Schema<Query, Mutation, Subscription>
 where
-    Query: ObjectType + 'static + OutputTypeMarker,
-    Mutation: ObjectType + 'static + OutputTypeMarker,
+    Query: ObjectType + 'static,
+    Mutation: ObjectType + 'static,
     Subscription: SubscriptionType + 'static,
 {
     async fn execute(&self, request: Request) -> Response {

@@ -1,6 +1,8 @@
 use actix_web::{HttpRequest, HttpResponse, web};
 use async_graphql::{
-    Context, EmptyMutation, EmptySubscription, Object, ObjectType, OutputTypeMarker, Schema, SubscriptionType, http::{GraphQLPlaygroundConfig, playground_source}
+    Context, EmptyMutation, EmptySubscription, Object, ObjectType, OutputTypeMarker, Schema,
+    SubscriptionType,
+    http::{GraphQLPlaygroundConfig, playground_source},
 };
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use async_lock::Mutex;
@@ -63,8 +65,8 @@ impl CountMutation {
 }
 
 pub async fn gql_handle_schema<
-    Q: ObjectType + OutputTypeMarker + 'static,
-    M: ObjectType + OutputTypeMarker + 'static,
+    Q: ObjectType + 'static,
+    M: ObjectType + 'static,
     S: SubscriptionType + 'static,
 >(
     schema: web::Data<Schema<Q, M, S>>,
@@ -73,7 +75,7 @@ pub async fn gql_handle_schema<
     schema.execute(req.into_inner()).await.into()
 }
 
-pub async fn gql_handle_schema_with_header<T: ObjectType + OutputTypeMarker + 'static>(
+pub async fn gql_handle_schema_with_header<T: ObjectType + 'static>(
     schema: actix_web::web::Data<Schema<T, EmptyMutation, EmptySubscription>>,
     req: HttpRequest,
     gql_request: GraphQLRequest,

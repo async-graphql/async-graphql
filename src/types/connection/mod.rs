@@ -234,8 +234,8 @@ where
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
     Node: OutputType + OutputTypeMarker,
     NodesVersion: NodesFieldSwitcherSealed,
-    ConnectionFields: ObjectType + OutputTypeMarker,
-    EdgeFields: ObjectType + OutputTypeMarker,
+    ConnectionFields: ObjectType,
+    EdgeFields: ObjectType,
     F: FnOnce(Option<Cursor>, Option<Cursor>, Option<usize>, Option<usize>) -> R,
     R: Future<
         Output = Result<

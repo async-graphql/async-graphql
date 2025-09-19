@@ -1,7 +1,9 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
-    ComplexObject, ObjectType, OutputType, OutputTypeMarker, SimpleObject, TypeName, connection::{DefaultEdgeName, EmptyFields}, types::connection::{CursorType, EdgeNameType}
+    ComplexObject, ObjectType, OutputType, OutputTypeMarker, SimpleObject, TypeName,
+    connection::{DefaultEdgeName, EmptyFields},
+    types::connection::{CursorType, EdgeNameType},
 };
 
 /// An edge in a connection.
@@ -11,7 +13,7 @@ pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType + OutputTypeMarker,
-    EdgeFields: ObjectType + OutputTypeMarker,
+    EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
     #[graphql(skip)]
@@ -30,7 +32,7 @@ impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType + OutputTypeMarker,
-    EdgeFields: ObjectType + OutputTypeMarker,
+    EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
     /// A cursor for use in pagination
@@ -43,7 +45,7 @@ impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields,
 where
     Cursor: CursorType + Send + Sync,
     Node: OutputType + OutputTypeMarker,
-    EdgeFields: ObjectType + OutputTypeMarker,
+    EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
     #[inline]
@@ -57,7 +59,7 @@ where
     Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     Node: OutputType + OutputTypeMarker,
-    EdgeFields: ObjectType + OutputTypeMarker,
+    EdgeFields: ObjectType,
 {
     /// Create a new edge, it can have some additional fields.
     #[inline]

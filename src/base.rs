@@ -63,7 +63,7 @@ pub trait InputType: Send + Sync + Sized {
     /// Returns a reference to the raw value.
     fn as_raw_value(&self) -> Option<&Self::RawValueType>;
 }
-
+/// Represents a GraphQL output type with static method.
 pub trait OutputTypeMarker: Send + Sync {
     /// Type the name.
     fn type_name() -> Cow<'static, str>;
@@ -190,7 +190,7 @@ impl<T: OutputType + OutputTypeMarker + Sync, E: Into<Error> + Send + Sync + Clo
 }
 /// A GraphQL object.
 
-pub trait ObjectType: ContainerType {}
+pub trait ObjectType: ContainerType + OutputTypeMarker {}
 
 impl<T: ObjectType + ?Sized> ObjectType for &T {}
 
@@ -199,10 +199,10 @@ impl<T: ObjectType + ?Sized> ObjectType for Box<T> {}
 impl<T: ObjectType + ?Sized> ObjectType for Arc<T> {}
 
 /// A GraphQL interface.
-pub trait InterfaceType: ContainerType {}
+pub trait InterfaceType: ContainerType + OutputTypeMarker {}
 
 /// A GraphQL interface.
-pub trait UnionType: ContainerType {}
+pub trait UnionType: ContainerType + OutputTypeMarker {}
 
 /// A GraphQL input object.
 pub trait InputObjectType: InputType {}
