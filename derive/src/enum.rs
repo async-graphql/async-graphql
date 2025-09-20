@@ -236,14 +236,6 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
         #boxed_trait
         impl #crate_name::OutputType for #ident {
-            fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                Self::__type_name()
-            }
-
-            fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                Self::__create_type_info(registry)
-            }
-
             async fn resolve(&self, _: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 ::std::result::Result::Ok(#crate_name::resolver_utils::enum_value(*self))
             }

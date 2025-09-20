@@ -65,24 +65,13 @@ impl<T: OutputTypeMarker + Ord > OutputTypeMarker for BTreeSet<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + Ord + OutputTypeMarker> OutputType for BTreeSet<T> {
-    fn type_name(&self) -> Cow<'static, str> {
-       <Self as OutputTypeMarker>::type_name()
-    }
-
-    fn qualified_type_name(&self) -> String {
-        <Self as OutputTypeMarker>::qualified_type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
-        <Self as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(
+        resolve_list::<T>(
             ctx,
             field,
             self.iter().map(|item| item as &dyn OutputType),

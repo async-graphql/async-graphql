@@ -69,13 +69,6 @@ where
     K: ToString + Eq + Hash + Send + Sync,
     V: Serialize + Send + Sync,
 {
-    fn type_name(&self) -> Cow<'static, str> {
-        <StdHashMap<K, V> as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <StdHashMap<K, V> as OutputTypeMarker>::create_type_info( registry)
-    }
 
     async fn resolve(
         &self,

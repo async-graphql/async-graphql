@@ -26,13 +26,6 @@ where
     T: OutputType + ToOwned + ?Sized + OutputTypeMarker,
     <T as ToOwned>::Owned: Send + Sync,
 {
-    fn type_name(&self) -> Cow<'static, str> {
-        <Self as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
-        <Self as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

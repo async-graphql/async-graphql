@@ -87,25 +87,6 @@ pub trait OutputTypeMarker: Send + Sync {
 /// Represents a GraphQL output type.
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 pub trait OutputType: Send + Sync {
-    /// Type the name.
-    fn type_name(&self) -> Cow<'static, str>;
-
-    /// Qualified typename.
-    fn qualified_type_name(&self) -> String {
-        format!("{}!", self.type_name())
-    }
-
-    /// Introspection type name
-    ///
-    /// Is the return value of field `__typename`, the interface and union
-    /// should return the current type, and the others return `Type::type_name`.
-    fn introspection_type_name(&self) -> Cow<'static, str> {
-        self.type_name()
-    }
-
-    /// Create type information in the registry and return qualified typename.
-    fn create_type_info(&self, registry: &mut registry::Registry) -> String;
-
     /// Resolve an output value to `async_graphql::Value`.
     #[cfg(feature = "boxed-trait")]
     async fn resolve(
@@ -135,14 +116,6 @@ impl<T: OutputTypeMarker + ?Sized> OutputTypeMarker for &T {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + ?Sized> OutputType for &T {
-    fn type_name(&self) -> Cow<'static, str> {
-        T::type_name(&self)
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        T::create_type_info(&self, registry)
-    }
-
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
         &self,
@@ -169,14 +142,6 @@ impl<T: OutputTypeMarker + Sync, E: Into<Error> + Send + Sync + Clone> OutputTyp
 impl<T: OutputType + OutputTypeMarker + Sync, E: Into<Error> + Send + Sync + Clone> OutputType
     for Result<T, E>
 {
-    fn type_name(&self) -> Cow<'static, str> {
-        <T as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <T as OutputTypeMarker>::create_type_info(registry)
-    }
-
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -222,13 +187,6 @@ impl<T: OutputTypeMarker + ?Sized> OutputTypeMarker for Box<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + ?Sized> OutputType for Box<T> {
-    fn type_name(&self) -> Cow<'static, str> {
-        T::type_name(&self)
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        T::create_type_info(&self, registry)
-    }
 
     #[cfg(feature = "boxed-trait")]
     async fn resolve(
@@ -288,13 +246,6 @@ impl<T: OutputTypeMarker + ?Sized> OutputTypeMarker for Arc<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + ?Sized> OutputType for Arc<T> {
-    fn type_name(&self) -> Cow<'static, str> {
-        T::type_name(&self)
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        T::create_type_info(&self, registry)
-    }
 
     #[allow(clippy::trivially_copy_pass_by_ref)]
     async fn resolve(
@@ -345,13 +296,6 @@ impl<T: ?Sized + OutputTypeMarker> OutputTypeMarker for Weak<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + ?Sized + OutputTypeMarker> OutputType for Weak<T> {
-    fn type_name(&self) -> Cow<'static, str> {
-        <Option<Arc<T>> as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <Option<Arc<T>> as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

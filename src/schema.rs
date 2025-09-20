@@ -490,14 +490,14 @@ where
         };
 
         let res = match &env.operation.node.ty {
-            OperationType::Query => resolve_container(&ctx, &self.0.query).await,
+            OperationType::Query => resolve_container(&ctx, &self.0.query, &self.0.query).await,
             OperationType::Mutation => {
                 if self.0.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
                     || env.introspection_mode == IntrospectionMode::IntrospectionOnly
                 {
-                    resolve_container_serial(&ctx, &EmptyMutation).await
+                    resolve_container_serial(&ctx, &EmptyMutation, &EmptyMutation).await
                 } else {
-                    resolve_container_serial(&ctx, &self.0.mutation).await
+                    resolve_container_serial(&ctx, &self.0.mutation, &self.0.mutation).await
                 }
             }
             OperationType::Subscription => Err(ServerError::new(

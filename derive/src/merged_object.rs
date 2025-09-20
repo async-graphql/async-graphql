@@ -79,9 +79,9 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
     let visible = visible_fn(&object_args.visible);
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
     };
 
     let expanded = quote! {
@@ -141,13 +141,6 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #boxed_trait
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                <Self as #crate_name::OutputTypeMarker>::type_name()
-            }
-
-            fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-            }
 
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #resolve_container

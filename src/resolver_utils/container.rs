@@ -47,10 +47,10 @@ pub trait ContainerType: OutputType {
         fields: &mut Fields<'a>,
     ) -> ServerResult<()>
     where
-        Self: Send + Sync + Sized,
+        Self: Send + Sync + Sized + OutputTypeMarker,
     {
         // Use the existing reference to self with lifetime 'a; avoid creating a Box that would be dropped.
-        fields.add_set(ctx, self)
+        fields.add_set(ctx, self, self)
     }
 
     /// Find the GraphQL entity with the given name from the parameter.
@@ -142,19 +142,21 @@ async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> 
 }
 
 /// Resolve an container by executing each of the fields concurrently.
-pub async fn resolve_container<'a>(
+pub async fn resolve_container<'a, T: OutputTypeMarker>(
     ctx: &ContextSelectionSet<'a>,
     root: &dyn ContainerType,
+    root_marker: &T,
 ) -> ServerResult<Value> {
-    resolve_container_inner(ctx, root, true).await
+    resolve_container_inner(ctx, root, root_marker, true).await
 }
 
 /// Resolve an container by executing each of the fields serially.
-pub async fn resolve_container_serial<'a>(
+pub async fn resolve_container_serial<'a, T: OutputTypeMarker>(
     ctx: &ContextSelectionSet<'a>,
     root: &dyn ContainerType,
+    root_marker: &T,
 ) -> ServerResult<Value> {
-    resolve_container_inner(ctx, root, false).await
+    resolve_container_inner(ctx, root, root_marker, false).await
 }
 
 pub(crate) fn create_value_object(values: Vec<(Name, Value)>) -> Value {
@@ -191,13 +193,14 @@ fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
     }
 }
 
-async fn resolve_container_inner<'a>(
+async fn resolve_container_inner<'a, T: OutputTypeMarker>(
     ctx: &ContextSelectionSet<'a>,
     root: &dyn ContainerType,
+    root_marker: &T,
     parallel: bool,
 ) -> ServerResult<Value> {
     let mut fields = Fields(Vec::new());
-    fields.add_set(ctx, root)?;
+    fields.add_set(ctx, root, root_marker)?;
 
     let res = if parallel {
         futures_util::future::try_join_all(fields.0).await?
@@ -220,14 +223,15 @@ pub struct Fields<'a>(Vec<BoxFieldFuture<'a>>);
 impl<'a> Fields<'a> {
     /// Add another set of fields to this set of fields using the given
     /// container.
-    pub fn add_set(
+    pub fn add_set<T: OutputTypeMarker + ?Sized>(
         &mut self,
         ctx: &ContextSelectionSet<'a>,
         root: &'a dyn ContainerType,
+        root_marker: &'a T,
     ) -> ServerResult<()> {
-        let mut stack = vec![(root, ctx.clone())];
+        let mut stack = vec![(root, root_marker, ctx.clone())];
         
-        while let Some((root, ctx)) = stack.pop() {
+        while let Some((root, root_marker, ctx)) = stack.pop() {
             for selection in &ctx.item.node.items {
                 match &selection.node {
                     Selection::Field(field) => {
@@ -235,7 +239,7 @@ impl<'a> Fields<'a> {
                             // Get the typename
                             let ctx_field = ctx.with_field(field);
                             let field_name = ctx_field.item.node.response_key().node.clone();
-                            let typename = root.introspection_type_name().into_owned();
+                            let typename = root_marker.introspection_type_name().into_owned();
 
                             self.0.push(Box::pin(async move {
                                 Ok((field_name, Value::String(typename)))
@@ -256,7 +260,7 @@ impl<'a> Fields<'a> {
                                         root.resolve_field(&ctx_field).await?.unwrap_or_default(),
                                     ))
                                 } else {
-                                    let type_name = root.type_name();
+                                    let type_name = T::type_name();
                                     let resolve_info = ResolveInfo {
                                         path_node: ctx_field.path_node.as_ref().unwrap(),
                                         parent_type: &type_name,
@@ -380,7 +384,7 @@ impl<'a> Fields<'a> {
                         let type_condition =
                             type_condition.map(|condition| condition.node.on.node.as_str());
 
-                        let introspection_type_name = root.introspection_type_name();
+                        let introspection_type_name = root_marker.introspection_type_name();
 
                         let applies_concrete_object = type_condition.is_some_and(|condition| {
                             introspection_type_name == condition
@@ -392,12 +396,12 @@ impl<'a> Fields<'a> {
                                     .is_some_and(|interfaces| interfaces.contains(condition))
                         });
                         if applies_concrete_object {
-                            stack.push((root, ctx.with_selection_set(selection_set)));
+                            stack.push((root, root_marker, ctx.with_selection_set(selection_set)));
                         } else if type_condition
-                            .is_none_or(|condition| root.type_name() == condition)
+                            .is_none_or(|condition| T::type_name() == condition)
                         {
                             // The fragment applies to an interface type.
-                            stack.push((root, ctx.with_selection_set(selection_set)));
+                            stack.push((root, root_marker, ctx.with_selection_set(selection_set)));
                         }
                     }
                 }

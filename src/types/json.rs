@@ -98,14 +98,6 @@ impl<T: Serialize + Send + Sync> OutputTypeMarker for Json<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: Serialize + Send + Sync> OutputType for Json<T> {
-    fn type_name(&self) -> Cow<'static, str> {
-       <Self as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <Self as OutputTypeMarker>::create_type_info(registry)
-    }
-
     async fn resolve(
         &self,
         _ctx: &ContextSelectionSet<'_>,
@@ -174,13 +166,6 @@ impl OutputTypeMarker for serde_json::Value {
 }
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl OutputType for serde_json::Value {
-    fn type_name(&self) -> Cow<'static, str> {
-        <Self as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <Self as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

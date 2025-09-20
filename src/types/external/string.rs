@@ -72,13 +72,7 @@ impl OutputTypeMarker for str {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl OutputType for str {
-    fn type_name(&self) -> Cow<'static, str> {
-       <Self as OutputTypeMarker>::type_name()
-    }
 
-    fn create_type_info(&self, registry: &mut registry::Registry) -> String {
-       <Self as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

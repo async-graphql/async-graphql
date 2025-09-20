@@ -639,9 +639,9 @@ pub fn generate(
 
     let visible = visible_fn(&object_args.visible);
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
+        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await }
+        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
     };
 
     let resolve_field_resolver_match = generate_field_match(resolvers)?;
@@ -724,13 +724,6 @@ pub fn generate(
                 #[allow(clippy::all, clippy::pedantic)]
                 #boxed_trait
                 impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
-                    fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                        <Self as #crate_name::OutputTypeMarker>::type_name()
-                    }
-
-                    fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-                    }
 
                     async fn resolve(
                         &self,
@@ -853,14 +846,6 @@ pub fn generate(
                 }
                 #boxed_trait
                 impl #def_bounds #crate_name::OutputType for #concrete_type {
-                    fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                        <Self as #crate_name::OutputTypeMarker>::type_name()
-                    }
-
-                    fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                         <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-                    }
-
                     async fn resolve(
                         &self,
                         ctx: &#crate_name::ContextSelectionSet<'_>,

@@ -1219,8 +1219,7 @@ impl Registry {
     }
 
     pub(crate) fn create_introspection_types(&mut self) {
-        let none = None::<Arc<__Schema>>;
-        none.create_type_info(self);
+        __Schema::create_type_info(self);
 
         if let Some(MetaType::Object { fields, .. }) = self.types.get_mut(&self.query_type) {
             fields.insert(

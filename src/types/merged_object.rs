@@ -96,16 +96,9 @@ where
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<A, B> OutputType for MergedObject<A, B>
 where
-    A: OutputTypeMarker,
-    B: OutputTypeMarker,
+    A: OutputType,
+    B: OutputType,
 {
-    fn type_name(&self) -> Cow<'static, str> {
-        <Self as OutputTypeMarker>::type_name()
-    }
-
-    fn create_type_info(&self, registry: &mut Registry) -> String {
-        <Self as OutputTypeMarker>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

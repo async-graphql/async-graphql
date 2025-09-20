@@ -255,20 +255,9 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             #[allow(clippy::all, clippy::pedantic)]
             #boxed_trait
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-                fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                    <Self as #crate_name::OutputTypeMarker>::type_name()
-                }
-
-                fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                   <Self as #crate_name::OutputTypeMarker>::introspection_type_name(&self)
-                }
-
-                fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-                }
 
                 async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                    #crate_name::resolver_utils::resolve_container(ctx, self as &dyn #crate_name::ContainerType).await
+                    #crate_name::resolver_utils::resolve_container(ctx, self as &dyn #crate_name::ContainerType, self).await
                 }
             }
 
@@ -421,20 +410,9 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 #[allow(clippy::all, clippy::pedantic)]
                 #boxed_trait
                 impl #def_bounds #crate_name::OutputType for #concrete_type {
-                    fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                        <Self as #crate_name::OutputTypeMarker>::type_name()
-                    }
-
-                    fn introspection_type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                       <Self as #crate_name::OutputTypeMarker>::introspection_type_name(&self)
-                    }
-
-                    fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-                    }
 
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
-                        #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType).await
+                        #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, self).await
                     }
                 }
 

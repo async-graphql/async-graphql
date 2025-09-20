@@ -133,13 +133,6 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         #[allow(clippy::all, clippy::pedantic)]
         #boxed_trait
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-            fn type_name(&self) -> ::std::borrow::Cow<'static, ::std::primitive::str> {
-                <Self as #crate_name::OutputTypeMarker>::type_name()
-            }
-
-            fn create_type_info(&self, registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                <Self as #crate_name::OutputTypeMarker>::create_type_info(registry)
-            }
 
             async fn resolve(
                 &self,
