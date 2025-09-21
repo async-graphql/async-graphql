@@ -10,7 +10,7 @@ use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
 
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContainerType, ContextBase, EmptyMutation,
-    EmptySubscription, Executor, InputType, ObjectType, OutputType, OutputTypeMarker, QueryEnv,
+    EmptySubscription, Executor, InputType, ObjectType, OutputTypeMarker, QueryEnv,
     Request, Response, ServerError, ServerResult, SubscriptionType, Variables,
     context::{Data, QueryEnvInner},
     custom_directive::CustomDirectiveFactory,
@@ -490,14 +490,31 @@ where
         };
 
         let res = match &env.operation.node.ty {
+            #[cfg(feature = "boxed-trait")]
             OperationType::Query => resolve_container(&ctx, &self.0.query, &self.0.query).await,
+            #[cfg(not(feature = "boxed-trait"))]
+            OperationType::Query => resolve_container(&ctx, &self.0.query).await,
             OperationType::Mutation => {
                 if self.0.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
                     || env.introspection_mode == IntrospectionMode::IntrospectionOnly
                 {
-                    resolve_container_serial(&ctx, &EmptyMutation, &EmptyMutation).await
+                    #[cfg(feature = "boxed-trait")]
+                    {
+                        resolve_container_serial(&ctx, &EmptyMutation, &EmptyMutation).await
+                    }
+                    #[cfg(not(feature = "boxed-trait"))]
+                    {
+                        resolve_container_serial(&ctx, &EmptyMutation).await
+                    }
                 } else {
-                    resolve_container_serial(&ctx, &self.0.mutation, &self.0.mutation).await
+                    #[cfg(feature = "boxed-trait")]
+                    {
+                        resolve_container_serial(&ctx, &self.0.mutation, &self.0.mutation).await
+                    }
+                    #[cfg(not(feature = "boxed-trait"))]
+                    {
+                        resolve_container_serial(&ctx, &self.0.mutation).await
+                    }
                 }
             }
             OperationType::Subscription => Err(ServerError::new(

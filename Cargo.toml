@@ -21,7 +21,7 @@ cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601"]
 dataloader = ["futures-channel", "lru"]
 decimal = ["rust_decimal"]
-default = ["email-validator", "tempfile", "playground", "graphiql", "boxed-trait"]
+default = ["email-validator", "tempfile", "playground", "graphiql"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["tokio"]
@@ -118,7 +118,7 @@ handlebars = { version = "5.1.2", optional = true }
 schemars = { version = "0.8.21", optional = true }
 
 [dev-dependencies]
-async-graphql = {path = ".", features = ["boxed-trait", "dataloader", "chrono-duration"]}
+async-graphql = {path = ".", features = ["dataloader", "chrono-duration"]}
 chrono = { version = "0.4.40"}
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
 futures-channel = "0.3.30"

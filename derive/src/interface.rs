@@ -435,6 +435,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         #[allow(clippy::all, clippy::pedantic)]
         #boxed_trait
         impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+            #[cfg(feature = "boxed-trait")]
             async fn resolve(
                 &self,
                 ctx: &#crate_name::ContextSelectionSet<'_>,
@@ -442,6 +443,16 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             ) -> #crate_name::ServerResult<#crate_name::Value> {
                 #crate_name::resolver_utils::resolve_container(ctx, self, self).await
             }
+
+            #[cfg(not(feature = "boxed-trait"))]
+            async fn resolve(
+                &self,
+                ctx: &#crate_name::ContextSelectionSet<'_>,
+                _field: &#crate_name::Positioned<#crate_name::parser::types::Field>,
+            ) -> #crate_name::ServerResult<#crate_name::Value> {
+                #crate_name::resolver_utils::resolve_container(ctx, self).await
+            }
+
         }
 
         impl #impl_generics #crate_name::InterfaceType for #ident #ty_generics #where_clause {}

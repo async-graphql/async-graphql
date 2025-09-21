@@ -67,7 +67,7 @@ impl<T: OutputTypeMarker> OutputTypeMarker for LinkedList<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + OutputTypeMarker> OutputType for LinkedList<T> {
-
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -81,4 +81,20 @@ impl<T: OutputType + OutputTypeMarker> OutputType for LinkedList<T> {
         )
         .await
     }
+
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
+            Some(self.len()),
+        )
+        .await
+    }
+
 }

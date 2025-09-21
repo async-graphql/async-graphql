@@ -124,13 +124,22 @@ impl<T: OutputTypeMarker> OutputTypeMarker for QueryRoot<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: ObjectType> OutputType for QueryRoot<T> {
-
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         _field: &Positioned<Field>,
     ) -> ServerResult<Value> {
         resolve_container(ctx, self, self).await
+    }
+
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        _field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_container(ctx, self).await
     }
 }
 

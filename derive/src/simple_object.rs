@@ -390,9 +390,17 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     }
 
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        if cfg!(feature = "boxed-trait") {
+            quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+            quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+        }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        if cfg!(feature = "boxed-trait") {
+            quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+            quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+        }
     };
 
     let expanded = if object_args.concretes.is_empty() {

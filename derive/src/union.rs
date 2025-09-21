@@ -255,9 +255,14 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
             #[allow(clippy::all, clippy::pedantic)]
             #boxed_trait
             impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
-
+                #[cfg(feature = "boxed-trait")]
                 async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                     #crate_name::resolver_utils::resolve_container(ctx, self as &dyn #crate_name::ContainerType, self).await
+                }
+
+                #[cfg(not(feature = "boxed-trait"))]
+                async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                    #crate_name::resolver_utils::resolve_container(ctx, self).await
                 }
             }
 
@@ -410,10 +415,16 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                 #[allow(clippy::all, clippy::pedantic)]
                 #boxed_trait
                 impl #def_bounds #crate_name::OutputType for #concrete_type {
-
+                    #[cfg(feature = "boxed-trait")]
                     async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                         #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, self).await
                     }
+
+                    #[cfg(not(feature = "boxed-trait"))]
+                    async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
+                        #crate_name::resolver_utils::resolve_container(ctx, self).await
+                    }
+
                 }
 
                 impl #def_bounds #crate_name::ObjectType for #concrete_type {}

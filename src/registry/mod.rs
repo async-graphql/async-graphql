@@ -14,7 +14,7 @@ use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::{__DirectiveLocation, location_traits};
 use crate::{
-    Any, Context, ID, InputType, OutputType, OutputTypeMarker, Positioned, ServerResult, SubscriptionType, Value, VisitorContext, model::__Schema, parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition}, schema::IntrospectionMode
+    Any, Context, ID, InputType, OutputTypeMarker, Positioned, ServerResult, SubscriptionType, Value, VisitorContext, model::__Schema, parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition}, schema::IntrospectionMode
 };
 
 fn strip_brackets(type_name: &str) -> Option<&str> {

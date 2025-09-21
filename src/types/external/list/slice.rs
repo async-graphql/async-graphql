@@ -26,7 +26,7 @@ impl<'a, T: OutputTypeMarker + 'a> OutputTypeMarker for &'a [T] {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<'a, T: OutputType + OutputTypeMarker + 'a> OutputType for &'a [T] {
-
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -36,6 +36,20 @@ impl<'a, T: OutputType + OutputTypeMarker + 'a> OutputType for &'a [T] {
             ctx,
             field,
             self.iter().map(|item| item as &dyn OutputType),
+            Some(self.len()),
+        )
+        .await
+    }
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
             Some(self.len()),
         )
         .await
@@ -65,7 +79,7 @@ macro_rules! impl_output_slice_for_smart_ptr {
         
         #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
         impl<T: OutputType + OutputTypeMarker> OutputType for $ty {
-
+            #[cfg(feature = "boxed-trait")]
             async fn resolve(
                 &self,
                 ctx: &ContextSelectionSet<'_>,
@@ -75,6 +89,20 @@ macro_rules! impl_output_slice_for_smart_ptr {
                     ctx,
                     field,
                     self.iter().map(|item| item as &dyn OutputType),
+                    Some(self.len()),
+                )
+                .await
+            }
+            #[cfg(not(feature = "boxed-trait"))]
+            async fn resolve(
+                &self,
+                ctx: &ContextSelectionSet<'_>,
+                field: &Positioned<Field>,
+            ) -> ServerResult<Value> {
+                resolve_list(
+                    ctx,
+                    field,
+                    self.iter(),
                     Some(self.len()),
                 )
                 .await

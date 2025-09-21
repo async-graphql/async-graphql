@@ -66,7 +66,7 @@ impl<T: OutputTypeMarker + Hash + Eq> OutputTypeMarker for HashSet<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + Hash + Eq + OutputTypeMarker> OutputType for HashSet<T> {
-
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -76,6 +76,21 @@ impl<T: OutputType + Hash + Eq + OutputTypeMarker> OutputType for HashSet<T> {
             ctx,
             field,
             self.iter().map(|item| item as &dyn OutputType),
+            Some(self.len()),
+        )
+        .await
+    }
+
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
             Some(self.len()),
         )
         .await

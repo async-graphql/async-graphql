@@ -45,7 +45,7 @@ impl<T: InputType + Ord> InputType for BTreeSet<T> {
         Some(self)
     }
 }
-impl<T: OutputTypeMarker + Ord > OutputTypeMarker for BTreeSet<T> {
+impl<T: OutputTypeMarker + Ord> OutputTypeMarker for BTreeSet<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!(
             "[{}]",
@@ -65,7 +65,7 @@ impl<T: OutputTypeMarker + Ord > OutputTypeMarker for BTreeSet<T> {
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + Ord + OutputTypeMarker> OutputType for BTreeSet<T> {
-
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -75,6 +75,21 @@ impl<T: OutputType + Ord + OutputTypeMarker> OutputType for BTreeSet<T> {
             ctx,
             field,
             self.iter().map(|item| item as &dyn OutputType),
+            Some(self.len()),
+        )
+        .await
+    }
+
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
             Some(self.len()),
         )
         .await

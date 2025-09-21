@@ -72,6 +72,7 @@ impl<T: OutputTypeMarker, const N: usize> OutputTypeMarker for [T; N] {
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<T: OutputType + OutputTypeMarker, const N: usize> OutputType for [T; N] {
 
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
@@ -85,4 +86,20 @@ impl<T: OutputType + OutputTypeMarker, const N: usize> OutputType for [T; N] {
         )
         .await
     }
+
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
+            Some(self.len()),
+        )
+        .await
+    }
+
 }
