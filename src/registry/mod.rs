@@ -981,9 +981,9 @@ impl Registry {
         T::qualified_type_name()
     }
 
-    fn create_type<F: FnMut(&mut Registry) -> MetaType>(
+    fn create_type(
         &mut self,
-        f: &mut F,
+        f: &mut dyn FnMut(&mut Registry) -> MetaType,
         name: &str,
         rust_typename: &'static str,
         type_id: MetaTypeId,
