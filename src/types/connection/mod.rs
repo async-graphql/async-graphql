@@ -15,7 +15,7 @@ pub use page_info::PageInfo;
 use crate::{Error, ObjectType, OutputType, Result, SimpleObject};
 
 /// Empty additional fields
-#[derive(SimpleObject)]
+#[derive(Default, Copy, Clone, SimpleObject)]
 #[graphql(internal, fake)]
 pub struct EmptyFields;
 
@@ -258,7 +258,7 @@ where
 /// # Examples
 ///
 /// ```rust
-/// 
+///
 /// use async_graphql::*;
 /// use async_graphql::types::connection::*;
 ///
