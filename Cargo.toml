@@ -118,6 +118,9 @@ handlebars = { version = "5.1.2", optional = true }
 schemars = { version = "0.8.21", optional = true }
 
 [dev-dependencies]
+async-graphql = {path = ".", features = ["dataloader", "chrono-duration"]}
+chrono = { version = "0.4.40"}
+uuid = { version = "1.8.0", features = ["v4", "serde"] }
 futures-channel = "0.3.30"
 tokio = { version = "1.37.0", features = [
   "macros",

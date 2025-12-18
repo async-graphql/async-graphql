@@ -79,9 +79,17 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
 
     let visible = visible_fn(&object_args.visible);
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+        if cfg!(feature = "boxed-trait") {
+            quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+            quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+        }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+        if cfg!(feature = "boxed-trait") {
+            quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+            quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+        }
     };
 
     let expanded = quote! {
@@ -97,9 +105,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
             }
         }
 
-        #[allow(clippy::all, clippy::pedantic)]
-        #boxed_trait
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+        impl #impl_generics #crate_name::OutputTypeMarker for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #gql_typename
             }
@@ -138,6 +144,11 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                     }
                 })
             }
+        }
+
+        #[allow(clippy::all, clippy::pedantic)]
+        #boxed_trait
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
 
             async fn resolve(&self, ctx: &#crate_name::ContextSelectionSet<'_>, _field: &#crate_name::Positioned<#crate_name::parser::types::Field>) -> #crate_name::ServerResult<#crate_name::Value> {
                 #resolve_container

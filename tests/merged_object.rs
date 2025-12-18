@@ -194,7 +194,7 @@ pub async fn test_generic_merged_subscription() {
     #[Subscription]
     impl<T> Subscription1<T>
     where
-        T: Clone + OutputType,
+        T: Clone + OutputType + OutputTypeMarker,
     {
         async fn events1(&self) -> impl Stream<Item = T> {
             futures_util::stream::iter(self.values.clone())
@@ -208,7 +208,7 @@ pub async fn test_generic_merged_subscription() {
     #[Subscription]
     impl<T> Subscription2<T>
     where
-        T: Clone + OutputType,
+        T: Clone + OutputType + OutputTypeMarker,
     {
         async fn events2(&self) -> impl Stream<Item = T> {
             futures_util::stream::iter(self.values.clone())
@@ -218,8 +218,8 @@ pub async fn test_generic_merged_subscription() {
     #[derive(MergedSubscription)]
     struct Subscription<T1, T2>(Subscription1<T1>, Subscription2<T2>)
     where
-        T1: Clone + OutputType,
-        T2: Clone + OutputType;
+        T1: Clone + OutputType + OutputTypeMarker,
+        T2: Clone + OutputType + OutputTypeMarker;
 
     struct Query;
 

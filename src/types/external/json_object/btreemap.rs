@@ -7,7 +7,7 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
-    ServerResult, Value,
+    OutputTypeMarker, ServerResult, Value,
     registry::{MetaType, MetaTypeId, Registry},
 };
 
@@ -72,8 +72,7 @@ where
     }
 }
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<K, V> OutputType for BTreeMap<K, V>
+impl<K, V> OutputTypeMarker for BTreeMap<K, V>
 where
     K: ToString + Ord + Send + Sync,
     V: Serialize + Send + Sync,
@@ -84,7 +83,7 @@ where
 
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
-            name: <Self as OutputType>::type_name().to_string(),
+            name: <Self as OutputTypeMarker>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value.".to_string()),
             is_valid: None,
             visible: None,
@@ -95,6 +94,14 @@ where
             requires_scopes: Default::default(),
         })
     }
+}
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<K, V> OutputType for BTreeMap<K, V>
+where
+    K: ToString + Ord + Send + Sync,
+    V: Serialize + Send + Sync,
+{
 
     async fn resolve(
         &self,

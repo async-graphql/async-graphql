@@ -96,8 +96,7 @@ pub fn generate(
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #boxed_trait
-        impl #generic #crate_name::OutputType for #self_ty #where_clause {
+        impl #generic #crate_name::OutputTypeMarker for #self_ty #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #gql_typename
             }
@@ -115,6 +114,11 @@ pub fn generate(
                     requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 })
             }
+        }
+
+        #[allow(clippy::all, clippy::pedantic)]
+        #boxed_trait
+        impl #generic #crate_name::OutputType for #self_ty #where_clause {
 
             async fn resolve(
                 &self,

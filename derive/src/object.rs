@@ -242,11 +242,11 @@ pub fn generate(
                     {
                         let mut key_str = Vec::new();
                         #(#get_federation_key)*
-                        registry.add_keys(&<#entity_type as #crate_name::OutputType>::type_name(), &key_str.join(" "));
+                        registry.add_keys(&<#entity_type as #crate_name::OutputTypeMarker>::type_name(), &key_str.join(" "));
                     }
                 });
                 create_entity_types.push(
-                    quote! { <#entity_type as #crate_name::OutputType>::create_type_info(registry); },
+                    quote! { <#entity_type as #crate_name::OutputTypeMarker>::create_type_info(registry); },
                 );
 
                 let field_ident = &method.sig.ident;
@@ -273,7 +273,7 @@ pub fn generate(
                     args.len(),
                     quote! {
                         #(#cfg_attrs)*
-                        if typename == &<#entity_type as #crate_name::OutputType>::type_name() {
+                        if typename == &<#entity_type as #crate_name::OutputTypeMarker>::type_name() {
                             if let (#(#key_pat),*) = (#(#key_getter),*) {
                                 let f = async move {
                                     #(#requires_getter)*
@@ -310,7 +310,7 @@ pub fn generate(
                     let ident = &method.sig.ident;
 
                     schema_fields.push(quote! {
-                        <#ty>::create_type_info(registry);
+                        <#ty as #crate_name::OutputTypeMarker>::create_type_info(registry);
                         if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                             registry.create_fake_output_type::<#ty>() {
                             fields.extend(obj_fields);
@@ -537,7 +537,7 @@ pub fn generate(
                             #(#schema_args)*
                             args
                         },
-                        ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+                        ty: <#schema_ty as #crate_name::OutputTypeMarker>::create_type_info(registry),
                         deprecation: #field_deprecation,
                         cache_control: #cache_control,
                         external: #external,
@@ -639,9 +639,17 @@ pub fn generate(
 
     let visible = visible_fn(&object_args.visible);
     let resolve_container = if object_args.serial {
-        quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, self).await }
+        if cfg!(feature = "boxed-trait") {
+          quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+          quote! { #crate_name::resolver_utils::resolve_container_serial(ctx, &self).await }
+        }
     } else {
-        quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
+        if cfg!(feature = "boxed-trait") {
+          quote! { #crate_name::resolver_utils::resolve_container(ctx, &self as &dyn #crate_name::resolver_utils::ContainerType, &self).await }
+        } else {
+          quote! { #crate_name::resolver_utils::resolve_container(ctx, &self).await }
+        }
     };
 
     let resolve_field_resolver_match = generate_field_match(resolvers)?;
@@ -688,8 +696,7 @@ pub fn generate(
                 }
 
                 #[allow(clippy::all, clippy::pedantic)]
-                #boxed_trait
-                impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
+                impl #impl_generics #crate_name::OutputTypeMarker for #self_ty #where_clause {
                     fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         #gql_typename
                     }
@@ -721,6 +728,10 @@ pub fn generate(
                         #(#add_keys)*
                         ty
                     }
+                }
+                #[allow(clippy::all, clippy::pedantic)]
+                #boxed_trait
+                impl #impl_generics #crate_name::OutputType for #self_ty #where_clause {
 
                     async fn resolve(
                         &self,
@@ -831,17 +842,18 @@ pub fn generate(
                         self.__internal_find_entity(ctx, params).await
                     }
                 }
-
-                #boxed_trait
-                impl #def_bounds #crate_name::OutputType for #concrete_type {
-                    fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+                
+                impl #def_bounds #crate_name::OutputTypeMarker for #concrete_type {
+                  fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                         ::std::borrow::Cow::Borrowed(#gql_typename)
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                         Self::__internal_create_type_info(registry, #gql_typename)
                     }
-
+                }
+                #boxed_trait
+                impl #def_bounds #crate_name::OutputType for #concrete_type {
                     async fn resolve(
                         &self,
                         ctx: &#crate_name::ContextSelectionSet<'_>,

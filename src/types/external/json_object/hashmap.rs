@@ -13,7 +13,7 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
     ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
-    ServerResult, Value,
+    OutputTypeMarker, ServerResult, Value,
     registry::{MetaType, MetaTypeId, Registry},
 };
 
@@ -79,8 +79,7 @@ where
     }
 }
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<K, V, S> OutputType for HashMap<K, V, S>
+impl<K, V, S> OutputTypeMarker for HashMap<K, V, S>
 where
     K: ToString + Eq + Hash + Send + Sync,
     V: Serialize + Send + Sync,
@@ -92,7 +91,7 @@ where
 
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<Self, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
-            name: <Self as OutputType>::type_name().to_string(),
+            name: <Self as OutputTypeMarker>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON Object value.".to_string()),
             is_valid: None,
             visible: None,
@@ -103,6 +102,15 @@ where
             requires_scopes: Default::default(),
         })
     }
+}
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<K, V, S> OutputType for HashMap<K, V, S>
+where
+    K: ToString + Eq + Hash + Send + Sync,
+    V: Serialize + Send + Sync,
+    S: Send + Sync,
+{
 
     async fn resolve(
         &self,

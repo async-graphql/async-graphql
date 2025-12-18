@@ -6,8 +6,8 @@ use std::{
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::{
-    ContextSelectionSet, InputType, InputValueResult, OutputType, Positioned, ServerResult, Value,
-    from_value,
+    ContextSelectionSet, InputType, InputValueResult, OutputType, OutputTypeMarker, Positioned,
+    ServerResult, Value, from_value,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
     to_value,
@@ -76,14 +76,14 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
 }
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<T: Serialize + Send + Sync> OutputType for Json<T> {
+impl<T: Serialize + Send + Sync> OutputTypeMarker for Json<T> {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")
     }
 
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<Json<T>, _>(MetaTypeId::Scalar, |_| MetaType::Scalar {
-            name: <Self as OutputType>::type_name().to_string(),
+            name: <Self as OutputTypeMarker>::type_name().to_string(),
             description: Some("A scalar that can represent any JSON value.".to_string()),
             is_valid: None,
             visible: None,
@@ -94,7 +94,10 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             requires_scopes: Default::default(),
         })
     }
+}
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<T: Serialize + Send + Sync> OutputType for Json<T> {
     async fn resolve(
         &self,
         _ctx: &ContextSelectionSet<'_>,
@@ -140,8 +143,7 @@ impl InputType for serde_json::Value {
     }
 }
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl OutputType for serde_json::Value {
+impl OutputTypeMarker for serde_json::Value {
     fn type_name() -> Cow<'static, str> {
         Cow::Borrowed("JSON")
     }
@@ -149,7 +151,7 @@ impl OutputType for serde_json::Value {
     fn create_type_info(registry: &mut Registry) -> String {
         registry.create_output_type::<serde_json::Value, _>(MetaTypeId::Scalar, |_| {
             MetaType::Scalar {
-                name: <Self as OutputType>::type_name().to_string(),
+                name: <Self as OutputTypeMarker>::type_name().to_string(),
                 description: Some("A scalar that can represent any JSON value.".to_string()),
                 is_valid: None,
                 visible: None,
@@ -161,6 +163,9 @@ impl OutputType for serde_json::Value {
             }
         })
     }
+}
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl OutputType for serde_json::Value {
 
     async fn resolve(
         &self,

@@ -494,7 +494,11 @@ pub async fn test_union_with_generic() {
         concrete(name = "MyObjString", params(String)),
         concrete(name = "MyObjInt", params(i64))
     )]
-    impl<T: Send + Sync + async_graphql::OutputType> MyObj<T> {
+    impl<T> MyObj<T>
+    where
+        T: Send + Sync + async_graphql::OutputType + async_graphql::OutputTypeMarker,
+        MyObj<T>: async_graphql::OutputTypeMarker,
+    {
         async fn id(&self) -> i32 {
             10
         }
@@ -511,7 +515,12 @@ pub async fn test_union_with_generic() {
     #[derive(Union)]
     #[graphql(concrete(name = "NodeInt", params(i64)))]
     #[graphql(concrete(name = "NodeString", params(String)))]
-    enum Node<T: Send + Sync + async_graphql::OutputType> {
+    enum Node<T>
+    where
+        T: Send + Sync + async_graphql::OutputType + async_graphql::OutputTypeMarker,
+        Node<T>: async_graphql::OutputTypeMarker,
+        MyObj<T>: async_graphql::OutputTypeMarker,
+    {
         MyObj(MyObj<T>),
     }
 
@@ -584,7 +593,7 @@ pub async fn test_union_with_sub_generic() {
 
     #[derive(Union)]
     #[graphql(concrete(name = "NodeMyObj", params("MyObj<G>"), bounds("G: Send + Sync")))]
-    enum Node<T: Send + Sync + async_graphql::OutputType> {
+    enum Node<T> where T: Send + Sync + async_graphql::OutputType + async_graphql::OutputTypeMarker {
         Nested(MyObj2<T>),
         NotNested(T),
     }

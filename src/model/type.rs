@@ -13,6 +13,7 @@ enum TypeDetail<'a> {
     List(String),
 }
 
+
 pub struct __Type<'a> {
     registry: &'a registry::Registry,
     visible_types: &'a HashSet<&'a str>,

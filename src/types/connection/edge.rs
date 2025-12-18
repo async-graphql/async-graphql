@@ -1,7 +1,7 @@
 use std::{borrow::Cow, marker::PhantomData};
 
 use crate::{
-    ComplexObject, ObjectType, OutputType, SimpleObject, TypeName,
+    ComplexObject, ObjectType, OutputType, OutputTypeMarker, SimpleObject, TypeName,
     connection::{DefaultEdgeName, EmptyFields},
     types::connection::{CursorType, EdgeNameType},
 };
@@ -12,7 +12,7 @@ use crate::{
 pub struct Edge<Cursor, Node, EdgeFields, Name = DefaultEdgeName>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
@@ -31,7 +31,7 @@ where
 impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
@@ -44,7 +44,7 @@ where
 impl<Cursor, Node, EdgeFields, Name> TypeName for Edge<Cursor, Node, EdgeFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     EdgeFields: ObjectType,
     Name: EdgeNameType,
 {
@@ -58,7 +58,7 @@ impl<Cursor, Node, EdgeFields, Name> Edge<Cursor, Node, EdgeFields, Name>
 where
     Name: EdgeNameType,
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     EdgeFields: ObjectType,
 {
     /// Create a new edge, it can have some additional fields.
@@ -80,7 +80,7 @@ where
 impl<Cursor, Node, Name> Edge<Cursor, Node, EmptyFields, Name>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     Name: EdgeNameType,
 {
     /// Create a new edge.

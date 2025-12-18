@@ -2,7 +2,7 @@ use std::{borrow::Cow, marker::PhantomData};
 
 use super::{DisableNodesField, EnableNodesField, NodesFieldSwitcherSealed};
 use crate::{
-    Object, ObjectType, OutputType, TypeName,
+    Object, ObjectType, OutputType, OutputTypeMarker, TypeName,
     connection::{
         ConnectionNameType, DefaultConnectionName, DefaultEdgeName, EdgeNameType, PageInfo,
         edge::Edge,
@@ -23,7 +23,7 @@ pub struct Connection<
     NodesField = EnableNodesField,
 > where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputTypeMarker + OutputType,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
@@ -47,7 +47,7 @@ impl<Cursor, Node, NodesField, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, EmptyFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
     EdgeName: EdgeNameType,
@@ -72,7 +72,7 @@ impl<Cursor, Node, NodesField, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
@@ -103,7 +103,7 @@ impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, DisableNodesField>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
@@ -137,7 +137,7 @@ impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName>
     Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, EnableNodesField>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,
@@ -175,7 +175,7 @@ impl<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField> Typ
     for Connection<Cursor, Node, ConnectionFields, EdgeFields, Name, EdgeName, NodesField>
 where
     Cursor: CursorType + Send + Sync,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,
     Name: ConnectionNameType,

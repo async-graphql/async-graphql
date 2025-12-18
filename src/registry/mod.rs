@@ -14,11 +14,7 @@ use indexmap::{map::IndexMap, set::IndexSet};
 
 pub use crate::model::{__DirectiveLocation, location_traits};
 use crate::{
-    Any, Context, ID, InputType, OutputType, Positioned, ServerResult, SubscriptionType, Value,
-    VisitorContext,
-    model::__Schema,
-    parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition},
-    schema::IntrospectionMode,
+    Any, Context, ID, InputType, OutputTypeMarker, Positioned, ServerResult, SubscriptionType, Value, VisitorContext, model::__Schema, parser::types::{BaseType as ParsedBaseType, Field, Type as ParsedType, VariableDefinition}, schema::IntrospectionMode
 };
 
 fn strip_brackets(type_name: &str) -> Option<&str> {
@@ -964,11 +960,11 @@ impl Registry {
 
     pub fn create_output_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
     where
-        T: OutputType + ?Sized,
+        T: OutputTypeMarker + ?Sized,
         F: FnMut(&mut Registry) -> MetaType,
     {
-        self.create_type(&mut f, &T::type_name(), std::any::type_name::<T>(), type_id);
-        T::qualified_type_name()
+        self.create_type(&mut f, &<T as OutputTypeMarker>::type_name(), std::any::type_name::<T>(), type_id);
+        <T as OutputTypeMarker>::qualified_type_name()
     }
 
     pub fn create_subscription_type<T, F>(&mut self, mut f: F) -> String
@@ -985,9 +981,9 @@ impl Registry {
         T::qualified_type_name()
     }
 
-    fn create_type<F: FnMut(&mut Registry) -> MetaType>(
+    fn create_type(
         &mut self,
-        f: &mut F,
+        f: &mut dyn FnMut(&mut Registry) -> MetaType,
         name: &str,
         rust_typename: &'static str,
         type_id: MetaTypeId,
@@ -1028,7 +1024,7 @@ impl Registry {
         }
     }
 
-    pub fn create_fake_output_type<T: OutputType>(&mut self) -> MetaType {
+    pub fn create_fake_output_type<T: OutputTypeMarker>(&mut self) -> MetaType {
         T::create_type_info(self);
         self.types
             .get(&*T::type_name())

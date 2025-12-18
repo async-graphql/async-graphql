@@ -120,8 +120,7 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
         }
 
         #[allow(clippy::all, clippy::pedantic)]
-        #boxed_trait
-        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
+        impl #impl_generics #crate_name::OutputTypeMarker for #ident #ty_generics #where_clause {
             fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 #type_name
             }
@@ -129,6 +128,11 @@ pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 #create_type_info
             }
+        }
+
+        #[allow(clippy::all, clippy::pedantic)]
+        #boxed_trait
+        impl #impl_generics #crate_name::OutputType for #ident #ty_generics #where_clause {
 
             async fn resolve(
                 &self,

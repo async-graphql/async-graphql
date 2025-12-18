@@ -9,9 +9,9 @@ use async_graphql_parser::types::ExecutableDocument;
 use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
 
 use crate::{
-    BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
-    Executor, InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
-    ServerResult, SubscriptionType, Variables,
+    BatchRequest, BatchResponse, CacheControl, ContainerType, ContextBase, EmptyMutation,
+    EmptySubscription, Executor, InputType, ObjectType, OutputTypeMarker, QueryEnv,
+    Request, Response, ServerError, ServerResult, SubscriptionType, Variables,
     context::{Data, QueryEnvInner},
     custom_directive::CustomDirectiveFactory,
     extensions::{ExtensionFactory, Extensions},
@@ -70,7 +70,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     /// You can use this function to register schema types that are not directly
     /// referenced.
     #[must_use]
-    pub fn register_output_type<T: OutputType>(mut self) -> Self {
+    pub fn register_output_type<T: OutputTypeMarker>(mut self) -> Self {
         T::create_type_info(&mut self.registry);
         self
     }
@@ -190,7 +190,10 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
 
     /// Override the name of the specified output type.
     #[must_use]
-    pub fn override_output_type_description<T: OutputType>(mut self, desc: &'static str) -> Self {
+    pub fn override_output_type_description<T: OutputTypeMarker>(
+        mut self,
+        desc: &'static str,
+    ) -> Self {
         self.registry.set_description(&*T::type_name(), desc);
         self
     }
@@ -401,11 +404,11 @@ where
             types: Default::default(),
             directives: Default::default(),
             implements: Default::default(),
-            query_type: Query::type_name().to_string(),
-            mutation_type: if Mutation::is_empty() {
+            query_type: <Query as OutputTypeMarker>::type_name().to_string(),
+            mutation_type: if Option::<Mutation>::is_empty(&None) {
                 None
             } else {
-                Some(Mutation::type_name().to_string())
+                Some(<Mutation as OutputTypeMarker>::type_name().to_string())
             },
             subscription_type: if Subscription::is_empty() {
                 None
@@ -419,10 +422,10 @@ where
             enable_suggestions: true,
         };
         registry.add_system_types();
+        <QueryRoot<Query> as OutputTypeMarker>::create_type_info(&mut registry);
 
-        QueryRoot::<Query>::create_type_info(&mut registry);
-        if !Mutation::is_empty() {
-            Mutation::create_type_info(&mut registry);
+        if !Option::<Mutation>::is_empty(&None) {
+            <Mutation as OutputTypeMarker>::create_type_info(&mut registry);
         }
         if !Subscription::is_empty() {
             Subscription::create_type_info(&mut registry);
@@ -487,14 +490,31 @@ where
         };
 
         let res = match &env.operation.node.ty {
+            #[cfg(feature = "boxed-trait")]
+            OperationType::Query => resolve_container(&ctx, &self.0.query, &self.0.query).await,
+            #[cfg(not(feature = "boxed-trait"))]
             OperationType::Query => resolve_container(&ctx, &self.0.query).await,
             OperationType::Mutation => {
                 if self.0.env.registry.introspection_mode == IntrospectionMode::IntrospectionOnly
                     || env.introspection_mode == IntrospectionMode::IntrospectionOnly
                 {
-                    resolve_container_serial(&ctx, &EmptyMutation).await
+                    #[cfg(feature = "boxed-trait")]
+                    {
+                        resolve_container_serial(&ctx, &EmptyMutation, &EmptyMutation).await
+                    }
+                    #[cfg(not(feature = "boxed-trait"))]
+                    {
+                        resolve_container_serial(&ctx, &EmptyMutation).await
+                    }
                 } else {
-                    resolve_container_serial(&ctx, &self.0.mutation).await
+                    #[cfg(feature = "boxed-trait")]
+                    {
+                        resolve_container_serial(&ctx, &self.0.mutation, &self.0.mutation).await
+                    }
+                    #[cfg(not(feature = "boxed-trait"))]
+                    {
+                        resolve_container_serial(&ctx, &self.0.mutation).await
+                    }
                 }
             }
             OperationType::Subscription => Err(ServerError::new(

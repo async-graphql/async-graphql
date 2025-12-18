@@ -109,6 +109,7 @@ pub fn derive_input_object(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(Interface, attributes(graphql))]
+
 pub fn derive_interface(input: TokenStream) -> TokenStream {
     let interface_args =
         match args::Interface::from_derive_input(&parse_macro_input!(input as DeriveInput)) {

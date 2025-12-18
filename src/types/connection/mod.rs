@@ -12,7 +12,7 @@ pub use cursor::{CursorType, OpaqueCursor};
 pub use edge::Edge;
 pub use page_info::PageInfo;
 
-use crate::{Error, ObjectType, OutputType, Result, SimpleObject};
+use crate::{Error, ObjectType, OutputType, OutputTypeMarker, Result, SimpleObject};
 
 /// Empty additional fields
 #[derive(SimpleObject)]
@@ -22,14 +22,14 @@ pub struct EmptyFields;
 /// Used to specify the edge name.
 pub trait EdgeNameType: Send + Sync {
     /// Returns the edge type name.
-    fn type_name<T: OutputType>() -> String;
+    fn type_name<T: OutputTypeMarker>() -> String;
 }
 
 /// Name the edge type by default with the default format.
 pub struct DefaultEdgeName;
 
 impl EdgeNameType for DefaultEdgeName {
-    fn type_name<T: OutputType>() -> String {
+    fn type_name<T: OutputTypeMarker>() -> String {
         format!("{}Edge", T::type_name())
     }
 }
@@ -37,14 +37,14 @@ impl EdgeNameType for DefaultEdgeName {
 /// Used to specify the connection name.
 pub trait ConnectionNameType: Send + Sync {
     /// Returns the connection type name.
-    fn type_name<T: OutputType>() -> String;
+    fn type_name<T: OutputTypeMarker>() -> String;
 }
 
 /// Name the connection type by default with the default format.
 pub struct DefaultConnectionName;
 
 impl ConnectionNameType for DefaultConnectionName {
-    fn type_name<T: OutputType>() -> String {
+    fn type_name<T: OutputTypeMarker>() -> String {
         format!("{}Connection", T::type_name())
     }
 }
@@ -232,7 +232,7 @@ where
     EdgeName: EdgeNameType,
     Cursor: CursorType + Send + Sync,
     <Cursor as CursorType>::Error: Display + Send + Sync + 'static,
-    Node: OutputType,
+    Node: OutputType + OutputTypeMarker,
     NodesVersion: NodesFieldSwitcherSealed,
     ConnectionFields: ObjectType,
     EdgeFields: ObjectType,

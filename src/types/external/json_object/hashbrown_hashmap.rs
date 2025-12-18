@@ -9,8 +9,7 @@ use indexmap::IndexMap;
 use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{
-    ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType,
-    ServerResult, Value, registry::Registry,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, Name, OutputType, OutputTypeMarker, ServerResult, Value, registry::Registry
 };
 
 impl<K, V> InputType for HashMap<K, V>
@@ -70,13 +69,6 @@ where
     K: ToString + Eq + Hash + Send + Sync,
     V: Serialize + Send + Sync,
 {
-    fn type_name() -> Cow<'static, str> {
-        <StdHashMap<K, V> as OutputType>::type_name()
-    }
-
-    fn create_type_info(registry: &mut Registry) -> String {
-        <StdHashMap<K, V> as OutputType>::create_type_info(registry)
-    }
 
     async fn resolve(
         &self,

@@ -199,9 +199,8 @@ macro_rules! scalar_internal {
 #[doc(hidden)]
 macro_rules! scalar_internal_output {
     ($ty:ty, $name:expr, $desc:expr, $specified_by_url:expr) => {
-        #[$crate::async_trait::async_trait]
-        impl $crate::OutputType for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+        impl $crate::OutputTypeMarker for $ty {
+           fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
             }
 
@@ -224,6 +223,10 @@ macro_rules! scalar_internal_output {
                     }
                 })
             }
+
+        }
+        #[$crate::async_trait::async_trait]
+        impl $crate::OutputType for $ty {
 
             async fn resolve(
                 &self,
@@ -241,8 +244,8 @@ macro_rules! scalar_internal_output {
 #[doc(hidden)]
 macro_rules! scalar_internal_output {
     ($ty:ty, $name:expr, $desc:expr, $specified_by_url:expr) => {
-        impl $crate::OutputType for $ty {
-            fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
+        impl $crate::OutputTypeMarker for $ty {
+           fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
                 ::std::borrow::Cow::Borrowed($name)
             }
 
@@ -265,6 +268,9 @@ macro_rules! scalar_internal_output {
                     }
                 })
             }
+
+        }
+        impl $crate::OutputType for $ty {
 
             async fn resolve(
                 &self,

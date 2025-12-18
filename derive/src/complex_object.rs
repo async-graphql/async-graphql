@@ -146,7 +146,7 @@ pub fn generate(
 
                 schema_fields.push(quote! {
                     #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::ObjectType);
-                    <#ty>::create_type_info(registry);
+                    <#ty as #crate_name::OutputTypeMarker>::create_type_info(registry);
                     if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                         registry.create_fake_output_type::<#ty>() {
                         fields.extend(obj_fields);
@@ -393,7 +393,7 @@ pub fn generate(
                         #(#schema_args)*
                         args
                     },
-                    ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+                    ty: <#schema_ty as #crate_name::OutputTypeMarker>::create_type_info(registry),
                     deprecation: #field_deprecation,
                     cache_control: #cache_control,
                     external: #external,

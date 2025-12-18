@@ -343,7 +343,7 @@ async fn query_characters<'a, F, T>(
 ) -> Result<Connection<usize, T>>
 where
     F: Fn(&'a StarWarsChar) -> T,
-    T: OutputType,
+    T: OutputType + OutputTypeMarker,
 {
     query(
         after,

@@ -3,8 +3,8 @@ use std::{borrow::Cow, pin::Pin};
 use indexmap::IndexMap;
 
 use crate::{
-    CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, Positioned, Response,
-    ServerResult, SimpleObject, SubscriptionType, Value,
+    CacheControl, ContainerType, Context, ContextSelectionSet, OutputType, OutputTypeMarker,
+    Positioned, Response, ServerResult, SimpleObject, SubscriptionType, Value,
     futures_util::stream::Stream,
     parser::types::Field,
     registry::{MetaType, MetaTypeId, Registry},
@@ -16,8 +16,8 @@ pub struct MergedObject<A, B>(pub A, pub B);
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
 impl<A, B> ContainerType for MergedObject<A, B>
 where
-    A: ContainerType,
-    B: ContainerType,
+    A: ContainerType + OutputTypeMarker,
+    B: ContainerType + OutputTypeMarker,
 {
     async fn resolve_field(&self, ctx: &Context<'_>) -> ServerResult<Option<Value>> {
         match self.0.resolve_field(ctx).await {
@@ -37,10 +37,10 @@ where
 }
 
 #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<A, B> OutputType for MergedObject<A, B>
+impl<A, B> OutputTypeMarker for MergedObject<A, B>
 where
-    A: OutputType,
-    B: OutputType,
+    A: OutputTypeMarker,
+    B: OutputTypeMarker,
 {
     fn type_name() -> Cow<'static, str> {
         Cow::Owned(format!("{}_{}", A::type_name(), B::type_name()))
@@ -72,7 +72,7 @@ where
             }
 
             MetaType::Object {
-                name: Self::type_name().to_string(),
+                name: <Self as OutputTypeMarker>::type_name().to_string(),
                 description: None,
                 fields,
                 cache_control: cc,
@@ -91,6 +91,14 @@ where
             }
         })
     }
+}
+
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<A, B> OutputType for MergedObject<A, B>
+where
+    A: OutputType,
+    B: OutputType,
+{
 
     async fn resolve(
         &self,

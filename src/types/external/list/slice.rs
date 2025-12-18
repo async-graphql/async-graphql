@@ -1,57 +1,111 @@
 use std::{borrow::Cow, sync::Arc};
 
 use crate::{
-    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType, Positioned,
-    ServerResult, Value, parser::types::Field, registry, resolver_utils::resolve_list,
+    ContextSelectionSet, InputType, InputValueError, InputValueResult, OutputType,
+    OutputTypeMarker, Positioned, ServerResult, Value, parser::types::Field, registry,
+    resolver_utils::resolve_list,
 };
 
-#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-impl<'a, T: OutputType + 'a> OutputType for &'a [T] {
+impl<'a, T: OutputTypeMarker + 'a> OutputTypeMarker for &'a [T] {
     fn type_name() -> Cow<'static, str> {
-        Cow::Owned(format!("[{}]", T::qualified_type_name()))
+        Cow::Owned(format!(
+            "[{}]",
+            <T as OutputTypeMarker>::qualified_type_name()
+        ))
     }
 
     fn qualified_type_name() -> String {
-        format!("[{}]!", T::qualified_type_name())
+        format!("[{}]!", <T as OutputTypeMarker>::qualified_type_name())
     }
 
     fn create_type_info(registry: &mut registry::Registry) -> String {
-        T::create_type_info(registry);
+        <T as OutputTypeMarker>::create_type_info(registry);
         Self::qualified_type_name()
     }
+}
 
+#[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+impl<'a, T: OutputType + OutputTypeMarker + 'a> OutputType for &'a [T] {
+    #[cfg(feature = "boxed-trait")]
     async fn resolve(
         &self,
         ctx: &ContextSelectionSet<'_>,
         field: &Positioned<Field>,
     ) -> ServerResult<Value> {
-        resolve_list(ctx, field, self.iter(), Some(self.len())).await
+        resolve_list::<T>(
+            ctx,
+            field,
+            self.iter().map(|item| item as &dyn OutputType),
+            Some(self.len()),
+        )
+        .await
+    }
+    #[cfg(not(feature = "boxed-trait"))]
+    async fn resolve(
+        &self,
+        ctx: &ContextSelectionSet<'_>,
+        field: &Positioned<Field>,
+    ) -> ServerResult<Value> {
+        resolve_list(
+            ctx,
+            field,
+            self.iter(),
+            Some(self.len()),
+        )
+        .await
     }
 }
 
 macro_rules! impl_output_slice_for_smart_ptr {
     ($ty:ty) => {
-        #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
-        impl<T: OutputType> OutputType for $ty {
+        
+        impl<T: OutputTypeMarker> OutputTypeMarker for $ty {
             fn type_name() -> Cow<'static, str> {
-                Cow::Owned(format!("[{}]", T::qualified_type_name()))
+                Cow::Owned(format!(
+                    "[{}]",
+                    <T as OutputTypeMarker>::qualified_type_name()
+                ))
             }
 
             fn qualified_type_name() -> String {
-                format!("[{}]!", T::qualified_type_name())
+                format!("[{}]!", <T as OutputTypeMarker>::qualified_type_name())
             }
 
             fn create_type_info(registry: &mut registry::Registry) -> String {
-                T::create_type_info(registry);
+                <T as OutputTypeMarker>::create_type_info(registry);
                 Self::qualified_type_name()
             }
-
+        }
+        
+        #[cfg_attr(feature = "boxed-trait", async_trait::async_trait)]
+        impl<T: OutputType + OutputTypeMarker> OutputType for $ty {
+            #[cfg(feature = "boxed-trait")]
             async fn resolve(
                 &self,
                 ctx: &ContextSelectionSet<'_>,
                 field: &Positioned<Field>,
             ) -> ServerResult<Value> {
-                resolve_list(ctx, field, self.iter(), Some(self.len())).await
+                resolve_list::<T>(
+                    ctx,
+                    field,
+                    self.iter().map(|item| item as &dyn OutputType),
+                    Some(self.len()),
+                )
+                .await
+            }
+            #[cfg(not(feature = "boxed-trait"))]
+            async fn resolve(
+                &self,
+                ctx: &ContextSelectionSet<'_>,
+                field: &Positioned<Field>,
+            ) -> ServerResult<Value> {
+                resolve_list(
+                    ctx,
+                    field,
+                    self.iter(),
+                    Some(self.len()),
+                )
+                .await
             }
         }
     };
