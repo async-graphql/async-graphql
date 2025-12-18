@@ -325,14 +325,13 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
 
                                         // Check if the type is a generic parameter which we should
                                         // convert to a concrete type
-                                        if let syn::Type::Path(ty_path) = ty {
-                                            if let Some(idx) = type_params.iter().position(|p| {
+                                        if let syn::Type::Path(ty_path) = ty
+                                            && let Some(idx) = type_params.iter().position(|p| {
                                                 p.ident == ty_path.path.segments[0].ident
-                                            }) {
-                                                let param = &params[idx];
-                                                *ty = syn::parse2::<syn::Type>(quote!(#param))
-                                                    .unwrap();
-                                            }
+                                            })
+                                        {
+                                            let param = &params[idx];
+                                            *ty = syn::parse2::<syn::Type>(quote!(#param)).unwrap();
                                         }
                                     }
                                 }

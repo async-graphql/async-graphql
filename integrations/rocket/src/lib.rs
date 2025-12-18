@@ -197,10 +197,10 @@ impl<'r> Responder<'r, 'static> for GraphQLResponse {
         let mut response = rocket::Response::new();
         response.set_header(ContentType::new("application", "json"));
 
-        if self.0.is_ok() {
-            if let Some(cache_control) = self.0.cache_control().value() {
-                response.set_header(Header::new("cache-control", cache_control));
-            }
+        if self.0.is_ok()
+            && let Some(cache_control) = self.0.cache_control().value()
+        {
+            response.set_header(Header::new("cache-control", cache_control));
         }
 
         for (name, value) in self.0.http_headers_iter() {

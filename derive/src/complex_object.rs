@@ -60,13 +60,11 @@ pub fn generate(
                         .iter()
                         .nth(1)
                         .map(|x| {
-                            if let FnArg::Typed(pat) = x {
-                                if let Type::Reference(TypeReference { elem, .. }) = &*pat.ty {
-                                    if let Type::Path(path) = elem.as_ref() {
-                                        return path.path.segments.last().unwrap().ident
-                                            != "Context";
-                                    }
-                                }
+                            if let FnArg::Typed(pat) = x
+                                && let Type::Reference(TypeReference { elem, .. }) = &*pat.ty
+                                && let Type::Path(path) = elem.as_ref()
+                            {
+                                return path.path.segments.last().unwrap().ident != "Context";
                             };
                             true
                         })

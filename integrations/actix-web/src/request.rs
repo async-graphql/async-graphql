@@ -194,10 +194,10 @@ impl Responder for GraphQLResponse {
     fn respond_to(self, req: &HttpRequest) -> HttpResponse {
         let mut builder = HttpResponse::build(StatusCode::OK);
 
-        if self.0.is_ok() {
-            if let Some(cache_control) = self.0.cache_control().value() {
-                builder.append_header((http::header::CACHE_CONTROL, cache_control));
-            }
+        if self.0.is_ok()
+            && let Some(cache_control) = self.0.cache_control().value()
+        {
+            builder.append_header((http::header::CACHE_CONTROL, cache_control));
         }
 
         let accept = req

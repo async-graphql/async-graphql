@@ -683,7 +683,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     ///     }
     /// }
     /// ```
-    pub fn look_ahead(&self) -> Lookahead {
+    pub fn look_ahead(&'_ self) -> Lookahead<'_> {
         Lookahead::new(&self.query_env.fragments, &self.item.node, self)
     }
 
@@ -728,7 +728,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// );
     /// # });
     /// ```
-    pub fn field(&self) -> SelectionField {
+    pub fn field(&'_ self) -> SelectionField<'_> {
         SelectionField {
             fragments: &self.query_env.fragments,
             field: &self.item.node,

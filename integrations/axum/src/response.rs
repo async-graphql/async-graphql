@@ -31,13 +31,12 @@ impl IntoResponse for GraphQLResponse {
             http::header::CONTENT_TYPE,
             HeaderValue::from_static("application/graphql-response+json"),
         );
-        if self.0.is_ok() {
-            if let Some(cache_control) = self.0.cache_control().value() {
-                if let Ok(value) = HeaderValue::from_str(&cache_control) {
-                    resp.headers_mut()
-                        .insert(http::header::CACHE_CONTROL, value);
-                }
-            }
+        if self.0.is_ok()
+            && let Some(cache_control) = self.0.cache_control().value()
+            && let Ok(value) = HeaderValue::from_str(&cache_control)
+        {
+            resp.headers_mut()
+                .insert(http::header::CACHE_CONTROL, value);
         }
 
         resp.headers_mut().extend(self.0.http_headers());

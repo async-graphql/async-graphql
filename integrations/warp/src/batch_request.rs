@@ -80,12 +80,11 @@ impl Reply for GraphQLBatchResponse {
         )
         .into_response();
 
-        if self.0.is_ok() {
-            if let Some(cache_control) = self.0.cache_control().value() {
-                if let Ok(value) = cache_control.try_into() {
-                    resp.headers_mut().insert("cache-control", value);
-                }
-            }
+        if self.0.is_ok()
+            && let Some(cache_control) = self.0.cache_control().value()
+            && let Ok(value) = cache_control.try_into()
+        {
+            resp.headers_mut().insert("cache-control", value);
         }
 
         resp.headers_mut()
