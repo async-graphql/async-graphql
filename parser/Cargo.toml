@@ -13,10 +13,10 @@ version = "7.0.17"
 
 [dependencies]
 async-graphql-value.workspace = true
-pest = "2.7.11"
+pest = "2.8.1"
 serde.workspace = true
 serde_json.workspace = true
 
 [dev-dependencies]
-pest_generator = "2.7.8"
-proc-macro2 = "1.0.79"
+pest_generator = "2.8.1"
+proc-macro2 = "1.0.101"
