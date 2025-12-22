@@ -211,6 +211,7 @@ Add the extension crate [`async_graphql_apollo_studio_extension`](https://github
 - [Diana](https://github.com/arctic-hen7/diana) Diana is a GraphQL system for Rust that's designed to work as simply as possible out of the box, without sacrificing configuration ability.
 - [cindythink](https://www.cindythink.com/)
 - [sudograph](https://github.com/sudograph/sudograph)
+- [grpc_graphql_gateway](https://github.com/Protocol-Lattice/grpc_graphql_gateway) is an open-source protoc plugin that generates GraphQL execution server code from your gRPC/Protocol Buffers definitions.
 
 ## Blog Posts
 
