@@ -132,14 +132,25 @@ impl Extension for TracingExtension {
         next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
         let span = if !info.is_for_introspection {
-            Some(span!(
-                target: "async_graphql::graphql",
-                Level::INFO,
-                "field",
-                path = %info.path_node,
-                parent_type = %info.parent_type,
-                return_type = %info.return_type,
-            ))
+            if cfg!(feature = "tracing-otel") {
+                Some(span!(
+                    target: "async_graphql::graphql",
+                    Level::INFO,
+                    "field",
+                    otel.name = %info.path_node,
+                    parent_type = %info.parent_type,
+                    return_type = %info.return_type,
+                ))
+            } else {
+                Some(span!(
+                    target: "async_graphql::graphql",
+                    Level::INFO,
+                    "field",
+                    path = %info.path_node,
+                    parent_type = %info.parent_type,
+                    return_type = %info.return_type,
+                ))
+            }
         } else {
             None
         };
