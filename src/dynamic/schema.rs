@@ -473,7 +473,7 @@ impl Schema {
     pub fn execute_stream(
         &self,
         request: impl Into<DynamicRequest>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    ) -> impl Stream<Item = Response> + Send + Unpin + 'static {
         self.execute_stream_with_session_data(request, Default::default())
     }
 
