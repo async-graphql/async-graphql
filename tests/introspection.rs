@@ -1,3 +1,4 @@
+#![cfg(feature = "chrono")]
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::diverging_sub_expression)]
 

@@ -72,13 +72,16 @@ pub async fn test_field_features() {
         })
     );
 
-    let query = "{ valueBson }";
-    assert_eq!(
-        schema.execute(query).await.data,
-        value!({
-            "valueBson": 10,
-        })
-    );
+    #[cfg(feature = "bson")]
+    {
+        let query = "{ valueBson }";
+        assert_eq!(
+            schema.execute(query).await.data,
+            value!({
+                "valueBson": 10,
+            })
+        );
+    }
 
     let query = "{ valueAbc }";
     assert_eq!(
@@ -101,13 +104,16 @@ pub async fn test_field_features() {
         })
     );
 
-    let query = "{ obj { valueBson } }";
-    assert_eq!(
-        schema.execute(query).await.data,
-        value!({
-            "obj": { "valueBson": 10 }
-        })
-    );
+    #[cfg(feature = "bson")]
+    {
+        let query = "{ obj { valueBson } }";
+        assert_eq!(
+            schema.execute(query).await.data,
+            value!({
+                "obj": { "valueBson": 10 }
+            })
+        );
+    }
 
     let query = "{ obj { valueAbc } }";
     assert_eq!(
@@ -134,13 +140,16 @@ pub async fn test_field_features() {
         })
     );
 
-    let mut stream = schema.execute_stream("subscription { valuesBson }");
-    assert_eq!(
-        stream.next().await.map(|resp| resp.data).unwrap(),
-        value!({
-            "valuesBson": 10
-        })
-    );
+    #[cfg(feature = "bson")]
+    {
+        let mut stream = schema.execute_stream("subscription { valuesBson }");
+        assert_eq!(
+            stream.next().await.map(|resp| resp.data).unwrap(),
+            value!({
+                "valuesBson": 10
+            })
+        );
+    }
 
     assert_eq!(
         schema
@@ -150,7 +159,12 @@ pub async fn test_field_features() {
             .unwrap()
             .errors,
         vec![ServerError {
-            message: r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values", "valuesBson"?"#.to_owned(),
+            message: if cfg!(feature = "bson") {
+                r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values", "valuesBson"?"#.to_owned()
+            } else {
+                r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values"?"#
+                    .to_owned()
+            },
             source: None,
             locations: vec![Pos {
                 column: 16,

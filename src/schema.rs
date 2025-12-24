@@ -138,6 +138,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     ///     }
     /// }
     ///
+    /// #[cfg(feature = "log")]
     /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
     ///     .extension(extensions::Logger)
     ///     .finish();
