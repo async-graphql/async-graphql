@@ -13,7 +13,7 @@ macro_rules! impl_set_description {
 
 macro_rules! impl_set_deprecation {
     () => {
-        /// Set the description
+        /// Set the deprecation
         #[inline]
         pub fn deprecation(self, reason: Option<&str>) -> Self {
             Self {
