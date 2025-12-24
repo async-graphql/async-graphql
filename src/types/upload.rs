@@ -74,7 +74,7 @@ impl UploadValue {
 
         #[cfg(not(feature = "tempfile"))]
         {
-            std::io::Cursor::new(self.content)
+            futures_util::io::Cursor::new(self.content)
         }
     }
 
