@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use futures_util::{TryFutureExt, stream::BoxStream};
+use tracing::{Level, span};
 use tracing_futures::Instrument;
-use tracinglib::{Level, span};
 
 use crate::{
     Response, ServerError, ServerResult, ValidationResult, Value, Variables,
@@ -84,12 +84,12 @@ impl Extension for TracingExtension {
             target: "async_graphql::graphql",
             Level::INFO,
             "parse",
-            source = tracinglib::field::Empty
+            source = tracing::field::Empty
         );
         async move {
             let res = next.run(ctx, query, variables).await;
             if let Ok(doc) = &res {
-                tracinglib::Span::current()
+                tracing::Span::current()
                     .record("source", ctx.stringify_execute_doc(doc, variables).as_str());
             }
             res
@@ -145,7 +145,7 @@ impl Extension for TracingExtension {
         };
 
         let fut = next.run(ctx, info).inspect_err(|err| {
-            tracinglib::info!(
+            tracing::info!(
                 target: "async_graphql::graphql",
                 error = %err.message,
                 "error",
