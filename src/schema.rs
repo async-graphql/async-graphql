@@ -6,7 +6,7 @@ use std::{
 };
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::stream::{self, BoxStream, FuturesOrdered, Stream, StreamExt};
+use futures_util::stream::{self, BoxStream, FuturesOrdered, StreamExt};
 
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
@@ -574,7 +574,7 @@ where
         &self,
         request: impl Into<Request>,
         session_data: Arc<Data>,
-    ) -> impl Stream<Item = Response> + Send + Unpin + 'static {
+    ) -> BoxStream<'static, Response> {
         let schema = self.clone();
         let request = request.into();
         let extensions = self.create_extensions(session_data.clone());
@@ -642,10 +642,7 @@ where
     }
 
     /// Execute a GraphQL subscription.
-    pub fn execute_stream(
-        &self,
-        request: impl Into<Request>,
-    ) -> impl Stream<Item = Response> + Send + Unpin {
+    pub fn execute_stream(&self, request: impl Into<Request>) -> BoxStream<'static, Response> {
         self.execute_stream_with_session_data(request, Default::default())
     }
 }
@@ -667,7 +664,6 @@ where
         session_data: Option<Arc<Data>>,
     ) -> BoxStream<'static, Response> {
         Schema::execute_stream_with_session_data(&self, request, session_data.unwrap_or_default())
-            .boxed()
     }
 }
 
