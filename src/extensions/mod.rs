@@ -490,7 +490,7 @@ impl Extensions {
     }
 
     #[inline]
-    fn create_context(&self) -> ExtensionContext {
+    fn create_context(&self) -> ExtensionContext<'_> {
         ExtensionContext {
             schema_env: &self.schema_env,
             session_data: &self.session_data,

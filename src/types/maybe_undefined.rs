@@ -47,17 +47,12 @@ use crate::{InputType, InputValueError, InputValueResult, Value, registry};
 /// # });
 /// ```
 #[allow(missing_docs)]
-#[derive(Copy, Clone, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
+#[derive(Copy, Clone, Default, PartialEq, PartialOrd, Eq, Ord, Debug, Hash)]
 pub enum MaybeUndefined<T> {
+    #[default]
     Undefined,
     Null,
     Value(T),
-}
-
-impl<T> Default for MaybeUndefined<T> {
-    fn default() -> Self {
-        Self::Undefined
-    }
 }
 
 impl<T> MaybeUndefined<T> {

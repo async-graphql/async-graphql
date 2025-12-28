@@ -46,7 +46,7 @@ impl Display for MetaTypeName<'_> {
 
 impl MetaTypeName<'_> {
     #[inline]
-    pub fn create(type_name: &str) -> MetaTypeName {
+    pub fn create(type_name: &str) -> MetaTypeName<'_> {
         if let Some(type_name) = type_name.strip_suffix('!') {
             MetaTypeName::NonNull(type_name)
         } else if let Some(type_name) = strip_brackets(type_name) {
