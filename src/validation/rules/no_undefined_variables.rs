@@ -106,10 +106,10 @@ impl<'a> Visitor<'a> for NoUndefinedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         variable_definition: &'a Positioned<VariableDefinition>,
     ) {
-        if let Some(Scope::Operation(ref name)) = self.current_scope {
-            if let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name) {
-                vars.insert(&variable_definition.node.name.node);
-            }
+        if let Some(Scope::Operation(ref name)) = self.current_scope
+            && let Some(&mut (_, ref mut vars)) = self.defined_variables.get_mut(name)
+        {
+            vars.insert(&variable_definition.node.name.node);
         }
     }
 

@@ -120,6 +120,7 @@ handlebars = { version = "5.1.2", optional = true }
 schemars = { version = "0.8.21", optional = true }
 
 [dev-dependencies]
+async-graphql = { workspace = true, features = ["chrono-duration", "dataloader", "uuid-validator"]}
 futures-channel = "0.3.30"
 tokio = { version = "1.37.0", features = [
   "macros",

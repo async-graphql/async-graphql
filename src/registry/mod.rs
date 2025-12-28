@@ -1635,13 +1635,14 @@ impl Registry {
         }
 
         for ty in self.types.values() {
-            if let MetaType::Interface { possible_types, .. } = ty {
-                if ty.is_visible(ctx) && !visible_types.contains(ty.name()) {
-                    for type_name in possible_types.iter() {
-                        if visible_types.contains(type_name.as_str()) {
-                            traverse_type(ctx, &self.types, &mut visible_types, ty.name());
-                            break;
-                        }
+            if let MetaType::Interface { possible_types, .. } = ty
+                && ty.is_visible(ctx)
+                && !visible_types.contains(ty.name())
+            {
+                for type_name in possible_types.iter() {
+                    if visible_types.contains(type_name.as_str()) {
+                        traverse_type(ctx, &self.types, &mut visible_types, ty.name());
+                        break;
                     }
                 }
             }

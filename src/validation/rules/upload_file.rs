@@ -18,14 +18,13 @@ impl<'a> Visitor<'a> for UploadFile {
             if let Some(ty) = ctx
                 .registry
                 .concrete_type_by_parsed_type(&var.node.var_type.node)
+                && operation_definition.node.ty != OperationType::Mutation
+                && ty.name() == "Upload"
             {
-                if operation_definition.node.ty != OperationType::Mutation && ty.name() == "Upload"
-                {
-                    ctx.report_error(
-                        vec![var.pos],
-                        "The Upload type is only allowed to be defined on a mutation",
-                    );
-                }
+                ctx.report_error(
+                    vec![var.pos],
+                    "The Upload type is only allowed to be defined on a mutation",
+                );
             }
         }
     }

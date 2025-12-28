@@ -587,10 +587,10 @@ impl<'a, T> ContextBase<'a, T> {
             .find(|(n, _)| n.node.as_str() == name)
             .map(|(_, value)| value)
             .cloned();
-        if value.is_none() {
-            if let Some(default) = default {
-                return Ok((Pos::default(), default()));
-            }
+        if value.is_none()
+            && let Some(default) = default
+        {
+            return Ok((Pos::default(), default()));
         }
         let (pos, value) = match value {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),

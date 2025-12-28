@@ -104,16 +104,16 @@ pub(crate) fn check_rules(
     };
 
     // check limit
-    if let Some(limit_complexity) = limit_complexity {
-        if complexity > limit_complexity {
-            return Err(vec![ServerError::new("Query is too complex.", None)]);
-        }
+    if let Some(limit_complexity) = limit_complexity
+        && complexity > limit_complexity
+    {
+        return Err(vec![ServerError::new("Query is too complex.", None)]);
     }
 
-    if let Some(limit_depth) = limit_depth {
-        if depth > limit_depth {
-            return Err(vec![ServerError::new("Query is nested too deep.", None)]);
-        }
+    if let Some(limit_depth) = limit_depth
+        && depth > limit_depth
+    {
+        return Err(vec![ServerError::new("Query is nested too deep.", None)]);
     }
 
     if !errors.is_empty() {

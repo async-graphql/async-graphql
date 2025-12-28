@@ -27,20 +27,17 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
         if let Some(fragment_type) = self
             .fragment_types
             .get(&*fragment_spread.node.fragment_name.node)
+            && let Some(current_type) = ctx.current_type()
+            && let Some(on_type) = ctx.registry.types.get(*fragment_type)
+            && !current_type.type_overlap(on_type)
         {
-            if let Some(current_type) = ctx.current_type() {
-                if let Some(on_type) = ctx.registry.types.get(*fragment_type) {
-                    if !current_type.type_overlap(on_type) {
-                        ctx.report_error(
+            ctx.report_error(
                             vec![fragment_spread.pos],
                             format!(
                                 "Fragment \"{}\" cannot be spread here as objects of type \"{}\" can never be of type \"{}\"",
                                 fragment_spread.node.fragment_name.node, current_type.name(), fragment_type
                             ),
                         );
-                    }
-                }
-            }
         }
     }
 
@@ -49,27 +46,24 @@ impl<'a> Visitor<'a> for PossibleFragmentSpreads<'a> {
         ctx: &mut VisitorContext<'a>,
         inline_fragment: &'a Positioned<InlineFragment>,
     ) {
-        if let Some(parent_type) = ctx.parent_type() {
-            if let Some(TypeCondition { on: fragment_type }) = &inline_fragment
+        if let Some(parent_type) = ctx.parent_type()
+            && let Some(TypeCondition { on: fragment_type }) = &inline_fragment
                 .node
                 .type_condition
                 .as_ref()
                 .map(|c| &c.node)
-            {
-                if let Some(on_type) = ctx.registry.types.get(fragment_type.node.as_str()) {
-                    if !parent_type.type_overlap(&on_type) {
-                        ctx.report_error(
-                            vec![inline_fragment.pos],
-                            format!(
-                                "Fragment cannot be spread here as objects of type \"{}\" \
+            && let Some(on_type) = ctx.registry.types.get(fragment_type.node.as_str())
+            && !parent_type.type_overlap(&on_type)
+        {
+            ctx.report_error(
+                vec![inline_fragment.pos],
+                format!(
+                    "Fragment cannot be spread here as objects of type \"{}\" \
              can never be of type \"{}\"",
-                                parent_type.name(),
-                                fragment_type
-                            ),
-                        )
-                    }
-                }
-            }
+                    parent_type.name(),
+                    fragment_type
+                ),
+            )
         }
     }
 }

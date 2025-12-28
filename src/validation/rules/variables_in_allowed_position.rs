@@ -127,16 +127,14 @@ impl<'a> Visitor<'a> for VariableInAllowedPosition<'a> {
         expected_type: &Option<MetaTypeName<'a>>,
         value: &'a Value,
     ) {
-        if let Value::Variable(name) = value {
-            if let Some(expected_type) = expected_type {
-                if let Some(scope) = &self.current_scope {
-                    self.variable_usages.entry(*scope).or_default().push((
-                        name,
-                        pos,
-                        *expected_type,
-                    ));
-                }
-            }
+        if let Value::Variable(name) = value
+            && let Some(expected_type) = expected_type
+            && let Some(scope) = &self.current_scope
+        {
+            self.variable_usages
+                .entry(*scope)
+                .or_default()
+                .push((name, pos, *expected_type));
         }
     }
 }

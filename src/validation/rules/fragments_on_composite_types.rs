@@ -14,16 +14,16 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
         name: &'a Name,
         fragment_definition: &'a Positioned<FragmentDefinition>,
     ) {
-        if let Some(current_type) = ctx.current_type() {
-            if !current_type.is_composite() {
-                ctx.report_error(
-                    vec![fragment_definition.pos],
-                    format!(
-                        "Fragment \"{}\" cannot condition non composite type \"{}\"",
-                        name, fragment_definition.node.type_condition.node.on.node,
-                    ),
-                );
-            }
+        if let Some(current_type) = ctx.current_type()
+            && !current_type.is_composite()
+        {
+            ctx.report_error(
+                vec![fragment_definition.pos],
+                format!(
+                    "Fragment \"{}\" cannot condition non composite type \"{}\"",
+                    name, fragment_definition.node.type_condition.node.on.node,
+                ),
+            );
         }
     }
 
@@ -32,16 +32,16 @@ impl<'a> Visitor<'a> for FragmentsOnCompositeTypes {
         ctx: &mut VisitorContext<'a>,
         inline_fragment: &'a Positioned<InlineFragment>,
     ) {
-        if let Some(current_type) = ctx.current_type() {
-            if !current_type.is_composite() {
-                ctx.report_error(
-                    vec![inline_fragment.pos],
-                    format!(
-                        "Fragment cannot condition non composite type \"{}\"",
-                        current_type.name()
-                    ),
-                );
-            }
+        if let Some(current_type) = ctx.current_type()
+            && !current_type.is_composite()
+        {
+            ctx.report_error(
+                vec![inline_fragment.pos],
+                format!(
+                    "Fragment cannot condition non composite type \"{}\"",
+                    current_type.name()
+                ),
+            );
         }
     }
 }
