@@ -16,7 +16,7 @@ async-graphql.workspace = true
 
 actix = "0.13.3"
 actix-http = "3.6.0"
-actix-web = { version = "4.5.1", default-features = false }
+actix-web = { version = "4.5.1", default-features = false, features = ["ws"] }
 actix-web-actors = "4.3.0"
 async-channel = "2.2.0"
 futures-channel = "0.3.30"

@@ -913,17 +913,12 @@ pub struct Description {
     pub internal: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum NewTypeName {
     New(String),
     Rust,
+    #[default]
     Original,
-}
-
-impl Default for NewTypeName {
-    fn default() -> Self {
-        Self::Original
-    }
 }
 
 impl FromMeta for NewTypeName {

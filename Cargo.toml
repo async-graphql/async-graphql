@@ -4,7 +4,7 @@ categories = ["network-programming", "asynchronous"]
 description = "A GraphQL server library implemented in Rust"
 documentation = "https://docs.rs/async-graphql/"
 edition = "2024"
-rust-version = "1.86.0"
+rust-version = "1.89.0"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
@@ -120,6 +120,7 @@ handlebars = { version = "5.1.2", optional = true }
 schemars = { version = "0.8.21", optional = true }
 
 [dev-dependencies]
+async-graphql = { workspace = true, features = ["chrono-duration", "dataloader", "uuid-validator"]}
 futures-channel = "0.3.30"
 tokio = { version = "1.37.0", features = [
   "macros",

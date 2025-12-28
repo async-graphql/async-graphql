@@ -16,10 +16,9 @@ impl<'a> Visitor<'a> for FieldsOnCorrectType {
         if let Some(parent_type) = ctx.parent_type() {
             if let Some(registry::MetaType::Union { .. })
             | Some(registry::MetaType::Interface { .. }) = ctx.parent_type()
+                && field.node.name.node == "__typename"
             {
-                if field.node.name.node == "__typename" {
-                    return;
-                }
+                return;
             }
 
             if parent_type

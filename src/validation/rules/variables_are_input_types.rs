@@ -16,17 +16,16 @@ impl<'a> Visitor<'a> for VariablesAreInputTypes {
         if let Some(ty) = ctx
             .registry
             .concrete_type_by_parsed_type(&variable_definition.node.var_type.node)
+            && !ty.is_input()
         {
-            if !ty.is_input() {
-                ctx.report_error(
-                    vec![variable_definition.pos],
-                    format!(
-                        "Variable \"{}\" cannot be of non-input type \"{}\"",
-                        variable_definition.node.name.node,
-                        ty.name()
-                    ),
-                );
-            }
+            ctx.report_error(
+                vec![variable_definition.pos],
+                format!(
+                    "Variable \"{}\" cannot be of non-input type \"{}\"",
+                    variable_definition.node.name.node,
+                    ty.name()
+                ),
+            );
         }
     }
 }

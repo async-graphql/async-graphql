@@ -128,9 +128,10 @@ impl<'de> Deserialize<'de> for Name {
 /// be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
-#[derive(Clone, Debug, Eq)]
+#[derive(Clone, Debug, Default, Eq)]
 pub enum ConstValue {
     /// `null`.
+    #[default]
     Null,
     /// A number.
     Number(Number),
@@ -330,12 +331,6 @@ impl ConstValue {
     }
 }
 
-impl Default for ConstValue {
-    fn default() -> Self {
-        Self::Null
-    }
-}
-
 impl Display for ConstValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -374,11 +369,12 @@ impl TryFrom<ConstValue> for serde_json::Value {
 /// `Upload` and `Variable` cannot be deserialized.
 ///
 /// [Reference](https://spec.graphql.org/June2018/#Value).
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum Value {
     /// A variable, without the `$`.
     Variable(Name),
     /// `null`.
+    #[default]
     Null,
     /// A number.
     Number(Number),
@@ -458,12 +454,6 @@ impl Value {
     /// Fails if deserialization fails (see enum docs for more info).
     pub fn from_json(json: serde_json::Value) -> serde_json::Result<Self> {
         json.try_into()
-    }
-}
-
-impl Default for Value {
-    fn default() -> Self {
-        Self::Null
     }
 }
 

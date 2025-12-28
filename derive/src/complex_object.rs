@@ -54,23 +54,15 @@ pub fn generate(
                         syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#into> })
                             .expect("invalid result type");
 
-                    let should_create_context = new_impl
-                        .sig
-                        .inputs
-                        .iter()
-                        .nth(1)
-                        .map(|x| {
-                            if let FnArg::Typed(pat) = x {
-                                if let Type::Reference(TypeReference { elem, .. }) = &*pat.ty {
-                                    if let Type::Path(path) = elem.as_ref() {
-                                        return path.path.segments.last().unwrap().ident
-                                            != "Context";
-                                    }
-                                }
-                            };
-                            true
-                        })
-                        .unwrap_or(true);
+                    let should_create_context = new_impl.sig.inputs.iter().nth(1).is_none_or(|x| {
+                        if let FnArg::Typed(pat) = x
+                            && let Type::Reference(TypeReference { elem, .. }) = &*pat.ty
+                            && let Type::Path(path) = elem.as_ref()
+                        {
+                            return path.path.segments.last().unwrap().ident != "Context";
+                        };
+                        true
+                    });
 
                     if should_create_context {
                         let arg_ctx = syn::parse2::<FnArg>(quote! { ctx: &Context<'_> })

@@ -372,15 +372,15 @@ impl Registry {
                     }
                     write!(sdl, "scalar {}", name).ok();
 
-                    if options.include_specified_by {
-                        if let Some(specified_by_url) = specified_by_url {
-                            write!(
-                                sdl,
-                                " @specifiedBy(url: \"{}\")",
-                                specified_by_url.replace('"', "\\\"")
-                            )
-                            .ok();
-                        }
+                    if options.include_specified_by
+                        && let Some(specified_by_url) = specified_by_url
+                    {
+                        write!(
+                            sdl,
+                            " @specifiedBy(url: \"{}\")",
+                            specified_by_url.replace('"', "\\\"")
+                        )
+                        .ok();
                     }
 
                     if options.federation {
@@ -709,19 +709,19 @@ impl Registry {
     }
 
     fn write_implements(&self, sdl: &mut String, name: &str) {
-        if let Some(implements) = self.implements.get(name) {
-            if !implements.is_empty() {
-                write!(
-                    sdl,
-                    " implements {}",
-                    implements
-                        .iter()
-                        .map(AsRef::as_ref)
-                        .collect::<Vec<&str>>()
-                        .join(" & ")
-                )
-                .ok();
-            }
+        if let Some(implements) = self.implements.get(name)
+            && !implements.is_empty()
+        {
+            write!(
+                sdl,
+                " implements {}",
+                implements
+                    .iter()
+                    .map(AsRef::as_ref)
+                    .collect::<Vec<&str>>()
+                    .join(" & ")
+            )
+            .ok();
         }
     }
 }

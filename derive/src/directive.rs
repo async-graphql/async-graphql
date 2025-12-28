@@ -39,11 +39,11 @@ pub fn generate(
     for arg in item_fn.sig.inputs.iter_mut() {
         let mut arg_info = None;
 
-        if let FnArg::Typed(pat) = arg {
-            if let Pat::Ident(ident) = &*pat.pat {
-                arg_info = Some((ident.clone(), pat.ty.clone(), pat.attrs.clone()));
-                remove_graphql_attrs(&mut pat.attrs);
-            }
+        if let FnArg::Typed(pat) = arg
+            && let Pat::Ident(ident) = &*pat.pat
+        {
+            arg_info = Some((ident.clone(), pat.ty.clone(), pat.attrs.clone()));
+            remove_graphql_attrs(&mut pat.attrs);
         }
 
         let (arg_ident, arg_ty, arg_attrs) = match arg_info {

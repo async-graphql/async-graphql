@@ -587,10 +587,10 @@ impl<'a, T> ContextBase<'a, T> {
             .find(|(n, _)| n.node.as_str() == name)
             .map(|(_, value)| value)
             .cloned();
-        if value.is_none() {
-            if let Some(default) = default {
-                return Ok((Pos::default(), default()));
-            }
+        if value.is_none()
+            && let Some(default) = default
+        {
+            return Ok((Pos::default(), default()));
         }
         let (pos, value) = match value {
             Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
@@ -683,7 +683,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     ///     }
     /// }
     /// ```
-    pub fn look_ahead(&self) -> Lookahead {
+    pub fn look_ahead(&self) -> Lookahead<'_> {
         Lookahead::new(&self.query_env.fragments, &self.item.node, self)
     }
 
@@ -728,7 +728,7 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
     /// );
     /// # });
     /// ```
-    pub fn field(&self) -> SelectionField {
+    pub fn field(&self) -> SelectionField<'_> {
         SelectionField {
             fragments: &self.query_env.fragments,
             field: &self.item.node,

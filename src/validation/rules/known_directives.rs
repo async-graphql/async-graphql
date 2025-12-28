@@ -66,16 +66,16 @@ impl<'a> Visitor<'a> for KnownDirectives {
             .directives
             .get(directive.node.name.node.as_str())
         {
-            if let Some(current_location) = self.location_stack.last() {
-                if !schema_directive.locations.contains(current_location) {
-                    ctx.report_error(
-                        vec![directive.pos],
-                        format!(
-                            "Directive \"{}\" may not be used on \"{:?}\"",
-                            directive.node.name.node, current_location
-                        ),
-                    )
-                }
+            if let Some(current_location) = self.location_stack.last()
+                && !schema_directive.locations.contains(current_location)
+            {
+                ctx.report_error(
+                    vec![directive.pos],
+                    format!(
+                        "Directive \"{}\" may not be used on \"{:?}\"",
+                        directive.node.name.node, current_location
+                    ),
+                )
             }
         } else {
             ctx.report_error(
