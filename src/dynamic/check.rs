@@ -21,26 +21,24 @@ impl SchemaInner {
     }
 
     fn check_root_types(&self) -> Result<(), SchemaError> {
-        if let Some(ty) = self.types.get(&self.env.registry.query_type) {
-            if !matches!(ty, Type::Object(_)) {
-                return Err("The query root must be an object".into());
-            }
+        if let Some(ty) = self.types.get(&self.env.registry.query_type)
+            && !matches!(ty, Type::Object(_))
+        {
+            return Err("The query root must be an object".into());
         }
 
-        if let Some(mutation_type) = &self.env.registry.mutation_type {
-            if let Some(ty) = self.types.get(mutation_type) {
-                if !matches!(ty, Type::Object(_)) {
-                    return Err("The mutation root must be an object".into());
-                }
-            }
+        if let Some(mutation_type) = &self.env.registry.mutation_type
+            && let Some(ty) = self.types.get(mutation_type)
+            && !matches!(ty, Type::Object(_))
+        {
+            return Err("The mutation root must be an object".into());
         }
 
-        if let Some(subscription_type) = &self.env.registry.subscription_type {
-            if let Some(ty) = self.types.get(subscription_type) {
-                if !matches!(ty, Type::Subscription(_)) {
-                    return Err("The subscription root must be a subscription object".into());
-                }
-            }
+        if let Some(subscription_type) = &self.env.registry.subscription_type
+            && let Some(ty) = self.types.get(subscription_type)
+            && !matches!(ty, Type::Subscription(_))
+        {
+            return Err("The subscription root must be a subscription object".into());
         }
 
         Ok(())
@@ -141,14 +139,14 @@ impl SchemaInner {
                     }
 
                     // The field must return a type where IsOutputType(fieldType) returns true.
-                    if let Some(ty) = self.types.get(field.ty.type_name()) {
-                        if !ty.is_output_type() {
-                            return Err(format!(
-                                "Field \"{}.{}\" must return a output type",
-                                obj.name, field.name
-                            )
-                            .into());
-                        }
+                    if let Some(ty) = self.types.get(field.ty.type_name())
+                        && !ty.is_output_type()
+                    {
+                        return Err(format!(
+                            "Field \"{}.{}\" must return a output type",
+                            obj.name, field.name
+                        )
+                        .into());
                     }
 
                     for arg in field.arguments.values() {
@@ -160,14 +158,14 @@ impl SchemaInner {
 
                         // The argument must accept a type where
                         // IsInputType(argumentType) returns true.
-                        if let Some(ty) = self.types.get(arg.ty.type_name()) {
-                            if !ty.is_input_type() {
-                                return Err(format!(
-                                    "Argument \"{}.{}.{}\" must accept a input type",
-                                    obj.name, field.name, arg.name
-                                )
-                                .into());
-                            }
+                        if let Some(ty) = self.types.get(arg.ty.type_name())
+                            && !ty.is_input_type()
+                        {
+                            return Err(format!(
+                                "Argument \"{}.{}.{}\" must accept a input type",
+                                obj.name, field.name, arg.name
+                            )
+                            .into());
                         }
                     }
                 }
@@ -199,14 +197,14 @@ impl SchemaInner {
 
                     // The input field must accept a type where IsInputType(inputFieldType) returns
                     // true.
-                    if let Some(ty) = self.types.get(field.ty.type_name()) {
-                        if !ty.is_input_type() {
-                            return Err(format!(
-                                "Field \"{}.{}\" must accept a input type",
-                                obj.name, field.name
-                            )
-                            .into());
-                        }
+                    if let Some(ty) = self.types.get(field.ty.type_name())
+                        && !ty.is_input_type()
+                    {
+                        return Err(format!(
+                            "Field \"{}.{}\" must accept a input type",
+                            obj.name, field.name
+                        )
+                        .into());
                     }
 
                     if obj.oneof {
@@ -292,14 +290,14 @@ impl SchemaInner {
                     }
 
                     // The field must return a type where IsOutputType(fieldType) returns true.
-                    if let Some(ty) = self.types.get(field.ty.type_name()) {
-                        if !ty.is_output_type() {
-                            return Err(format!(
-                                "Field \"{}.{}\" must return a output type",
-                                interface.name, field.name
-                            )
-                            .into());
-                        }
+                    if let Some(ty) = self.types.get(field.ty.type_name())
+                        && !ty.is_output_type()
+                    {
+                        return Err(format!(
+                            "Field \"{}.{}\" must return a output type",
+                            interface.name, field.name
+                        )
+                        .into());
                     }
 
                     for arg in field.arguments.values() {
@@ -311,14 +309,14 @@ impl SchemaInner {
 
                         // The argument must accept a type where
                         // IsInputType(argumentType) returns true.
-                        if let Some(ty) = self.types.get(arg.ty.type_name()) {
-                            if !ty.is_input_type() {
-                                return Err(format!(
-                                    "Argument \"{}.{}.{}\" must accept a input type",
-                                    interface.name, field.name, arg.name
-                                )
-                                .into());
-                            }
+                        if let Some(ty) = self.types.get(arg.ty.type_name())
+                            && !ty.is_input_type()
+                        {
+                            return Err(format!(
+                                "Argument \"{}.{}.{}\" must accept a input type",
+                                interface.name, field.name, arg.name
+                            )
+                            .into());
                         }
                     }
 
@@ -358,14 +356,14 @@ impl SchemaInner {
                 // types of a Union. Similarly, wrapping types must not be
                 // member types of a Union.
                 for type_name in &union.possible_types {
-                    if let Some(ty) = self.types.get(type_name) {
-                        if ty.as_object().is_none() {
-                            return Err(format!(
-                                "Member \"{}\" of union \"{}\" is not an object",
-                                type_name, union.name
-                            )
-                            .into());
-                        }
+                    if let Some(ty) = self.types.get(type_name)
+                        && ty.as_object().is_none()
+                    {
+                        return Err(format!(
+                            "Member \"{}\" of union \"{}\" is not an object",
+                            type_name, union.name
+                        )
+                        .into());
                     }
                 }
             }

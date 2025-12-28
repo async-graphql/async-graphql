@@ -1,4 +1,6 @@
-use zxcvbn::{ZxcvbnError, zxcvbn};
+use std::convert::TryFrom;
+
+use zxcvbn::zxcvbn;
 
 use crate::{InputType, InputValueError};
 
@@ -6,16 +8,11 @@ pub fn min_password_strength<T: AsRef<str> + InputType>(
     value: &T,
     min_score: u8,
 ) -> Result<(), InputValueError<T>> {
-    match zxcvbn(value.as_ref(), &[]) {
-        Ok(password_strength) => {
-            if password_strength.score() < min_score {
-                Err("password is too weak".into())
-            } else {
-                Ok(())
-            }
-        }
-        Err(ZxcvbnError::BlankPassword) => Err("password is too weak".into()),
-        _ => Err("error processing password strength".into()),
+    let password_strength = zxcvbn(value.as_ref(), &[]);
+    if password_strength.score() < zxcvbn::Score::try_from(min_score).expect("invalid score") {
+        Err("password is too weak".into())
+    } else {
+        Ok(())
     }
 }
 
