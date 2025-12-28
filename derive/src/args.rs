@@ -5,7 +5,7 @@ use darling::{
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
 };
-use heck::{ToPascalCase, ToLowerCamelCase,  ToSnakeCase, ToShoutySnakeCase};
+use heck::{ToLowerCamelCase, ToPascalCase, ToShoutySnakeCase, ToSnakeCase};
 use quote::format_ident;
 use syn::{
     Attribute, Expr, GenericParam, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type,
