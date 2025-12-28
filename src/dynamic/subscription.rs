@@ -42,7 +42,7 @@ impl<'a> SubscriptionFieldFuture<'a> {
 }
 
 type BoxResolverFn =
-    Arc<(dyn for<'a> Fn(ResolverContext<'a>) -> SubscriptionFieldFuture<'a> + Send + Sync)>;
+    Arc<dyn for<'a> Fn(ResolverContext<'a>) -> SubscriptionFieldFuture<'a> + Send + Sync>;
 
 /// A GraphQL subscription field
 pub struct SubscriptionField {
@@ -201,14 +201,15 @@ impl Subscription {
         root_value: &'a FieldValue<'static>,
     ) {
         for selection in &ctx.item.node.items {
-            if let Selection::Field(field) = &selection.node {
-                if let Some(field_def) = self.fields.get(field.node.name.node.as_str()) {
-                    let schema = schema.clone();
-                    let field_type = field_def.ty.clone();
-                    let resolver_fn = field_def.resolver_fn.clone();
-                    let ctx = ctx.clone();
+            if let Selection::Field(field) = &selection.node
+                && let Some(field_def) = self.fields.get(field.node.name.node.as_str())
+            {
+                let schema = schema.clone();
+                let field_type = field_def.ty.clone();
+                let resolver_fn = field_def.resolver_fn.clone();
+                let ctx = ctx.clone();
 
-                    streams.push(
+                streams.push(
                         async_stream::try_stream! {
                             let ctx_field = ctx.with_field(field);
                             let field_name = ctx_field.item.node.response_key().node.clone();
@@ -282,7 +283,6 @@ impl Subscription {
                         })
                         .boxed(),
                     );
-                }
             }
         }
     }
