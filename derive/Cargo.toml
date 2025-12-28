@@ -20,8 +20,8 @@ boxed-trait = []
 [dependencies]
 async-graphql-parser.workspace = true
 
-Inflector = "0.11.4"
 darling = "0.23.0"
+heck = "0.5.0"
 proc-macro-crate = "3.1.0"
 proc-macro2 = "1.0.79"
 quote = "1.0.35"

@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade darling to 0.23
 - Upgrade strum to 0.27
 - Upgrade criterion to 0.8
+- Move from Inflector to heck (since Inflector is archived) [#1732](https://github.com/async-graphql/async-graphql/pull/1732)
 
 # [7.0.17] 2025-05-24
 
