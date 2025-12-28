@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update MSRV to `1.89.0`
 - Fix DataLoader with tracing [#1749](https://github.com/async-graphql/async-graphql/pull/1749)
 - Fix clippy lints [#1770](https://github.com/async-graphql/async-graphql/pull/1770)
+- Upgrade hashbrown to 0.16 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade zxcvbn to 3.1 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade lru to 0.16 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade handlebars to 6.3 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade schemars to 1.2 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
 
 # [7.0.17] 2025-05-24
 
