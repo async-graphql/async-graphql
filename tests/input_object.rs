@@ -496,7 +496,7 @@ pub async fn test_both_input_output_generic_with_nesting() {
             "obj": {
                 "a": "OPTION_1",
             }
-        })
+        }),
     );
 
     assert_eq!(<MyObject<u32> as InputType>::type_name(), "MyObjectU32");
