@@ -102,10 +102,10 @@ impl<'a> VisitorContext<'a> {
     ) -> ServerResult<T> {
         let value = field.get_argument(name).cloned();
 
-        if value.is_none() {
-            if let Some(default) = default {
-                return Ok(default());
-            }
+        if value.is_none()
+            && let Some(default) = default
+        {
+            return Ok(default());
         }
 
         let (pos, value) = match value {
@@ -697,22 +697,21 @@ fn visit_input_value<'a, V: Visitor<'a>>(
         Value::Object(values) => {
             if let Some(expected_ty) = expected_ty {
                 let expected_ty = expected_ty.unwrap_non_null();
-                if let MetaTypeName::Named(expected_ty) = expected_ty {
-                    if let Some(MetaType::InputObject { input_fields, .. }) = ctx
+                if let MetaTypeName::Named(expected_ty) = expected_ty
+                    && let Some(MetaType::InputObject { input_fields, .. }) = ctx
                         .registry
                         .types
                         .get(MetaTypeName::concrete_typename(expected_ty))
-                    {
-                        for (item_key, item_value) in values {
-                            if let Some(input_value) = input_fields.get(item_key.as_str()) {
-                                visit_input_value(
-                                    v,
-                                    ctx,
-                                    pos,
-                                    Some(MetaTypeName::create(&input_value.ty)),
-                                    item_value,
-                                );
-                            }
+                {
+                    for (item_key, item_value) in values {
+                        if let Some(input_value) = input_fields.get(item_key.as_str()) {
+                            visit_input_value(
+                                v,
+                                ctx,
+                                pos,
+                                Some(MetaTypeName::create(&input_value.ty)),
+                                item_value,
+                            );
                         }
                     }
                 }
@@ -781,13 +780,12 @@ fn visit_fragment_spread<'a, V: Visitor<'a>>(
 ) {
     v.enter_fragment_spread(ctx, fragment_spread);
     visit_directives(v, ctx, &fragment_spread.node.directives);
-    if v.mode() == VisitMode::Inline {
-        if let Some(fragment) = ctx
+    if v.mode() == VisitMode::Inline
+        && let Some(fragment) = ctx
             .fragments
             .get(fragment_spread.node.fragment_name.node.as_str())
-        {
-            visit_selection_set(v, ctx, &fragment.node.selection_set);
-        }
+    {
+        visit_selection_set(v, ctx, &fragment.node.selection_set);
     }
     v.exit_fragment_spread(ctx, fragment_spread);
 }

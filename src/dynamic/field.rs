@@ -224,7 +224,7 @@ impl<'a> FieldValue<'a> {
     /// If the FieldValue is a list, returns the associated
     /// vector. Returns `None` otherwise.
     #[inline]
-    pub fn as_list(&self) -> Option<&[FieldValue]> {
+    pub fn as_list(&self) -> Option<&[FieldValue<'_>]> {
         match &self.0 {
             FieldValueInner::List(values) => Some(values),
             _ => None,
@@ -233,7 +233,7 @@ impl<'a> FieldValue<'a> {
 
     /// Like `as_list`, but returns `Result`.
     #[inline]
-    pub fn try_to_list(&self) -> Result<&[FieldValue]> {
+    pub fn try_to_list(&self) -> Result<&[FieldValue<'_>]> {
         self.as_list()
             .ok_or_else(|| Error::new(format!("internal: \"{:?}\" not a List", self)))
     }
@@ -314,7 +314,7 @@ impl<'a> FieldFuture<'a> {
 }
 
 pub(crate) type BoxResolverFn =
-    Box<(dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync)>;
+    Box<dyn for<'a> Fn(ResolverContext<'a>) -> FieldFuture<'a> + Send + Sync>;
 
 /// A GraphQL field
 pub struct Field {

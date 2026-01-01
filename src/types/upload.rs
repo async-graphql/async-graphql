@@ -74,7 +74,7 @@ impl UploadValue {
 
         #[cfg(not(feature = "tempfile"))]
         {
-            std::io::Cursor::new(self.content)
+            futures_util::io::Cursor::new(self.content)
         }
     }
 
@@ -175,10 +175,10 @@ impl InputType for Upload {
     fn parse(value: Option<Value>) -> InputValueResult<Self> {
         const PREFIX: &str = "#__graphql_file__:";
         let value = value.unwrap_or_default();
-        if let Value::String(s) = &value {
-            if let Some(filename) = s.strip_prefix(PREFIX) {
-                return Ok(Upload(filename.parse::<usize>().unwrap()));
-            }
+        if let Value::String(s) = &value
+            && let Some(filename) = s.strip_prefix(PREFIX)
+        {
+            return Ok(Upload(filename.parse::<usize>().unwrap()));
         }
         Err(InputValueError::expected_type(value))
     }

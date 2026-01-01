@@ -105,10 +105,10 @@ impl<'a> Visitor<'a> for NoUnusedVariables<'a> {
         _ctx: &mut VisitorContext<'a>,
         variable_definition: &'a Positioned<VariableDefinition>,
     ) {
-        if let Some(Scope::Operation(ref name)) = self.current_scope {
-            if let Some(vars) = self.defined_variables.get_mut(name) {
-                vars.insert((&variable_definition.node.name.node, variable_definition.pos));
-            }
+        if let Some(Scope::Operation(ref name)) = self.current_scope
+            && let Some(vars) = self.defined_variables.get_mut(name)
+        {
+            vars.insert((&variable_definition.node.name.node, variable_definition.pos));
         }
     }
 

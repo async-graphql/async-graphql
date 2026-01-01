@@ -112,54 +112,52 @@ pub(super) async fn receive_batch_multipart(
                 }
             }
             _ => {
-                if let Some(name) = field.name().map(ToString::to_string) {
-                    if let Some(filename) = field.file_name().map(ToString::to_string) {
-                        let content_type = field.content_type().map(ToString::to_string);
+                if let Some(name) = field.name().map(ToString::to_string)
+                    && let Some(filename) = field.file_name().map(ToString::to_string)
+                {
+                    let content_type = field.content_type().map(ToString::to_string);
 
-                        #[cfg(feature = "tempfile")]
-                        let content = {
-                            let mut field = field;
+                    #[cfg(feature = "tempfile")]
+                    let content = {
+                        let mut field = field;
 
-                            #[cfg(feature = "unblock")]
-                            {
-                                use std::io::SeekFrom;
+                        #[cfg(feature = "unblock")]
+                        {
+                            use std::io::SeekFrom;
 
-                                use blocking::Unblock;
-                                use futures_util::{AsyncSeekExt, AsyncWriteExt};
+                            use blocking::Unblock;
+                            use futures_util::{AsyncSeekExt, AsyncWriteExt};
 
-                                let mut file = Unblock::new(
-                                    tempfile::tempfile().map_err(ParseRequestError::Io)?,
-                                );
-                                while let Some(chunk) = field.chunk().await? {
-                                    file.write_all(&chunk)
-                                        .await
-                                        .map_err(ParseRequestError::Io)?;
-                                }
-                                file.seek(SeekFrom::Start(0))
+                            let mut file =
+                                Unblock::new(tempfile::tempfile().map_err(ParseRequestError::Io)?);
+                            while let Some(chunk) = field.chunk().await? {
+                                file.write_all(&chunk)
                                     .await
                                     .map_err(ParseRequestError::Io)?;
-                                file.into_inner().await
                             }
+                            file.seek(SeekFrom::Start(0))
+                                .await
+                                .map_err(ParseRequestError::Io)?;
+                            file.into_inner().await
+                        }
 
-                            #[cfg(not(feature = "unblock"))]
-                            {
-                                use std::io::{Seek, Write};
+                        #[cfg(not(feature = "unblock"))]
+                        {
+                            use std::io::{Seek, Write};
 
-                                let mut file =
-                                    tempfile::tempfile().map_err(ParseRequestError::Io)?;
-                                while let Some(chunk) = field.chunk().await? {
-                                    file.write_all(&chunk).map_err(ParseRequestError::Io)?;
-                                }
-                                file.rewind()?;
-                                file
+                            let mut file = tempfile::tempfile().map_err(ParseRequestError::Io)?;
+                            while let Some(chunk) = field.chunk().await? {
+                                file.write_all(&chunk).map_err(ParseRequestError::Io)?;
                             }
-                        };
+                            file.rewind()?;
+                            file
+                        }
+                    };
 
-                        #[cfg(not(feature = "tempfile"))]
-                        let content = field.bytes().await?;
+                    #[cfg(not(feature = "tempfile"))]
+                    let content = field.bytes().await?;
 
-                        files.push((name, filename, content_type, content));
-                    }
+                    files.push((name, filename, content_type, content));
                 }
             }
         }
@@ -186,10 +184,10 @@ pub(super) async fn receive_batch_multipart(
                         let idx = s.next().and_then(|idx| idx.parse::<usize>().ok());
                         let path = s.next();
 
-                        if let (Some(idx), Some(path)) = (idx, path) {
-                            if let Some(request) = requests.get_mut(idx) {
-                                request.set_upload(path, upload.try_clone()?);
-                            }
+                        if let (Some(idx), Some(path)) = (idx, path)
+                            && let Some(request) = requests.get_mut(idx)
+                        {
+                            request.set_upload(path, upload.try_clone()?);
                         }
                     }
                 }

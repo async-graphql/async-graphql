@@ -42,3 +42,32 @@ struct MyObj(Object1, Object2, Object3);
 
 let obj = MyObj(Object1 { a: 10 }, Object2 { b: 20 }, Object3 { c: 30 });
 ```
+
+If you run into compilation errors like `error: queries overflow the depth limit!`, consider splitting the root object into smaller sets of objects merged with `MergedObject`:
+```
+use async_graphql::*;
+
+#[derive(SimpleObject)]
+struct Object1 {
+    a: i32,
+}
+
+#[derive(SimpleObject)]
+struct Object2 {
+    b: i32,
+}
+
+#[derive(SimpleObject)]
+struct Object3 {
+    c: i32,
+}
+
+#[derive(MergedObject)]
+struct MergeSet1(Object1, Object2);
+
+#[derive(MergedObject)]
+struct RootObject(MergeSet1, Object3);
+
+let obj = RootObject(MergeSet1(Object1 { a: 10 }, Object2 { b: 20}), Object3 { c: 30});
+ 
+```

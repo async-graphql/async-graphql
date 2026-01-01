@@ -34,40 +34,40 @@ impl<'a> ValueAccessor<'a> {
 
     /// Returns the number as `i64`
     pub fn i64(&self) -> Result<i64> {
-        if let Value::Number(number) = self.0 {
-            if let Some(value) = number.as_i64() {
-                return Ok(value);
-            }
+        if let Value::Number(number) = self.0
+            && let Some(value) = number.as_i64()
+        {
+            return Ok(value);
         }
         Err(Error::new("internal: not an signed integer"))
     }
 
     /// Returns the number as `u64`
     pub fn u64(&self) -> Result<u64> {
-        if let Value::Number(number) = self.0 {
-            if let Some(value) = number.as_u64() {
-                return Ok(value);
-            }
+        if let Value::Number(number) = self.0
+            && let Some(value) = number.as_u64()
+        {
+            return Ok(value);
         }
         Err(Error::new("internal: not an unsigned integer"))
     }
 
     /// Returns the number as `f32`
     pub fn f32(&self) -> Result<f32> {
-        if let Value::Number(number) = self.0 {
-            if let Some(value) = number.as_f64() {
-                return Ok(value as f32);
-            }
+        if let Value::Number(number) = self.0
+            && let Some(value) = number.as_f64()
+        {
+            return Ok(value as f32);
         }
         Err(Error::new("internal: not a float"))
     }
 
     /// Returns the number as `f64`
     pub fn f64(&self) -> Result<f64> {
-        if let Value::Number(number) = self.0 {
-            if let Some(value) = number.as_f64() {
-                return Ok(value);
-            }
+        if let Value::Number(number) = self.0
+            && let Some(value) = number.as_f64()
+        {
+            return Ok(value);
         }
         Err(Error::new("internal: not a float"))
     }

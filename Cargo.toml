@@ -4,14 +4,14 @@ categories = ["network-programming", "asynchronous"]
 description = "A GraphQL server library implemented in Rust"
 documentation = "https://docs.rs/async-graphql/"
 edition = "2024"
-rust-version = "1.86.0"
+rust-version = "1.89.0"
 homepage = "https://github.com/async-graphql/async-graphql"
 keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.17"
+version = "7.0.18"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -82,7 +82,7 @@ chrono = { version = "0.4.37", optional = true, default-features = false, featur
 ] }
 chrono-tz = { version = "0.10.0", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
-hashbrown = { version = "0.14.5", optional = true }
+hashbrown = { version = "0.16.1", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
 log = { version = "0.4.21", optional = true }
 opentelemetry = { version = "0.27.0", optional = true, default-features = false, features = [
@@ -102,7 +102,9 @@ tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracinglib = { version = "0.1.40", optional = true, package = "tracing" }
+tracinglib = { version = "0.1.41", features = [
+  "attributes",
+], optional = true, package = "tracing" }
 url = { version = "2.5.0", optional = true }
 uuid = { version = "1.8.0", optional = true, features = ["v4", "serde"] }
 tempfile = { version = "3.10.1", optional = true }
@@ -110,14 +112,15 @@ tempfile = { version = "3.10.1", optional = true }
 # Non-feature optional dependencies
 blocking = { version = "1.6.1", optional = true }
 futures-channel = { version = "0.3.30", optional = true }
-lru = { version = "0.12.3", optional = true }
+lru = { version = "0.16.2", optional = true }
 serde_cbor = { version = "0.11.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-zxcvbn = { version = "2.2.2", optional = true }
-handlebars = { version = "5.1.2", optional = true }
-schemars = { version = "0.8.21", optional = true }
+zxcvbn = { version = "3.1.0", optional = true }
+handlebars = { version = "6.3.2", optional = true }
+schemars = { version = "1.2.0", optional = true }
 
 [dev-dependencies]
+async-graphql = { workspace = true, features = ["chrono-duration", "dataloader", "uuid-validator"]}
 futures-channel = "0.3.30"
 tokio = { version = "1.37.0", features = [
   "macros",
@@ -125,7 +128,7 @@ tokio = { version = "1.37.0", features = [
   "sync",
   "time",
 ] }
-criterion = { version = "0.5.1", features = ["html_reports", "async_tokio"] }
+criterion = { version = "0.8.1", features = ["html_reports", "async_tokio"] }
 slab = "0.4.9"
 
 [package.metadata.docs.rs]
@@ -147,16 +150,16 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "7.0.17", default-features = false }
-async-graphql-derive = { path = "derive", version = "7.0.17" }
-async-graphql-parser = { path = "parser", version = "7.0.17" }
-async-graphql-value = { path = "value", version = "7.0.17" }
+async-graphql = { path = ".", version = "7.0.18", default-features = false }
+async-graphql-derive = { path = "derive", version = "7.0.18" }
+async-graphql-parser = { path = "parser", version = "7.0.18" }
+async-graphql-value = { path = "value", version = "7.0.18" }
 
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
 indexmap = { version = "2", features = ["serde"] }
 bytes = { version = "1.6.0", features = ["serde"] }
-thiserror = "1.0.58"
+thiserror = "2.0.17"
 async-trait = "0.1.79"
 futures-util = { version = "0.3.30", default-features = false }
 tokio-util = { version = "0.7.10", default-features = false }

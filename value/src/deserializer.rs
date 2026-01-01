@@ -47,7 +47,7 @@ impl From<de::value::Error> for DeserializerError {
 
 impl ConstValue {
     #[inline]
-    fn unexpected(&self) -> Unexpected {
+    fn unexpected(&self) -> Unexpected<'_> {
         match self {
             ConstValue::Null => Unexpected::Unit,
             ConstValue::Number(_) => Unexpected::Other("number"),

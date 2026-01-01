@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [7.0.18] 2026-01-01
+
+- update MSRV to `1.89.0`
+- Fix DataLoader with tracing [#1749](https://github.com/async-graphql/async-graphql/pull/1749)
+- Fix clippy lints [#1770](https://github.com/async-graphql/async-graphql/pull/1770)
+- Upgrade hashbrown to 0.16 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade zxcvbn to 3.1 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade lru to 0.16 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade handlebars to 6.3 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade schemars to 1.2 [#1771](https://github.com/async-graphql/async-graphql/pull/1771)
+- Upgrade darling to 0.23
+- Upgrade strum to 0.27
+- Upgrade criterion to 0.8
+- Move from Inflector to heck (since Inflector is archived) [#1732](https://github.com/async-graphql/async-graphql/pull/1732)
+- Remove double boxing from subscription streams [#1736](https://github.com/async-graphql/async-graphql/pull/1736)
+- Fix unblock feature without tempfile [#1718](https://github.com/async-graphql/async-graphql/pull/1718)
+- Upgrade thiserror to 2.0
+
 # [7.0.17] 2025-05-24
 
 - update MSRV to `1.86.0`

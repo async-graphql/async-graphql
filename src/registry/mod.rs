@@ -46,7 +46,7 @@ impl Display for MetaTypeName<'_> {
 
 impl MetaTypeName<'_> {
     #[inline]
-    pub fn create(type_name: &str) -> MetaTypeName {
+    pub fn create(type_name: &str) -> MetaTypeName<'_> {
         if let Some(type_name) = type_name.strip_suffix('!') {
             MetaTypeName::NonNull(type_name)
         } else if let Some(type_name) = strip_brackets(type_name) {
@@ -1635,13 +1635,14 @@ impl Registry {
         }
 
         for ty in self.types.values() {
-            if let MetaType::Interface { possible_types, .. } = ty {
-                if ty.is_visible(ctx) && !visible_types.contains(ty.name()) {
-                    for type_name in possible_types.iter() {
-                        if visible_types.contains(type_name.as_str()) {
-                            traverse_type(ctx, &self.types, &mut visible_types, ty.name());
-                            break;
-                        }
+            if let MetaType::Interface { possible_types, .. } = ty
+                && ty.is_visible(ctx)
+                && !visible_types.contains(ty.name())
+            {
+                for type_name in possible_types.iter() {
+                    if visible_types.contains(type_name.as_str()) {
+                        traverse_type(ctx, &self.types, &mut visible_types, ty.name());
+                        break;
                     }
                 }
             }

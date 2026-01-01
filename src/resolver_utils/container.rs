@@ -156,15 +156,15 @@ fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
                     insert_value(target_map, key, value);
                 }
             }
-        } else if let Value::List(target_list) = prev_value {
-            if let Value::List(list) = value {
-                for (idx, value) in list.into_iter().enumerate() {
-                    if let Some(Value::Object(target_map)) = target_list.get_mut(idx) {
-                        if let Value::Object(obj) = value {
-                            for (key, value) in obj.into_iter() {
-                                insert_value(target_map, key, value);
-                            }
-                        }
+        } else if let Value::List(target_list) = prev_value
+            && let Value::List(list) = value
+        {
+            for (idx, value) in list.into_iter().enumerate() {
+                if let Some(Value::Object(target_map)) = target_list.get_mut(idx)
+                    && let Value::Object(obj) = value
+                {
+                    for (key, value) in obj.into_iter() {
+                        insert_value(target_map, key, value);
                     }
                 }
             }

@@ -8,10 +8,10 @@ pub fn uuid<T: AsRef<str> + InputType>(
 ) -> Result<(), InputValueError<T>> {
     match Uuid::try_parse(value.as_ref()) {
         Ok(uuid) => {
-            if let Some(version) = version_option {
-                if uuid.get_version_num() != version {
-                    return Err(InputValueError::custom("UUID version mismatch"));
-                }
+            if let Some(version) = version_option
+                && uuid.get_version_num() != version
+            {
+                return Err(InputValueError::custom("UUID version mismatch"));
             }
             Ok(())
         }
