@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move from Inflector to heck (since Inflector is archived) [#1732](https://github.com/async-graphql/async-graphql/pull/1732)
 - Remove double boxing from subscription streams [#1736](https://github.com/async-graphql/async-graphql/pull/1736)
 - Fix unblock feature without tempfile [#1718](https://github.com/async-graphql/async-graphql/pull/1718)
+- Upgrade thiserror to 2.0
 
 # [7.0.17] 2025-05-24
 
