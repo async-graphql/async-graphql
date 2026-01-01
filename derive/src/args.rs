@@ -5,7 +5,7 @@ use darling::{
     ast::{Data, Fields, NestedMeta},
     util::{Ignored, SpannedValue},
 };
-use heck::{ToLowerCamelCase, ToPascalCase, ToShoutySnakeCase, ToSnakeCase};
+use inflector::Inflector;
 use quote::format_ident;
 use syn::{
     Attribute, Expr, GenericParam, Generics, Ident, Lit, LitBool, LitStr, Meta, Path, Type,
@@ -856,28 +856,15 @@ pub enum RenameRule {
     ScreamingSnake,
 }
 
-fn patch_snakecase(name: String) -> String {
-    let mut dst = String::with_capacity(name.len());
-    for chr in name.chars() {
-        if chr.is_ascii_digit() {
-            dst.push('_');
-        }
-
-        dst.push(chr);
-    }
-
-    dst
-}
-
 impl RenameRule {
     fn rename(&self, name: impl AsRef<str>) -> String {
         match self {
             Self::Lower => name.as_ref().to_lowercase(),
             Self::Upper => name.as_ref().to_uppercase(),
             Self::Pascal => name.as_ref().to_pascal_case(),
-            Self::Camel => name.as_ref().to_lower_camel_case(),
-            Self::Snake => patch_snakecase(name.as_ref().to_snake_case()),
-            Self::ScreamingSnake => patch_snakecase(name.as_ref().to_shouty_snake_case()),
+            Self::Camel => name.as_ref().to_camel_case(),
+            Self::Snake => name.as_ref().to_snake_case(),
+            Self::ScreamingSnake => name.as_ref().to_screaming_snake_case(),
         }
     }
 }
