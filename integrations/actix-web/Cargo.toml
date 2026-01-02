@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-actix-web"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.0.19"
+version = "7.1.0"
 
 [dependencies]
 async-graphql.workspace = true
@@ -24,7 +24,7 @@ futures-util = { version = "0.3.30", default-features = false }
 serde_cbor = { version = "0.11.2", optional = true }
 serde_json.workspace = true
 thiserror.workspace = true
-async-stream = "0.3.5"
+asynk-strim = "0.1.5"
 
 [features]
 cbor = ["serde_cbor"]

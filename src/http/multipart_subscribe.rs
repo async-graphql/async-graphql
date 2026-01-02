@@ -23,7 +23,7 @@ pub fn create_multipart_mixed_stream<'a>(
     let mut input = input.fuse();
     let mut heartbeat_timer = Delay::new(heartbeat_interval).fuse();
 
-    async_stream::stream! {
+    asynk_strim::stream_fn(move |mut yielder| async move {
         loop {
             futures_util::select! {
                 item = input.next() => {
@@ -35,23 +35,23 @@ pub fn create_multipart_mixed_stream<'a>(
                                 continue;
                             }
 
-                            yield PART_HEADER.clone();
-                            yield writer.into_inner().freeze();
-                            yield CRLF.clone();
+                            yielder.yield_item(PART_HEADER.clone()).await;
+                            yielder.yield_item(writer.into_inner().freeze()).await;
+                            yielder.yield_item(CRLF.clone()).await;
                         }
                         None => break,
                     }
                 }
                 _ = heartbeat_timer => {
                     heartbeat_timer = Delay::new(heartbeat_interval).fuse();
-                    yield PART_HEADER.clone();
-                    yield HEARTBEAT.clone();
+                    yielder.yield_item(PART_HEADER.clone()).await;
+                    yielder.yield_item(HEARTBEAT.clone()).await;
                 }
             }
         }
 
-        yield EOF.clone();
-    }
+        yielder.yield_item(EOF.clone()).await;
+    })
     .boxed()
 }
 

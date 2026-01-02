@@ -281,7 +281,7 @@ mod tests {
         }
 
         impl Animal {
-            fn to_field_value(&self) -> FieldValue {
+            fn to_field_value(&self) -> FieldValue<'_> {
                 match self {
                     Animal::Dog(dog) => FieldValue::borrowed_any(dog).with_type("Dog"),
                     Animal::Cat(cat) => FieldValue::borrowed_any(cat).with_type("Cat"),

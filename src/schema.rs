@@ -1,5 +1,5 @@
 use std::{
-    any::Any,
+    any::{Any, TypeId},
     collections::{HashMap, HashSet},
     ops::Deref,
     sync::Arc,
@@ -582,15 +582,23 @@ where
         let stream = futures_util::stream::StreamExt::boxed({
             let extensions = extensions.clone();
             let env = self.0.env.clone();
-            async_stream::stream! {
+            asynk_strim::stream_fn(|mut yielder| async move {
                 let (env, cache_control) = match prepare_request(
-                        extensions, request, session_data, &env.registry,
-                        schema.0.validation_mode, schema.0.recursive_depth,
-                        schema.0.max_directives, schema.0.complexity, schema.0.depth
-                ).await {
+                    extensions,
+                    request,
+                    session_data,
+                    &env.registry,
+                    schema.0.validation_mode,
+                    schema.0.recursive_depth,
+                    schema.0.max_directives,
+                    schema.0.complexity,
+                    schema.0.depth,
+                )
+                .await
+                {
                     Ok(res) => res,
                     Err(errors) => {
-                        yield Response::from_errors(errors);
+                        yielder.yield_item(Response::from_errors(errors)).await;
                         return;
                     }
                 };
@@ -600,15 +608,20 @@ where
                         let env = env.clone();
                         let schema = schema.clone();
                         async move {
-                            schema.execute_once(env, execute_data.as_ref())
+                            schema
+                                .execute_once(env, execute_data.as_ref())
                                 .await
                                 .cache_control(cache_control)
                         }
                     };
-                    yield env.extensions
-                        .execute(env.operation_name.as_deref(), f)
-                        .await
-                        .cache_control(cache_control);
+                    yielder
+                        .yield_item(
+                            env.extensions
+                                .execute(env.operation_name.as_deref(), f)
+                                .await
+                                .cache_control(cache_control),
+                        )
+                        .await;
                     return;
                 }
 
@@ -629,14 +642,14 @@ where
                     collect_subscription_streams(&ctx, &schema.0.subscription, &mut streams)
                 };
                 if let Err(err) = collect_result {
-                    yield Response::from_errors(vec![err]);
+                    yielder.yield_item(Response::from_errors(vec![err])).await;
                 }
 
                 let mut stream = stream::select_all(streams);
                 while let Some(resp) = stream.next().await {
-                    yield resp;
+                    yielder.yield_item(resp).await;
                 }
-            }
+            })
         });
         extensions.subscribe(stream)
     }
@@ -644,6 +657,15 @@ where
     /// Execute a GraphQL subscription.
     pub fn execute_stream(&self, request: impl Into<Request>) -> BoxStream<'static, Response> {
         self.execute_stream_with_session_data(request, Default::default())
+    }
+
+    /// Access global data stored in the Schema
+    pub fn data<D: Any + Send + Sync>(&self) -> Option<&D> {
+        self.0
+            .env
+            .data
+            .get(&TypeId::of::<D>())
+            .and_then(|d| d.downcast_ref::<D>())
     }
 }
 

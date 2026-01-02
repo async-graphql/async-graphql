@@ -548,3 +548,24 @@ pub async fn test_interface_with_oneof_object() {
         })
     );
 }
+
+/// Module docs
+#[deny(missing_docs)]
+pub mod test_interface_docs {
+    use async_graphql::*;
+
+    /// Some object
+    #[derive(SimpleObject)]
+    pub struct MyObj {
+        id: i32,
+        title: String,
+    }
+
+    /// Some interface
+    #[derive(Interface)]
+    #[graphql(field(name = "id", ty = "&i32", desc = "Get the id"))]
+    pub enum Node {
+        /// Some objects
+        MyObj(MyObj),
+    }
+}

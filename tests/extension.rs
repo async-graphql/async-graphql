@@ -151,13 +151,13 @@ pub async fn test_extension_call_order() {
             let calls = self.calls.clone();
             next.run(
                 ctx,
-                Box::pin(async_stream::stream! {
+                Box::pin(asynk_strim::stream_fn(|mut yielder| async move {
                     calls.lock().await.push("subscribe_start");
                     while let Some(item) = stream.next().await {
-                        yield item;
+                        yielder.yield_item(item).await;
                     }
                     calls.lock().await.push("subscribe_end");
-                }),
+                })),
             )
         }
 

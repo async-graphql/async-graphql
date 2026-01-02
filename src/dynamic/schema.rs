@@ -418,11 +418,11 @@ impl Schema {
         let stream = {
             let extensions = extensions.clone();
 
-            async_stream::stream! {
+            asynk_strim::stream_fn(|mut yielder| async move {
                 let subscription = match schema.subscription_root() {
                     Ok(subscription) => subscription,
                     Err(err) => {
-                        yield Response::from_errors(vec![err]);
+                        yielder.yield_item(Response::from_errors(vec![err])).await;
                         return;
                     }
                 };
@@ -438,16 +438,19 @@ impl Schema {
                     schema.0.complexity,
                     schema.0.depth,
                 )
-                .await {
+                .await
+                {
                     Ok(res) => res,
                     Err(errors) => {
-                        yield Response::from_errors(errors);
+                        yielder.yield_item(Response::from_errors(errors)).await;
                         return;
                     }
                 };
 
                 if env.operation.node.ty != OperationType::Subscription {
-                    yield schema.execute_once(env, &request.root_value, None).await;
+                    yielder
+                        .yield_item(schema.execute_once(env, &request.root_value, None).await)
+                        .await;
                     return;
                 }
 
@@ -462,9 +465,9 @@ impl Schema {
 
                 let mut stream = futures_util::stream::select_all(streams);
                 while let Some(resp) = stream.next().await {
-                    yield resp;
+                    yielder.yield_item(resp).await;
                 }
-            }
+            })
         };
         extensions.subscribe(stream.boxed())
     }
@@ -853,13 +856,13 @@ mod tests {
                 let calls = self.calls.clone();
                 next.run(
                     ctx,
-                    Box::pin(async_stream::stream! {
+                    Box::pin(asynk_strim::stream_fn(|mut yielder| async move {
                         calls.lock().await.push("subscribe_start");
                         while let Some(item) = stream.next().await {
-                            yield item;
+                            yielder.yield_item(item).await;
                         }
                         calls.lock().await.push("subscribe_end");
-                    }),
+                    })),
                 )
             }
 

@@ -40,13 +40,15 @@ use warp::{Error, Filter, Rejection, Reply, filters::ws, ws::Message};
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn tick(&self) -> impl Stream<Item = String> {
-///         async_stream::stream! {
+///         asynk_strim::stream_fn(|mut yielder| async move {
 ///             let mut interval = tokio::time::interval(Duration::from_secs(1));
 ///             loop {
 ///                 let n = interval.tick().await;
-///                 yield format!("{}", n.elapsed().as_secs_f32());
+///                 yielder
+///                     .yield_item(format!("{}", n.elapsed().as_secs_f32()))
+///                     .await;
 ///             }
-///         }
+///         })
 ///     }
 /// }
 ///
@@ -122,13 +124,15 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn tick(&self) -> impl Stream<Item = String> {
-///         async_stream::stream! {
+///         asynk_strim::stream_fn(|mut yielder| async move {
 ///             let mut interval = tokio::time::interval(Duration::from_secs(1));
 ///             loop {
 ///                 let n = interval.tick().await;
-///                 yield format!("{}", n.elapsed().as_secs_f32());
+///                 yielder
+///                     .yield_item(format!("{}", n.elapsed().as_secs_f32()))
+///                     .await;
 ///             }
-///         }
+///         })
 ///     }
 /// }
 ///
