@@ -1684,9 +1684,10 @@ fn is_system_type(name: &str) -> bool {
 
 #[cfg(test)]
 mod test {
-    use crate::SDLExportOptions;
-    use crate::registry::MetaDirective;
-    use crate::registry::{__DirectiveLocation, MetaDirectiveInvocation};
+    use crate::{
+        SDLExportOptions,
+        registry::{__DirectiveLocation, MetaDirective, MetaDirectiveInvocation},
+    };
 
     #[test]
     fn test_directive_invocation_dsl() {
@@ -1716,7 +1717,7 @@ mod test {
                 name: "testDirective".to_string(),
                 description: None,
                 locations: vec![__DirectiveLocation::OBJECT, __DirectiveLocation::INTERFACE,],
-                args:Default::default(),
+                args: Default::default(),
                 is_repeatable: true,
                 visible: None,
                 composable: None,
@@ -1736,12 +1737,12 @@ mod test {
                 name: "testDirective".to_string(),
                 description: None,
                 locations: vec![__DirectiveLocation::OBJECT, __DirectiveLocation::INTERFACE,],
-                args:Default::default(),
+                args: Default::default(),
                 is_repeatable: false,
                 visible: None,
                 composable: None,
             }
-                .sdl(&export_options)
+            .sdl(&export_options)
         )
     }
 }
