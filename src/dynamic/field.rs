@@ -210,6 +210,7 @@ impl<'a> FieldValue<'a> {
     pub fn as_value(&self) -> Option<&Value> {
         match &self.0 {
             FieldValueInner::Value(value) => Some(value),
+            FieldValueInner::WithType { value, .. } => value.as_value(),
             _ => None,
         }
     }
@@ -227,6 +228,7 @@ impl<'a> FieldValue<'a> {
     pub fn as_list(&self) -> Option<&[FieldValue<'_>]> {
         match &self.0 {
             FieldValueInner::List(values) => Some(values),
+            FieldValueInner::WithType { value, .. } => value.as_list(),
             _ => None,
         }
     }
