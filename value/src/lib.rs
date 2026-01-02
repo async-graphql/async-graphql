@@ -264,6 +264,16 @@ impl<'a> From<Cow<'a, str>> for ConstValue {
     }
 }
 
+impl<T: Into<ConstValue>> From<Option<T>> for ConstValue {
+    #[inline]
+    fn from(nullable: Option<T>) -> Self {
+        match nullable {
+            Some(value) => value.into(),
+            None => ConstValue::Null,
+        }
+    }
+}
+
 impl<T: Into<ConstValue>> FromIterator<T> for ConstValue {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         ConstValue::List(iter.into_iter().map(Into::into).collect())
