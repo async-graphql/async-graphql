@@ -159,7 +159,7 @@ impl InputType for Upload {
     fn create_type_info(registry: &mut registry::Registry) -> String {
         registry.create_input_type::<Self, _>(MetaTypeId::Scalar, |_| registry::MetaType::Scalar {
             name: Self::type_name().to_string(),
-            description: None,
+            description: Some("A multipart file upload".to_string()),
             is_valid: Some(Arc::new(|value| matches!(value, Value::String(_)))),
             visible: None,
             inaccessible: false,
