@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# Unreleased
+
+- Replace async-stream in favour of asynk-strim
+- Add `From<Option<T>>` for `ConstValue` [#1739](https://github.com/async-graphql/async-graphql/pull/1739)
+- Don't bail early on first error when resolving containers [#1746](https://github.com/async-graphql/async-graphql/pull/1746)
+- Allow accessing data on schema level [#1727](https://github.com/async-graphql/async-graphql/pull/1727)
+- Mark generated interface methods as allowing missing docs [#1730](https://github.com/async-graphql/async-graphql/pull/1730)
+
 # [7.0.19] 2026-01-01
 
 - Revert heck migration (breaks current schemas)
