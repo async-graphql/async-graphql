@@ -317,7 +317,7 @@ impl Subscription {
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
+    use web_time::Duration;
 
     use futures_util::StreamExt;
 

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use web_time::Duration;
 
 use bytes::{BufMut, Bytes, BytesMut};
 use futures_timer::Delay;

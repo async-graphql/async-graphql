@@ -1,8 +1,9 @@
 use std::{
     pin::Pin,
     sync::{Arc, Mutex},
-    time::Duration,
 };
+
+use web_time::Duration;
 
 use async_graphql::{
     http::{WebSocketProtocols, WsMessage},
