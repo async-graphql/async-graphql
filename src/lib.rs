@@ -217,8 +217,6 @@ pub use async_graphql_value::{
     from_value, to_value, value,
 };
 #[doc(hidden)]
-pub use async_stream;
-#[doc(hidden)]
 pub use async_trait;
 pub use base::{
     ComplexObject, Description, InputObjectType, InputType, InterfaceType, ObjectType,

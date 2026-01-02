@@ -563,12 +563,12 @@ pub async fn test_stream_drop() {
     impl Subscription {
         async fn values(&self, ctx: &Context<'_>) -> impl Stream<Item = i32> {
             TestStream {
-                inner: Box::pin(async_stream::stream! {
+                inner: Box::pin(asynk_strim::stream_fn(|mut yielder| async move {
                     loop {
                         tokio::time::sleep(Duration::from_millis(10)).await;
-                        yield 10;
+                        yielder.yield_item(10).await;
                     }
-                }),
+                })),
                 dropped: ctx.data_unchecked::<Dropped>().clone(),
             }
         }

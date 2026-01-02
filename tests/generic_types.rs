@@ -263,11 +263,11 @@ pub async fn test_generic_subscription() {
         T: Clone + Send + Sync + Unpin,
     {
         async fn values(&self) -> Result<impl Stream<Item = T> + '_> {
-            Ok(async_stream::stream! {
+            Ok(asynk_strim::stream_fn(move |mut yielder| async move {
                 for value in self.values.iter().cloned() {
-                    yield value
+                    yielder.yield_item(value).await;
                 }
-            })
+            }))
         }
     }
 
