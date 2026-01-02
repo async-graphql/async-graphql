@@ -40,7 +40,7 @@ use warp::{Error, Filter, Rejection, Reply, filters::ws, ws::Message};
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn tick(&self) -> impl Stream<Item = String> {
-///         asynk_strim::stream_fn(|mut yielder| async {
+///         asynk_strim::stream_fn(|mut yielder| async move {
 ///             let mut interval = tokio::time::interval(Duration::from_secs(1));
 ///             loop {
 ///                 let n = interval.tick().await;
@@ -124,7 +124,7 @@ pub fn graphql_protocol() -> impl Filter<Extract = (WebSocketProtocols,), Error 
 /// #[Subscription]
 /// impl SubscriptionRoot {
 ///     async fn tick(&self) -> impl Stream<Item = String> {
-///         asynk_strim::stream_fn(|mut yielder| async {
+///         asynk_strim::stream_fn(|mut yielder| async move {
 ///             let mut interval = tokio::time::interval(Duration::from_secs(1));
 ///             loop {
 ///                 let n = interval.tick().await;
