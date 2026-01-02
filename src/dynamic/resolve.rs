@@ -14,7 +14,7 @@ use crate::{
     },
     extensions::ResolveInfo,
     parser::types::Selection,
-    resolver_utils::create_value_object,
+    resolver_utils::do_resolve_container,
 };
 
 /// Federation service
@@ -36,17 +36,7 @@ pub(crate) async fn resolve_container(
     let mut fields = Vec::new();
     collect_fields(&mut fields, schema, object, ctx, parent_value)?;
 
-    let res = if !serial {
-        futures_util::future::try_join_all(fields).await?
-    } else {
-        let mut results = Vec::with_capacity(fields.len());
-        for field in fields {
-            results.push(field.await?);
-        }
-        results
-    };
-
-    Ok(Some(create_value_object(res)))
+    Ok(Some(do_resolve_container(ctx, !serial, fields).await))
 }
 
 fn collect_typename_field<'a>(
