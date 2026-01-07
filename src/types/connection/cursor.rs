@@ -129,6 +129,19 @@ impl CursorType for chrono::DateTime<chrono::Utc> {
     }
 }
 
+#[cfg(feature = "jiff")]
+impl CursorType for jiff::Timestamp {
+    type Error = jiff::Error;
+
+    fn decode_cursor(s: &str) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+
+    fn encode_cursor(&self) -> String {
+        self.to_string()
+    }
+}
+
 #[cfg(feature = "uuid")]
 impl CursorType for uuid::Uuid {
     type Error = uuid::Error;
