@@ -1,7 +1,9 @@
-use std::future::Future;
-use std::pin::Pin;
-use std::task::{Context, Poll};
-use std::time::Duration;
+use std::{
+    future::Future,
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration,
+};
 
 /// A runtime-agnostic delay.
 ///
@@ -9,7 +11,7 @@ use std::time::Duration;
 /// [`async_io::Timer`] as a fallback implementation. [`async_io::Timer`] is generally
 /// avoided, since most runtimes provide their own timer implementations without needing to spawn
 /// a new helper thread.
-pub struct Delay(DelayInner);
+pub(crate) struct Delay(DelayInner);
 
 enum DelayInner {
     #[cfg(feature = "tokio-time")]
