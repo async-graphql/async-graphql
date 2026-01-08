@@ -1,2 +1,2 @@
 mod delay;
-pub use delay::Delay;
+pub(crate) use delay::Delay;
