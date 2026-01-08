@@ -62,6 +62,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 ```
 
 ## Dynamic schema
+
 Requires the `dynamic-schema` feature to be enabled.
 
 ```rs
@@ -153,7 +154,7 @@ Integrations are what glue `async-graphql` with your web server, here are provid
 This crate offers the following features. Most are not activated by default, except the integrations of GraphiQL (`graphiql`) and GraphQL Playground (`playground`):
 
 | feature                        | enables                                                                                                                                                                                       |
-|:-------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`apollo_tracing`**           | Enable the [Apollo tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.ApolloTracing.html).                                                               |
 | **`apollo_persisted_queries`** | Enable the [Apollo persisted queries extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).                   |
 | **`boxed-trait`**              | Enables [`async-trait`](https://crates.io/crates/async-trait) for all traits.                                                                                                                 |
@@ -173,12 +174,14 @@ This crate offers the following features. Most are not activated by default, exc
 | **`playground`**               | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration                                                                                               |
 | **`rawvalue`**                 | Support raw values from [`serde_json`](https://crates.io/crates/serde_json)                                                                                                                   |
 | **`secrecy`**                  | Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).                                                                                                                       |
+| **`smol`**                     | Integrate with the [`smol` crate](https://crates.io/crates/smol).                                                                                                                             |
 | **`smol_str`**                 | Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).                                                                                                                     |
 | **`string_number`**            | Enable the [StringNumber](types/struct.StringNumber.html).                                                                                                                                    |
 | **`time`**                     | Integrate with the [`time` crate](https://github.com/time-rs/time).                                                                                                                           |
 | **`tracing`**                  | Enable the [Tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.Tracing.html).                                                                            |
 | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
-| **`tokio-sync`**               | Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/1.18.1/tokio/sync/struct.Mutex.html). |
+| **`tokio-sync`**               | Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/latest/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/latest/tokio/sync/struct.Mutex.html). |
+| **`tokio-time`**               | Integrate with the [`tokio::time` module](https://docs.rs/tokio/latest/tokio/time/index.html).                                                                                                |
 | **`unblock`**                  | Support [Asynchronous reader for Upload](types/struct.Upload.html)                                                                                                                            |
 | **`uuid`**                     | Integrate with the [`uuid` crate](https://crates.io/crates/uuid).                                                                                                                             |
 | **`url`**                      | Integrate with the [`url` crate](https://crates.io/crates/url).                                                                                                                               |

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
+use crate::util::Delay;
 use bytes::{BufMut, Bytes, BytesMut};
-use futures_timer::Delay;
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};
 use mime::Mime;
 

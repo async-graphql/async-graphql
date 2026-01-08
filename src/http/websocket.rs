@@ -9,7 +9,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use futures_timer::Delay;
+use crate::util::Delay;
 use futures_util::{
     FutureExt, StreamExt,
     future::{BoxFuture, Ready},
