@@ -6,13 +6,13 @@ use syn::{Error, ext::IdentExt};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        GeneratorResult, gen_deprecation, gen_directive_calls, generate_default, get_crate_name,
+        GeneratorResult, gen_deprecation, gen_directive_calls, generate_default, get_crate_path,
         get_rustdoc, visible_fn,
     },
 };
 
 pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(object_args.internal);
+    let crate_name = get_crate_path(object_args.internal);
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
     let ident = &object_args.ident;
     let inaccessible = object_args.inaccessible;
@@ -21,8 +21,11 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .iter()
         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
         .collect::<Vec<_>>();
-    let directives =
-        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::InputObject);
+    let directives = gen_directive_calls(
+        &crate_name,
+        &object_args.directives,
+        TypeDirectiveLocation::InputObject,
+    );
     let s = match &object_args.data {
         Data::Struct(s) => s,
         _ => {
@@ -77,6 +80,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             .collect::<Vec<_>>();
 
         let directive_invocations = gen_directive_calls(
+            &crate_name,
             &field.directives,
             TypeDirectiveLocation::InputFieldDefinition,
         );

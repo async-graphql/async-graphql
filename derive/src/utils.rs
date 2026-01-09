@@ -2,12 +2,13 @@ use std::collections::HashSet;
 
 use darling::FromMeta;
 use proc_macro_crate::{FoundCrate, crate_name};
-use proc_macro2::{Span, TokenStream, TokenTree};
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::{
     Attribute, Error, Expr, ExprLit, ExprPath, FnArg, Ident, ImplItemFn, Lifetime, Lit, LitStr,
-    Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference, visit::Visit, visit_mut,
-    visit_mut::VisitMut,
+    Meta, Pat, PatIdent, Type, TypeGroup, TypeParamBound, TypeReference, parse_quote,
+    visit::Visit,
+    visit_mut::{self, VisitMut},
 };
 use thiserror::Error;
 
@@ -33,20 +34,21 @@ impl GeneratorError {
 
 pub type GeneratorResult<T> = std::result::Result<T, GeneratorError>;
 
-pub fn get_crate_name(internal: bool) -> TokenStream {
+pub fn get_crate_path(internal: bool) -> syn::Path {
     if internal {
-        quote! { crate }
+        parse_quote! { crate }
     } else {
         let name = match crate_name("async-graphql") {
             Ok(FoundCrate::Name(name)) => name,
             Ok(FoundCrate::Itself) | Err(_) => "async_graphql".to_string(),
         };
-        TokenTree::from(Ident::new(&name, Span::call_site())).into()
+        let ident = Ident::new(&name, Span::call_site());
+        parse_quote! { ::#ident }
     }
 }
 
 pub fn generate_guards(
-    crate_name: &TokenStream,
+    crate_name: &syn::Path,
     expr: &Expr,
     map_err: TokenStream,
 ) -> GeneratorResult<TokenStream> {
@@ -239,7 +241,7 @@ pub fn parse_complexity_expr(expr: Expr) -> GeneratorResult<(HashSet<String>, Ex
     Ok((visit.variables, expr))
 }
 
-pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> TokenStream {
+pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &syn::Path) -> TokenStream {
     match deprecation {
         Deprecation::NoDeprecated => {
             quote! { #crate_name::registry::Deprecation::NoDeprecated }
@@ -256,7 +258,7 @@ pub fn gen_deprecation(deprecation: &Deprecation, crate_name: &TokenStream) -> T
 }
 
 pub fn extract_input_args<T: FromMeta + Default>(
-    crate_name: &proc_macro2::TokenStream,
+    crate_name: &syn::Path,
     method: &mut ImplItemFn,
 ) -> GeneratorResult<Vec<(PatIdent, Type, T)>> {
     let mut args = Vec::new();
@@ -335,6 +337,7 @@ impl VisitMut for RemoveLifetime {
 }
 
 pub fn gen_directive_calls(
+    crate_name: &syn::Path,
     directive_calls: &[Expr],
     location: TypeDirectiveLocation,
 ) -> Vec<TokenStream> {
@@ -346,8 +349,8 @@ pub fn gen_directive_calls(
             );
             let identifier = location.location_trait_identifier();
             quote!({
-                <#directive_path as async_graphql::registry::location_traits::#identifier>::check();
-                <#directive_path as async_graphql::TypeDirective>::register(&#directive_path, registry);
+                <#directive_path as #crate_name::registry::location_traits::#identifier>::check();
+                <#directive_path as #crate_name::TypeDirective>::register(&#directive_path, registry);
                 #directive
             })
         })
@@ -371,7 +374,7 @@ fn extract_directive_call_path(directive: &Expr) -> Option<syn::Path> {
     None
 }
 
-pub fn gen_boxed_trait(crate_name: &TokenStream) -> TokenStream {
+pub fn gen_boxed_trait(crate_name: &syn::Path) -> TokenStream {
     if cfg!(feature = "boxed-trait") {
         quote! {
             #[#crate_name::async_trait::async_trait]

@@ -10,7 +10,7 @@ use crate::{
     output_type::OutputType,
     utils::{
         GeneratorResult, extract_input_args, gen_deprecation, gen_directive_calls,
-        generate_default, generate_guards, get_cfg_attrs, get_crate_name, get_rustdoc,
+        generate_default, generate_guards, get_cfg_attrs, get_crate_path, get_rustdoc,
         get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
         visible_fn,
     },
@@ -20,13 +20,16 @@ pub fn generate(
     subscription_args: &args::Subscription,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(subscription_args.internal);
+    let crate_name = get_crate_path(subscription_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;
     let extends = subscription_args.extends;
-    let directives =
-        gen_directive_calls(&subscription_args.directives, TypeDirectiveLocation::Object);
+    let directives = gen_directive_calls(
+        &crate_name,
+        &subscription_args.directives,
+        TypeDirectiveLocation::Object,
+    );
 
     let gql_typename = if !subscription_args.name_type {
         let name = subscription_args
@@ -252,8 +255,11 @@ pub fn generate(
                 quote! { ::std::option::Option::None }
             };
 
-            let directives =
-                gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
+            let directives = gen_directive_calls(
+                &crate_name,
+                &field.directives,
+                TypeDirectiveLocation::FieldDefinition,
+            );
 
             schema_fields.push(quote! {
                 #(#cfg_attrs)*

@@ -11,7 +11,7 @@ use crate::{
     },
     utils::{
         GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, generate_guards,
-        get_crate_name, get_rustdoc, parse_complexity_expr, visible_fn,
+        get_crate_path, get_rustdoc, parse_complexity_expr, visible_fn,
     },
 };
 
@@ -29,7 +29,7 @@ struct SimpleObjectFieldGenerator<'a> {
 }
 
 pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(object_args.internal);
+    let crate_name = get_crate_path(object_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &object_args.ident;
     let (impl_generics, ty_generics, where_clause) = object_args.generics.split_for_impl();
@@ -48,8 +48,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
-    let object_directives =
-        gen_directive_calls(&object_args.directives, TypeDirectiveLocation::Object);
+
+    let object_directives = gen_directive_calls(
+        &crate_name,
+        &object_args.directives,
+        TypeDirectiveLocation::Object,
+    );
     let gql_typename = if !object_args.name_type {
         object_args
             .name
@@ -207,8 +211,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         let visible = visible_fn(&field.visible);
-        let directives =
-            gen_directive_calls(&field.directives, TypeDirectiveLocation::FieldDefinition);
+        let directives = gen_directive_calls(
+            &crate_name,
+            &field.directives,
+            TypeDirectiveLocation::FieldDefinition,
+        );
 
         let complexity = if let Some(complexity) = &field.complexity {
             let (_, expr) = parse_complexity_expr(complexity.clone())?;
