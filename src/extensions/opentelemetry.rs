@@ -14,6 +14,7 @@ use crate::{
         Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
         NextResolve, NextSubscribe, NextValidation, ResolveInfo,
     },
+    registry::MetaTypeName,
 };
 
 const KEY_SOURCE: Key = Key::from_static_str("graphql.source");
@@ -25,9 +26,22 @@ const KEY_COMPLEXITY: Key = Key::from_static_str("graphql.complexity");
 const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 
 /// OpenTelemetry extension
+///
+/// # Example
+///
+/// ```ignore
+/// use async_graphql::{extensions::OpenTelemetry, *};
+///
+/// let tracer = todo!("create your OpenTelemetry tracer");
+///
+/// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+///     .extension(OpenTelemetry::new(tracer))
+///     .finish();
+/// ```
 #[cfg_attr(docsrs, doc(cfg(feature = "opentelemetry")))]
 pub struct OpenTelemetry<T> {
     tracer: Arc<T>,
+    trace_scalars: bool,
 }
 
 impl<T> OpenTelemetry<T> {
@@ -39,7 +53,34 @@ impl<T> OpenTelemetry<T> {
     {
         Self {
             tracer: Arc::new(tracer),
+            trace_scalars: false,
         }
+    }
+
+    /// Enable or disable tracing for scalar and enum field resolutions.
+    ///
+    /// When `false` (the default), spans are not created for fields that return
+    /// scalar or enum types. This significantly reduces the number of spans
+    /// generated, preventing span explosion in queries with many scalar fields.
+    ///
+    /// When `true`, spans are created for all field resolutions, including
+    /// scalars and enums.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// use async_graphql::{extensions::OpenTelemetry, *};
+    ///
+    /// let tracer = todo!("create your OpenTelemetry tracer");
+    ///
+    /// // Trace all fields including scalars
+    /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+    ///     .extension(OpenTelemetry::new(tracer).with_trace_scalars(true))
+    ///     .finish();
+    /// ```
+    pub fn with_trace_scalars(mut self, trace_scalars: bool) -> Self {
+        self.trace_scalars = trace_scalars;
+        self
     }
 }
 
@@ -51,12 +92,14 @@ where
     fn create(&self) -> Arc<dyn Extension> {
         Arc::new(OpenTelemetryExtension {
             tracer: self.tracer.clone(),
+            trace_scalars: self.trace_scalars,
         })
     }
 }
 
 struct OpenTelemetryExtension<T> {
     tracer: Arc<T>,
+    trace_scalars: bool,
 }
 
 #[async_trait::async_trait]
@@ -171,7 +214,23 @@ where
         info: ResolveInfo<'_>,
         next: NextResolve<'_>,
     ) -> ServerResult<Option<Value>> {
-        let span = if !info.is_for_introspection {
+        // Check if we should skip tracing for this field
+        let should_trace = if info.is_for_introspection {
+            false
+        } else if !self.trace_scalars {
+            // Check if the return type is a scalar or enum (leaf type)
+            let concrete_type = MetaTypeName::concrete_typename(info.return_type);
+            !ctx.schema_env
+                .registry
+                .types
+                .get(concrete_type)
+                .map(|ty| ty.is_leaf())
+                .unwrap_or(false)
+        } else {
+            true
+        };
+
+        let span = if should_trace {
             let attributes = vec![
                 KeyValue::new(KEY_PARENT_TYPE, info.parent_type.to_string()),
                 KeyValue::new(KEY_RETURN_TYPE, info.return_type.to_string()),
