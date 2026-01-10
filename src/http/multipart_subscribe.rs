@@ -1,11 +1,10 @@
 use std::time::Duration;
 
 use bytes::{BufMut, Bytes, BytesMut};
-use futures_timer::Delay;
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};
 use mime::Mime;
 
-use crate::Response;
+use crate::{Response, util::Delay};
 
 static PART_HEADER: Bytes =
     Bytes::from_static(b"--graphql\r\nContent-Type: application/json\r\n\r\n");

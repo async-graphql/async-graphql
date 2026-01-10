@@ -9,7 +9,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use futures_timer::Delay;
 use futures_util::{
     FutureExt, StreamExt,
     future::{BoxFuture, Ready},
@@ -18,7 +17,7 @@ use futures_util::{
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Error, Executor, Request, Response, Result};
+use crate::{Data, Error, Executor, Request, Response, Result, util::Delay};
 
 /// All known protocols based on WebSocket.
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
