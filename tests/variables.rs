@@ -409,3 +409,45 @@ pub async fn test_variables_invalid_type_with_value() {
         Some("Unknown type \"invalid\"")
     );
 }
+
+/// Ensure we only validated parameters against their variables for the
+/// selected operation. Variables with the same name can have different
+/// types in different operations.
+#[tokio::test]
+pub async fn test_variables_different_type_in_different_operations() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn int_val(&self, value: i32) -> i32 {
+            value
+        }
+
+        pub async fn bool_val(&self, value: bool) -> bool {
+            value
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = Request::new(
+        r#"
+            query QueryInt($input: Int!) {
+                intVal(value: $input)
+            }
+            query QueryBool($input: Boolean!) {
+                boolVal(value: $input)
+            }
+        "#,
+    )
+    .operation_name("QueryInt")
+    .variables(Variables::from_value(value!({
+        "input": 10,
+    })));
+    let resp = schema.execute(query).await;
+    assert_eq!(
+        resp.into_result().unwrap().data,
+        value!({
+            "intVal": 10,
+        })
+    );
+}
