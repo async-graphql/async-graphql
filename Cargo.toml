@@ -22,6 +22,7 @@ chrono-duration = ["chrono", "iso8601"]
 dataloader = ["futures-channel", "lru"]
 decimal = ["rust_decimal"]
 default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
+jiff = ["dep:jiff"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
 tokio-sync = ["dep:tokio", "tokio/sync"]
@@ -85,6 +86,7 @@ chrono-tz = { version = "0.10.0", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
 hashbrown = { version = "0.16.1", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
+jiff = { version = "0.2.18", optional = true }
 log = { version = "0.4.21", optional = true }
 opentelemetry = { version = "0.27.0", optional = true, default-features = false, features = [
   "trace",
