@@ -14,7 +14,7 @@ use crate::{
 };
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(union_args.internal);
+    let crate_name = get_crate_path(&union_args.crate_path, union_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &union_args.ident;
     let type_params = union_args.generics.type_params().collect::<Vec<_>>();

@@ -19,7 +19,7 @@ use crate::{
 };
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(interface_args.internal);
+    let crate_name = get_crate_path(&interface_args.crate_path, interface_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &interface_args.ident;
     let type_params = interface_args.generics.type_params().collect::<Vec<_>>();

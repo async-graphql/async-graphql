@@ -23,7 +23,7 @@ pub fn generate(
     object_args: &args::ComplexObject,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(object_args.internal);
+    let crate_name = get_crate_path(&object_args.crate_path, object_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let (self_ty, _) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;

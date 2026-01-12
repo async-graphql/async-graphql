@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(newtype_args.internal);
+    let crate_name = get_crate_path(&newtype_args.crate_path, newtype_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();

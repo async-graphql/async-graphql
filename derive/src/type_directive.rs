@@ -14,7 +14,7 @@ pub fn generate(
     directive_args: &args::TypeDirective,
     item_fn: &mut ItemFn,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(directive_args.internal);
+    let crate_name = get_crate_path(&directive_args.crate_path, directive_args.internal);
     let ident = &item_fn.sig.ident;
     let vis = &item_fn.vis;
     let directive_name = if !directive_args.name_type {

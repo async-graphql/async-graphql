@@ -34,9 +34,11 @@ impl GeneratorError {
 
 pub type GeneratorResult<T> = std::result::Result<T, GeneratorError>;
 
-pub fn get_crate_path(internal: bool) -> syn::Path {
+pub fn get_crate_path(crate_path: &Option<syn::Path>, internal: bool) -> syn::Path {
     if internal {
         parse_quote! { crate }
+    } else if let Some(path) = crate_path {
+        path.clone()
     } else {
         let name = match crate_name("async-graphql") {
             Ok(FoundCrate::Name(name)) => name,

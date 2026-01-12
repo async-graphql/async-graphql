@@ -20,7 +20,7 @@ pub fn generate(
     subscription_args: &args::Subscription,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(subscription_args.internal);
+    let crate_name = get_crate_path(&subscription_args.crate_path, subscription_args.internal);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let generics = &item_impl.generics;
     let where_clause = &item_impl.generics.where_clause;

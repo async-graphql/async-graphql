@@ -24,7 +24,7 @@ pub fn generate(
     object_args: &args::Object,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(object_args.internal);
+    let crate_name = get_crate_path(&object_args.crate_path, object_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let (self_ty, self_name) = get_type_path_and_name(item_impl.self_ty.as_ref())?;
     let (impl_generics, _, where_clause) = item_impl.generics.split_for_impl();

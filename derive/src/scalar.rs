@@ -14,7 +14,7 @@ pub fn generate(
     scalar_args: &args::Scalar,
     item_impl: &mut ItemImpl,
 ) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(scalar_args.internal);
+    let crate_name = get_crate_path(&scalar_args.crate_path, scalar_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let self_name = get_type_path_and_name(item_impl.self_ty.as_ref())?.1;
     let gql_typename = if !scalar_args.name_type {

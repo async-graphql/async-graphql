@@ -12,7 +12,7 @@ use crate::{
 };
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_path(enum_args.internal);
+    let crate_name = get_crate_path(&enum_args.crate_path, enum_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &enum_args.ident;
     let e = match &enum_args.data {
