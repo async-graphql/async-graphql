@@ -138,8 +138,6 @@ jobs:
         run: |
           FEATURES=$(cargo metadata --format-version=1 --no-deps | jq -r '.packages[] | select(.name == "async-graphql") | .features | keys | map(select(. != "boxed-trait")) | join(",")')
           echo "features=$FEATURES" >> "$GITHUB_OUTPUT"
-      - name: Clean previous artifacts
-        run: cargo clean
       - name: Build with all features
         run: cargo build --workspace --features ${{ steps.meta.outputs.features }}
       - name: Run book tests for en language
