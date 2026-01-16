@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Unreleased
 
+# [7.2.0] 2026-01-16
+
 - fix: Use runtime timers when available [#1780](https://github.com/async-graphql/async-graphql/pull/1780)
 - Fix validation failure with variables in multiple operations [#1669](https://github.com/async-graphql/async-graphql/pull/1669)
 - Add `trace_scalars` option to Tracing and OpenTelemetry extensions [#1781](https://github.com/async-graphql/async-graphql/pull/1781)
