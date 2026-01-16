@@ -9,12 +9,12 @@ use syn::{Error, LifetimeParam, Type, visit::Visit, visit_mut::VisitMut};
 use crate::{
     args::{self, RenameTarget},
     utils::{
-        GeneratorResult, RemoveLifetime, gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn,
+        GeneratorResult, RemoveLifetime, gen_boxed_trait, get_crate_path, get_rustdoc, visible_fn,
     },
 };
 
 pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(union_args.internal);
+    let crate_name = get_crate_path(&union_args.crate_path, union_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &union_args.ident;
     let type_params = union_args.generics.type_params().collect::<Vec<_>>();

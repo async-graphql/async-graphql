@@ -6,13 +6,13 @@ use syn::{Error, ext::IdentExt};
 use crate::{
     args::{self, RenameRuleExt, RenameTarget, TypeDirectiveLocation},
     utils::{
-        GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, get_crate_name,
+        GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, get_crate_path,
         get_rustdoc, visible_fn,
     },
 };
 
 pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(enum_args.internal);
+    let crate_name = get_crate_path(&enum_args.crate_path, enum_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &enum_args.ident;
     let e = match &enum_args.data {
@@ -41,7 +41,12 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
-    let directives = gen_directive_calls(&enum_args.directives, TypeDirectiveLocation::Enum);
+
+    let directives = gen_directive_calls(
+        &crate_name,
+        &enum_args.directives,
+        TypeDirectiveLocation::Enum,
+    );
     let desc = get_rustdoc(&enum_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
@@ -75,7 +80,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
-        let directives = gen_directive_calls(&variant.directives, TypeDirectiveLocation::EnumValue);
+        let directives = gen_directive_calls(
+            &crate_name,
+            &variant.directives,
+            TypeDirectiveLocation::EnumValue,
+        );
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
         let item_desc = get_rustdoc(&variant.attrs)?
             .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })

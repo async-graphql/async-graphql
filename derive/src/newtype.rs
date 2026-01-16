@@ -5,11 +5,11 @@ use syn::Error;
 
 use crate::{
     args::{self, NewTypeName, RenameTarget},
-    utils::{GeneratorResult, gen_boxed_trait, get_crate_name, get_rustdoc, visible_fn},
+    utils::{GeneratorResult, gen_boxed_trait, get_crate_path, get_rustdoc, visible_fn},
 };
 
 pub fn generate(newtype_args: &args::NewType) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(newtype_args.internal);
+    let crate_name = get_crate_path(&newtype_args.crate_path, newtype_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &newtype_args.ident;
     let (impl_generics, ty_generics, where_clause) = newtype_args.generics.split_for_impl();
