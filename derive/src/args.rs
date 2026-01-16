@@ -290,6 +290,8 @@ pub struct SimpleObject {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -341,6 +343,8 @@ pub struct Object {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -412,6 +416,8 @@ pub struct Enum {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromVariant)]
@@ -462,6 +468,9 @@ pub struct Union {
     // for OneofObject
     #[darling(default)]
     pub input_name: Option<String>,
+
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromVariant)]
@@ -552,6 +561,8 @@ pub struct InputObject {
     pub shareable: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromVariant)]
@@ -610,6 +621,8 @@ pub struct OneofObject {
     // for Interface
     #[darling(default, multiple, rename = "field")]
     pub fields: Vec<InterfaceField>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta)]
@@ -711,6 +724,8 @@ pub struct Interface {
     pub input_name: Option<String>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -728,6 +743,8 @@ pub struct Scalar {
     pub specified_by_url: Option<String>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -746,6 +763,8 @@ pub struct Subscription {
     pub guard: Option<Expr>,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -813,6 +832,8 @@ pub struct MergedObject {
     pub serial: bool,
     #[darling(default, multiple, rename = "directive")]
     pub directives: Vec<Expr>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromField)]
@@ -838,6 +859,8 @@ pub struct MergedSubscription {
     pub visible: Option<Visible>,
     #[darling(default)]
     pub extends: bool,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta)]
@@ -911,6 +934,8 @@ pub struct Description {
 
     #[darling(default)]
     pub internal: bool,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(Debug, Default)]
@@ -959,6 +984,8 @@ pub struct NewType {
     pub tags: Vec<String>,
     #[darling(default)]
     pub specified_by_url: Option<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -968,6 +995,8 @@ pub struct ComplexObject {
     pub rename_fields: Option<RenameRule>,
     pub rename_args: Option<RenameRule>,
     pub guard: Option<Expr>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(FromMeta, Default)]
@@ -1009,6 +1038,8 @@ pub struct Directive {
     pub rename_args: Option<RenameRule>,
     #[darling(multiple, rename = "location")]
     pub locations: Vec<DirectiveLocation>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta, strum::Display)]
@@ -1032,6 +1063,8 @@ pub struct TypeDirective {
     pub locations: Vec<TypeDirectiveLocation>,
     #[darling(default)]
     pub composable: Option<String>,
+    #[darling(rename = "crate")]
+    pub crate_path: Option<Path>,
 }
 
 #[derive(Debug, Copy, Clone, FromMeta, strum::Display)]

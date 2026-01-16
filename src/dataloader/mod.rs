@@ -75,10 +75,11 @@ use std::{
 pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
 use fnv::FnvHashMap;
 use futures_channel::oneshot;
-use futures_timer::Delay;
 use futures_util::future::BoxFuture;
 #[cfg(feature = "tracing")]
 use tracing::{Instrument, info_span, instrument};
+
+use crate::util::Delay;
 
 #[allow(clippy::type_complexity)]
 struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {

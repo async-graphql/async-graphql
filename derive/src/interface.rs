@@ -14,12 +14,12 @@ use crate::{
     output_type::OutputType,
     utils::{
         GeneratorResult, RemoveLifetime, gen_boxed_trait, gen_deprecation, gen_directive_calls,
-        generate_default, get_crate_name, get_rustdoc, visible_fn,
+        generate_default, get_crate_path, get_rustdoc, visible_fn,
     },
 };
 
 pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream> {
-    let crate_name = get_crate_name(interface_args.internal);
+    let crate_name = get_crate_path(&interface_args.crate_path, interface_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
     let ident = &interface_args.ident;
     let type_params = interface_args.generics.type_params().collect::<Vec<_>>();
@@ -47,8 +47,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
-    let directives =
-        gen_directive_calls(&interface_args.directives, TypeDirectiveLocation::Interface);
+
+    let directives = gen_directive_calls(
+        &crate_name,
+        &interface_args.directives,
+        TypeDirectiveLocation::Interface,
+    );
     let gql_typename = if !interface_args.name_type {
         let name = interface_args
             .name
@@ -258,8 +262,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 .iter()
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
-            let directives =
-                gen_directive_calls(directives, TypeDirectiveLocation::ArgumentDefinition);
+            let directives = gen_directive_calls(
+                &crate_name,
+                directives,
+                TypeDirectiveLocation::ArgumentDefinition,
+            );
             let deprecation = gen_deprecation(deprecation, &crate_name);
 
             schema_args.push(quote! {
@@ -318,7 +325,12 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
             .collect::<Vec<_>>();
-        let directives = gen_directive_calls(directives, TypeDirectiveLocation::FieldDefinition);
+
+        let directives = gen_directive_calls(
+            &crate_name,
+            directives,
+            TypeDirectiveLocation::FieldDefinition,
+        );
 
         schema_fields.push(quote! {
             fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {

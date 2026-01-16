@@ -11,7 +11,7 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.1.0"
+version = "7.2.0"
 
 [features]
 apollo_persisted_queries = ["lru", "sha2"]
@@ -22,9 +22,11 @@ chrono-duration = ["chrono", "iso8601"]
 dataloader = ["futures-channel", "lru"]
 decimal = ["rust_decimal"]
 default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
+jiff = ["dep:jiff"]
 password-strength-validator = ["zxcvbn"]
 string_number = []
-tokio-sync = ["tokio"]
+tokio-sync = ["dep:tokio", "tokio/sync"]
+tokio-timer = ["dep:tokio", "tokio/time", "tokio/rt"]
 tracing = ["tracinglib", "tracing-futures"]
 unblock = ["blocking"]
 dynamic-schema = []
@@ -57,6 +59,7 @@ futures-util = { workspace = true, features = [
   "async-await-macro",
 ] }
 indexmap.workspace = true
+async-io = "2.6.0"
 mime = "0.3.17"
 multer = "3.0.0"
 num-traits = "0.2.18"
@@ -69,7 +72,6 @@ thiserror.workspace = true
 base64 = "0.22.0"
 serde_urlencoded = "0.7.1"
 http.workspace = true
-futures-timer = "3.0.3"
 
 # Feature optional dependencies
 bson = { version = "2.9.0", optional = true, features = [
@@ -84,6 +86,7 @@ chrono-tz = { version = "0.10.0", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
 hashbrown = { version = "0.16.1", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
+jiff = { version = "0.2.18", optional = true }
 log = { version = "0.4.21", optional = true }
 opentelemetry = { version = "0.27.0", optional = true, default-features = false, features = [
   "trace",
@@ -97,7 +100,7 @@ time = { version = "0.3.36", optional = true, features = [
   "formatting",
   "macros",
 ] }
-tokio = { version = "1.37.0", features = ["sync"], optional = true }
+tokio = { version = "1.37.0", optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
@@ -150,10 +153,10 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "7.1.0", default-features = false }
-async-graphql-derive = { path = "derive", version = "7.1.0" }
-async-graphql-parser = { path = "parser", version = "7.1.0" }
-async-graphql-value = { path = "value", version = "7.1.0" }
+async-graphql = { path = ".", version = "7.2.0", default-features = false }
+async-graphql-derive = { path = "derive", version = "7.2.0" }
+async-graphql-parser = { path = "parser", version = "7.2.0" }
+async-graphql-value = { path = "value", version = "7.2.0" }
 
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"

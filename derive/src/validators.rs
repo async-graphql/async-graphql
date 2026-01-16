@@ -85,7 +85,7 @@ pub struct Validators {
 impl Validators {
     pub fn create_validators(
         &self,
-        crate_name: &TokenStream,
+        crate_name: &syn::Path,
         value: TokenStream,
         map_err: Option<TokenStream>,
     ) -> Result<TokenStream> {
