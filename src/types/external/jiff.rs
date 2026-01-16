@@ -95,11 +95,12 @@ impl ScalarType for Span {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ScalarType, Value};
     use jiff::{
         Span, Timestamp, ToSpan, Zoned,
         civil::{Date, Time},
     };
+
+    use crate::{ScalarType, Value};
 
     #[test]
     fn test_span_to_value() {
