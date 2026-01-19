@@ -42,8 +42,8 @@
 //! * Rustfmt friendly (Procedural Macro)
 //! * Custom scalars
 //! * Minimal overhead
-//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, tide,
-//!   warp, rocket ...)
+//! * Easy integration ([poem](https://crates.io/crates/poem), actix_web, warp,
+//!   rocket ...)
 //! * File upload (Multipart request)
 //! * Subscriptions (WebSocket transport)
 //! * Custom extensions
@@ -95,7 +95,6 @@
 //! * Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 //! * Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 //! * Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
-//! * Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 //! * Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 //! * Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 //!

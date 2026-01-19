@@ -114,7 +114,7 @@ I strongly recommend limiting the [complexity and depth](https://async-graphql.g
 - Rustfmt friendly (Procedural Macro)
 - Custom scalars
 - Minimal overhead
-- Easy integration ([poem](https://crates.io/crates/poem), [axum](https://crates.io/crates/axum), [actix-web](https://crates.io/crates/actix-web), [tide](https://crates.io/crates/tide), [warp](https://crates.io/crates/warp), [rocket](https://crates.io/crates/rocket) ...)
+- Easy integration ([poem](https://crates.io/crates/poem), [axum](https://crates.io/crates/axum), [actix-web](https://crates.io/crates/actix-web), [warp](https://crates.io/crates/warp), [rocket](https://crates.io/crates/rocket) ...)
 - Upload files (Multipart request)
 - Subscriptions (WebSocket transport)
 - Custom extensions
@@ -145,7 +145,6 @@ Integrations are what glue `async-graphql` with your web server, here are provid
 - Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 - Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 - Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
-- Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 - Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 - Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 

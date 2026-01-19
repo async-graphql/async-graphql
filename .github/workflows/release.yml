@@ -42,9 +42,6 @@ jobs:
           - name: async-graphql-rocket
             registryName: async-graphql-rocket
             path: integrations/rocket
-          - name: async-graphql-tide
-            registryName: async-graphql-tide
-            path: integrations/tide
     steps:
       - uses: dtolnay/rust-toolchain@stable
         with:

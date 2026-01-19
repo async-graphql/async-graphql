@@ -22,6 +22,7 @@ warp = { version = "0.3.6", default-features = false, features = ["websocket"] }
 
 [dev-dependencies]
 asynk-strim = "0.1.5"
+warp = { version = "0.4.2", features = ["server"] }
 tokio = { version = "1.36.0", default-features = false, features = [
   "macros",
   "rt-multi-thread",

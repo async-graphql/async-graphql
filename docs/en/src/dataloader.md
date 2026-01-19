@@ -69,7 +69,7 @@ need to optimize these codes!
 We need to group queries and exclude duplicate queries. `Dataloader` can do this.
 [facebook](https://github.com/facebook/dataloader) gives a request-scope batch and caching solution.
 
-The following is a simplified example of using `DataLoader` to optimize queries, there is also a [full code example available in GitHub](https://github.com/async-graphql/examples/tree/master/tide/dataloader-postgres).
+The following is a simplified example of using `DataLoader` to optimize queries. 
 
 ```rust,ignore
 use async_graphql::*;
