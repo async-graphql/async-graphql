@@ -1,4 +1,4 @@
-use std::{time::Duration, pin::pin};
+use std::{pin::pin, time::Duration};
 
 use bytes::{BufMut, Bytes, BytesMut};
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};

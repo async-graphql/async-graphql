@@ -4,6 +4,7 @@ use std::{
     task::{Context, Poll},
     time::Duration,
 };
+
 use pin_project_lite::pin_project;
 
 pin_project! {
@@ -33,16 +34,20 @@ impl Delay {
     pub fn new(duration: Duration) -> Self {
         #[cfg(feature = "tokio-timer")]
         if tokio::runtime::Handle::try_current().is_ok() {
-            return Self { inner: DelayInner::Tokio {
-                fut: tokio::time::sleep(duration),
-            }};
+            return Self {
+                inner: DelayInner::Tokio {
+                    fut: tokio::time::sleep(duration),
+                },
+            };
         }
 
         // Fallback
         #[allow(unreachable_code)]
-        Self { inner: DelayInner::AsyncIo {
-            fut: async_io::Timer::after(duration),
-        }}
+        Self {
+            inner: DelayInner::AsyncIo {
+                fut: async_io::Timer::after(duration),
+            },
+        }
     }
 
     /// Resets the delay to wait for the specified duration.
