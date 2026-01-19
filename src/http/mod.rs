@@ -105,15 +105,12 @@ pub async fn receive_batch_body(
                 ))
             }
         }
-        // application/json or cbor (currently)
-        // cbor is in application/octet-stream.
-        // Note: cbor will only match if feature ``cbor`` is active
-        // TODO: wait for mime to add application/cbor and match against that too
+        // application/json (currently)
         _ => receive_batch_body_no_multipart(&content_type, body).await,
     }
 }
 
-/// Receives a GraphQL query which is either cbor or json but NOT multipart
+/// Receives a GraphQL query which is json but NOT multipart
 /// This method is only to avoid recursive calls with [``receive_batch_body``]
 /// and [``multipart::receive_batch_multipart``]
 pub(super) async fn receive_batch_body_no_multipart(
@@ -121,17 +118,9 @@ pub(super) async fn receive_batch_body_no_multipart(
     body: impl AsyncRead + Send,
 ) -> Result<BatchRequest, ParseRequestError> {
     assert_ne!(content_type.type_(), mime::MULTIPART, "received multipart");
-    match (content_type.type_(), content_type.subtype()) {
-        #[cfg(feature = "cbor")]
-        // cbor is in application/octet-stream.
-        // TODO: wait for mime to add application/cbor and match against that too
-        (mime::OCTET_STREAM, _) | (mime::APPLICATION, mime::OCTET_STREAM) => {
-            receive_batch_cbor(body).await
-        }
-        // default to json
-        _ => receive_batch_json(body).await,
-    }
+    receive_batch_json(body).await
 }
+
 /// Receive a GraphQL request from a body as JSON.
 pub async fn receive_json(body: impl AsyncRead) -> Result<Request, ParseRequestError> {
     receive_batch_json(body).await?.into_single()
@@ -145,26 +134,6 @@ pub async fn receive_batch_json(body: impl AsyncRead) -> Result<BatchRequest, Pa
         .await
         .map_err(ParseRequestError::Io)?;
     serde_json::from_slice::<BatchRequest>(&data)
-        .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))
-}
-
-/// Receive a GraphQL request from a body as CBOR.
-#[cfg(feature = "cbor")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
-pub async fn receive_cbor(body: impl AsyncRead) -> Result<Request, ParseRequestError> {
-    receive_batch_cbor(body).await?.into_single()
-}
-
-/// Receive a GraphQL batch request from a body as CBOR
-#[cfg(feature = "cbor")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cbor")))]
-pub async fn receive_batch_cbor(body: impl AsyncRead) -> Result<BatchRequest, ParseRequestError> {
-    let mut data = Vec::new();
-    futures_util::pin_mut!(body);
-    body.read_to_end(&mut data)
-        .await
-        .map_err(ParseRequestError::Io)?;
-    serde_cbor::from_slice::<BatchRequest>(&data)
         .map_err(|e| ParseRequestError::InvalidRequest(Box::new(e)))
 }
 
