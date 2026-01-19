@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{time::Duration, pin::pin};
 
 use bytes::{BufMut, Bytes, BytesMut};
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};
@@ -20,9 +20,9 @@ pub fn create_multipart_mixed_stream<'a>(
     heartbeat_interval: Duration,
 ) -> BoxStream<'a, Bytes> {
     let mut input = input.fuse();
-    let mut heartbeat_timer = Delay::new(heartbeat_interval).fuse();
 
     asynk_strim::stream_fn(move |mut yielder| async move {
+        let mut heartbeat_timer = pin!(Delay::new(heartbeat_interval).fuse());
         loop {
             futures_util::select! {
                 item = input.next() => {
@@ -42,7 +42,7 @@ pub fn create_multipart_mixed_stream<'a>(
                     }
                 }
                 _ = heartbeat_timer => {
-                    heartbeat_timer = Delay::new(heartbeat_interval).fuse();
+                    heartbeat_timer.set(Delay::new(heartbeat_interval).fuse());
                     yielder.yield_item(PART_HEADER.clone()).await;
                     yielder.yield_item(HEARTBEAT.clone()).await;
                 }

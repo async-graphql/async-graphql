@@ -66,7 +66,7 @@ impl WsMessage {
 
 struct Timer {
     interval: Duration,
-    delay: Delay,
+    delay: Pin<Box<Delay>>,
 }
 
 impl Timer {
@@ -74,13 +74,13 @@ impl Timer {
     fn new(interval: Duration) -> Self {
         Self {
             interval,
-            delay: Delay::new(interval),
+            delay: Box::pin(Delay::new(interval)),
         }
     }
 
     #[inline]
     fn reset(&mut self) {
-        self.delay.reset(self.interval);
+        self.delay.as_mut().reset(self.interval);
     }
 }
 
@@ -91,7 +91,7 @@ impl Stream for Timer {
         let this = &mut *self;
         match this.delay.poll_unpin(cx) {
             Poll::Ready(_) => {
-                this.delay.reset(this.interval);
+                this.delay.as_mut().reset(this.interval);
                 Poll::Ready(Some(()))
             }
             Poll::Pending => Poll::Pending,
