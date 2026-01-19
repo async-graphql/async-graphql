@@ -1,9 +1,8 @@
 //! Apollo persisted queries extension.
 
-use std::{num::NonZeroUsize, sync::Arc};
+use std::sync::Arc;
 
 use async_graphql_parser::types::ExecutableDocument;
-use futures_util::lock::Mutex;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
@@ -32,27 +31,26 @@ pub trait CacheStorage: Send + Sync + Clone + 'static {
 
 /// Memory-based LRU cache.
 #[derive(Clone)]
-pub struct LruCacheStorage(Arc<Mutex<lru::LruCache<String, ExecutableDocument>>>);
+pub struct LruCacheStorage(Arc<scc::HashCache<String, ExecutableDocument>>);
 
 impl LruCacheStorage {
     /// Creates a new LRU Cache that holds at most `cap` items.
     pub fn new(cap: usize) -> Self {
-        Self(Arc::new(Mutex::new(lru::LruCache::new(
-            NonZeroUsize::new(cap).unwrap(),
-        ))))
+        Self(Arc::new(scc::HashCache::with_capacity(0, cap)))
     }
 }
 
 #[async_trait::async_trait]
 impl CacheStorage for LruCacheStorage {
     async fn get(&self, key: String) -> Option<ExecutableDocument> {
-        let mut cache = self.0.lock().await;
-        cache.get(&key).cloned()
+        self.0
+            .get_async(&key)
+            .await
+            .map(|entry| entry.get().clone())
     }
 
     async fn set(&self, key: String, query: ExecutableDocument) {
-        let mut cache = self.0.lock().await;
-        cache.put(key, query);
+        let _ = self.0.put_async(key, query).await;
     }
 }
 

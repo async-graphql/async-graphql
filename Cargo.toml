@@ -14,12 +14,12 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "7.2.0"
 
 [features]
-apollo_persisted_queries = ["lru", "sha2"]
+apollo_persisted_queries = ["dep:scc", "sha2"]
 apollo_tracing = ["chrono"]
 email-validator = ["fast_chemail"]
 cbor = ["serde_cbor"]
 chrono-duration = ["chrono", "iso8601"]
-dataloader = ["futures-channel", "lru"]
+dataloader = ["futures-channel", "lru", "dep:scc"]
 decimal = ["rust_decimal"]
 default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
 jiff = ["dep:jiff"]
@@ -50,7 +50,6 @@ async-graphql-value.workspace = true
 asynk-strim = "0.1.5"
 async-trait.workspace = true
 bytes.workspace = true
-fnv = "1.0.7"
 futures-util = { workspace = true, features = [
   "std",
   "io",
@@ -72,6 +71,7 @@ thiserror.workspace = true
 base64 = "0.22.0"
 serde_urlencoded = "0.7.1"
 http.workspace = true
+rustc-hash = "2.1.1"
 
 # Feature optional dependencies
 bson = { version = "2.9.0", optional = true, features = [
@@ -121,6 +121,7 @@ sha2 = { version = "0.10.8", optional = true }
 zxcvbn = { version = "3.1.0", optional = true }
 handlebars = { version = "6.3.2", optional = true }
 schemars = { version = "1.2.0", optional = true }
+scc = { version = "3.4.13", optional = true }
 
 [dev-dependencies]
 futures-channel = "0.3.30"
