@@ -66,6 +66,7 @@ futures-util = { workspace = true, features = [
   "std",
   "io",
   "sink",
+  "async-await-macro",
 ] }
 indexmap.workspace = true
 async-io = "2.6.0"
