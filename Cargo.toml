@@ -14,27 +14,39 @@ repository = "https://github.com/async-graphql/async-graphql"
 version = "7.2.0"
 
 [features]
-apollo_persisted_queries = ["dep:scc", "sha2"]
-apollo_tracing = ["chrono"]
-email-validator = ["fast_chemail"]
-cbor = ["serde_cbor"]
-chrono-duration = ["chrono", "iso8601"]
-dataloader = ["futures-channel", "lru", "dep:scc"]
-decimal = ["rust_decimal"]
+apollo_persisted_queries = ["dep:scc", "dep:sha2"]
+apollo_tracing = ["dep:chrono"]
+email-validator = ["dep:fast_chemail"]
+bson = ["dep:bson"]
+bigdecimal = ["dep:bigdecimal"]
+cbor = ["dep:serde_cbor"]
+chrono = ["dep:chrono"]
+chrono-duration = ["dep:chrono", "dep:iso8601"]
+dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
+decimal = ["dep:rust_decimal"]
 default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
+hashbrown = ["dep:hashbrown"]
+log = ["dep:log"]
+opentelemetry = ["dep:opentelemetry"]
 jiff = ["dep:jiff"]
-password-strength-validator = ["zxcvbn"]
+password-strength-validator = ["dep:zxcvbn"]
 string_number = []
+tempfile = ["dep:tempfile"]
 tokio-sync = ["dep:tokio", "tokio/sync"]
 tokio-timer = ["dep:tokio", "tokio/time", "tokio/rt"]
-tracing = ["tracinglib", "tracing-futures"]
-unblock = ["blocking"]
+secrecy = ["dep:secrecy"]
+smol_str = ["dep:smol_str"]
+time = ["dep:time"]
+url = ["dep:url"]
+uuid = ["dep:uuid"]
+tracing = ["dep:tracing", "dep:tracing-futures"]
+unblock = ["dep:blocking"]
 dynamic-schema = []
-graphiql = ["handlebars"]
-altair = ["handlebars", "schemars"]
+graphiql = ["dep:handlebars"]
+altair = ["dep:handlebars", "dep:schemars"]
 playground = []
 raw_value = ["async-graphql-value/raw_value"]
-uuid-validator = ["uuid"]
+uuid-validator = ["dep:uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 custom-error-conversion = []
 
@@ -54,8 +66,6 @@ futures-util = { workspace = true, features = [
   "std",
   "io",
   "sink",
-  "async-await",
-  "async-await-macro",
 ] }
 indexmap.workspace = true
 async-io = "2.6.0"
@@ -105,9 +115,9 @@ tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracinglib = { version = "0.1.41", features = [
+tracing = { version = "0.1.41", features = [
   "attributes",
-], optional = true, package = "tracing" }
+], optional = true }
 url = { version = "2.5.0", optional = true }
 uuid = { version = "1.8.0", optional = true, features = ["v4", "serde"] }
 tempfile = { version = "3.10.1", optional = true }
