@@ -4,8 +4,6 @@ use std::{
 };
 
 use async_graphql_value::ConstValue;
-#[cfg(feature = "bson")]
-use bson::oid::{self, ObjectId};
 use serde::{Deserialize, Serialize};
 
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
@@ -80,15 +78,6 @@ impl TryFrom<ID> for uuid::Uuid {
 
     fn try_from(id: ID) -> Result<Self, Self::Error> {
         uuid::Uuid::parse_str(&id.0)
-    }
-}
-
-#[cfg(feature = "bson")]
-impl TryFrom<ID> for ObjectId {
-    type Error = oid::Error;
-
-    fn try_from(id: ID) -> std::result::Result<Self, oid::Error> {
-        ObjectId::parse_str(id.0)
     }
 }
 
