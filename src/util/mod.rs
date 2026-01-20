@@ -2,6 +2,7 @@
 //
 // License: CC0 1.0 Universal
 // See: <https://gist.github.com/tesaguri/2a1c0790a48bbda3dd7f71c26d02a793>
+#[allow(unused_macros)]
 macro_rules! pin_project_cfg {
     ($(#[$($attr:tt)*])* $vis:vis enum $($rest:tt)+) => {
         pin_project_cfg! {
@@ -142,5 +143,12 @@ macro_rules! pin_project_cfg {
     };
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 mod delay;
+#[cfg(not(target_arch = "wasm32"))]
 pub(crate) use delay::Delay;
+
+#[cfg(target_arch = "wasm32")]
+mod delay_wasm;
+#[cfg(target_arch = "wasm32")]
+pub(crate) use delay_wasm::Delay;
