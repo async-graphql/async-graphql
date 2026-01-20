@@ -59,7 +59,6 @@ futures-util = { workspace = true, features = [
   "async-await-macro",
 ] }
 indexmap.workspace = true
-async-io = "2.6.0"
 mime = "0.3.17"
 multer = "3.0.0"
 num-traits = "0.2.18"
@@ -133,6 +132,9 @@ tokio = { version = "1.37.0", features = [
 criterion = { version = "0.8.1", features = ["html_reports", "async_tokio"] }
 slab = "0.4.9"
 uuid = { version = "1.8.0", features = ["serde", "v4"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+async-io = "2.6.0"
 
 [package.metadata.docs.rs]
 all-features = true
