@@ -17,7 +17,6 @@ version = "7.2.0"
 apollo_persisted_queries = ["dep:scc", "dep:sha2"]
 apollo_tracing = ["dep:chrono"]
 email-validator = ["dep:fast_chemail"]
-bigdecimal = ["dep:bigdecimal"]
 chrono = ["dep:chrono"]
 chrono-duration = ["dep:chrono", "dep:iso8601"]
 dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
@@ -90,7 +89,6 @@ opentelemetry = { version = "0.27.0", optional = true, default-features = false,
   "trace",
 ] }
 rust_decimal = { version = "1.35.0", optional = true, default-features = false }
-bigdecimal = { version = ">=0.3.0, <0.5.0", optional = true, default-features = false }
 secrecy = { version = "0.10.3", optional = true }
 time = { version = "0.3.36", optional = true, features = [
   "parsing",
