@@ -126,7 +126,7 @@ send_wrapper = { version = "0.6.0", features = ["futures"] }
 async-io = "2.6.0"
 
 [dev-dependencies]
-futures-channel = "0.3.30"
+futures-channel = { version = "0.3.30", features = ["sink"] }
 tokio = { version = "1.37.0", features = [
   "macros",
   "rt-multi-thread",
