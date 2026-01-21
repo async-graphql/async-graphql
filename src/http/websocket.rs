@@ -17,7 +17,7 @@ use futures_util::{
 use pin_project_lite::pin_project;
 use serde::{Deserialize, Serialize};
 
-use crate::{Data, Error, Executor, Request, Response, Result, util::Delay};
+use crate::{Data, Error, Executor, Request, Response, Result, runtime::Timer as RtTimer};
 
 /// All known protocols based on WebSocket.
 pub const ALL_WEBSOCKET_PROTOCOLS: [&str; 2] = ["graphql-transport-ws", "graphql-ws"];
@@ -66,21 +66,26 @@ impl WsMessage {
 
 struct Timer {
     interval: Duration,
-    delay: Pin<Box<Delay>>,
+    rt_timer: Box<dyn RtTimer>,
+    future: BoxFuture<'static, ()>,
 }
 
 impl Timer {
     #[inline]
-    fn new(interval: Duration) -> Self {
+    fn new<T>(rt_timer: T, interval: Duration) -> Self
+    where
+        T: RtTimer,
+    {
         Self {
             interval,
-            delay: Box::pin(Delay::new(interval)),
+            future: rt_timer.delay(interval),
+            rt_timer: Box::new(rt_timer),
         }
     }
 
     #[inline]
     fn reset(&mut self) {
-        self.delay.as_mut().reset(self.interval);
+        self.future = self.rt_timer.delay(self.interval);
     }
 }
 
@@ -89,9 +94,9 @@ impl Stream for Timer {
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
-        match this.delay.poll_unpin(cx) {
+        match this.future.poll_unpin(cx) {
             Poll::Ready(_) => {
-                this.delay.as_mut().reset(this.interval);
+                this.reset();
                 Poll::Ready(Some(()))
             }
             Poll::Pending => Poll::Pending,
@@ -269,9 +274,12 @@ where
     ///
     /// NOTE: Only used for the `graphql-ws` protocol.
     #[must_use]
-    pub fn keepalive_timeout(self, timeout: impl Into<Option<Duration>>) -> Self {
+    pub fn keepalive_timeout<T>(self, timer: T, timeout: impl Into<Option<Duration>>) -> Self
+    where
+        T: RtTimer,
+    {
         Self {
-            keepalive_timer: timeout.into().map(Timer::new),
+            keepalive_timer: timeout.into().map(|timeout| Timer::new(timer, timeout)),
             ..self
         }
     }

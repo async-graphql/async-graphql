@@ -4,7 +4,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use futures_util::{FutureExt, Stream, StreamExt, stream::BoxStream};
 use mime::Mime;
 
-use crate::{Response, util::Delay};
+use crate::{Response, runtime::Timer};
 
 static PART_HEADER: Bytes =
     Bytes::from_static(b"--graphql\r\nContent-Type: application/json\r\n\r\n");
@@ -15,14 +15,18 @@ static HEARTBEAT: Bytes = Bytes::from_static(b"{}\r\n");
 /// Create a stream for `multipart/mixed` responses.
 ///
 /// Reference: <https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/>
-pub fn create_multipart_mixed_stream<'a>(
+pub fn create_multipart_mixed_stream<'a, T>(
     input: impl Stream<Item = Response> + Send + Unpin + 'a,
     heartbeat_interval: Duration,
-) -> BoxStream<'a, Bytes> {
+    timer: T,
+) -> BoxStream<'a, Bytes>
+where
+    T: Timer,
+{
     let mut input = input.fuse();
 
     asynk_strim::stream_fn(move |mut yielder| async move {
-        let mut heartbeat_timer = pin!(Delay::new(heartbeat_interval).fuse());
+        let mut heartbeat_timer = pin!(timer.delay(heartbeat_interval).fuse());
         loop {
             futures_util::select! {
                 item = input.next() => {
@@ -42,7 +46,7 @@ pub fn create_multipart_mixed_stream<'a>(
                     }
                 }
                 _ = heartbeat_timer => {
-                    heartbeat_timer.set(Delay::new(heartbeat_interval).fuse());
+                    heartbeat_timer.set(timer.delay(heartbeat_interval).fuse());
                     yielder.yield_item(PART_HEADER.clone()).await;
                     yielder.yield_item(HEARTBEAT.clone()).await;
                 }

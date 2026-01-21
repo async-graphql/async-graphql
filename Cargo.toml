@@ -21,15 +21,15 @@ chrono = ["dep:chrono"]
 chrono-duration = ["dep:chrono", "dep:iso8601"]
 dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
 decimal = ["dep:rust_decimal"]
-default = ["dynamic-schema", "email-validator", "tempfile", "graphiql"]
+default = ["dataloader", "tokio", "dynamic-schema", "email-validator", "tempfile", "graphiql"]
 log = ["dep:log"]
 opentelemetry = ["dep:opentelemetry"]
 jiff = ["dep:jiff"]
 string_number = []
 tempfile = ["dep:tempfile"]
-tokio-timer = ["dep:tokio", "tokio/time", "tokio/rt"]
 secrecy = ["dep:secrecy"]
 time = ["dep:time"]
+tokio = ["dep:tokio"]
 url = ["dep:url"]
 uuid = ["dep:uuid"]
 tracing = ["dep:tracing", "dep:tracing-futures"]
@@ -93,7 +93,7 @@ time = { version = "0.3.36", optional = true, features = [
   "formatting",
   "macros",
 ] }
-tokio = { version = "1.37.0", optional = true }
+tokio = { version = "1.37.0", features = ["rt", "time"], optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
@@ -113,13 +113,6 @@ futures-channel = { version = "0.3.30", optional = true }
 lru = { version = "0.16.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
 scc = { version = "3.4.13", optional = true }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-gloo-timers = { version = "0.3.0", features = ["futures"] }
-send_wrapper = { version = "0.6.0", features = ["futures"] }
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-io = "2.6.0"
 
 [dev-dependencies]
 futures-channel = { version = "0.3.30", features = ["sink"] }
