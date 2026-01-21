@@ -17,25 +17,18 @@ version = "7.2.0"
 apollo_persisted_queries = ["dep:scc", "dep:sha2"]
 apollo_tracing = ["dep:chrono"]
 email-validator = ["dep:fast_chemail"]
-bson = ["dep:bson"]
-bigdecimal = ["dep:bigdecimal"]
-cbor = ["dep:serde_cbor"]
 chrono = ["dep:chrono"]
 chrono-duration = ["dep:chrono", "dep:iso8601"]
 dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
 decimal = ["dep:rust_decimal"]
 default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
-hashbrown = ["dep:hashbrown"]
 log = ["dep:log"]
 opentelemetry = ["dep:opentelemetry"]
 jiff = ["dep:jiff"]
-password-strength-validator = ["dep:zxcvbn"]
 string_number = []
 tempfile = ["dep:tempfile"]
-tokio-sync = ["dep:tokio", "tokio/sync"]
 tokio-timer = ["dep:tokio", "tokio/time", "tokio/rt"]
 secrecy = ["dep:secrecy"]
-smol_str = ["dep:smol_str"]
 time = ["dep:time"]
 url = ["dep:url"]
 uuid = ["dep:uuid"]
@@ -46,7 +39,6 @@ graphiql = ["dep:handlebars"]
 altair = ["dep:handlebars", "dep:schemars"]
 playground = []
 raw_value = ["async-graphql-value/raw_value"]
-uuid-validator = ["dep:uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 custom-error-conversion = []
 
@@ -84,17 +76,12 @@ http.workspace = true
 rustc-hash = "2.1.1"
 
 # Feature optional dependencies
-bson = { version = "2.9.0", optional = true, features = [
-  "chrono-0_4",
-  "uuid-1",
-] }
 chrono = { version = "0.4.37", optional = true, default-features = false, features = [
   "clock",
   "std",
 ] }
 chrono-tz = { version = "0.10.0", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
-hashbrown = { version = "0.16.1", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
 jiff = { version = "0.2.18", optional = true }
 log = { version = "0.4.21", optional = true }
@@ -102,9 +89,7 @@ opentelemetry = { version = "0.27.0", optional = true, default-features = false,
   "trace",
 ] }
 rust_decimal = { version = "1.35.0", optional = true, default-features = false }
-bigdecimal = { version = ">=0.3.0, <0.5.0", optional = true, default-features = false }
 secrecy = { version = "0.10.3", optional = true }
-smol_str = { version = "0.3.1", optional = true }
 time = { version = "0.3.36", optional = true, features = [
   "parsing",
   "formatting",
@@ -126,9 +111,7 @@ tempfile = { version = "3.10.1", optional = true }
 blocking = { version = "1.6.1", optional = true }
 futures-channel = { version = "0.3.30", optional = true }
 lru = { version = "0.16.2", optional = true }
-serde_cbor = { version = "0.11.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-zxcvbn = { version = "3.1.0", optional = true }
 handlebars = { version = "6.3.2", optional = true }
 schemars = { version = "1.2.0", optional = true }
 scc = { version = "3.4.13", optional = true }
@@ -141,7 +124,7 @@ send_wrapper = { version = "0.6.0", features = ["futures"] }
 async-io = "2.6.0"
 
 [dev-dependencies]
-futures-channel = "0.3.30"
+futures-channel = { version = "0.3.30", features = ["sink"] }
 tokio = { version = "1.37.0", features = [
   "macros",
   "rt-multi-thread",

@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove allocations from `Delay` impl
 - Delete `tide` integration (it's been umaintained for a while, just like async-std)
 - Replace `Inflector` with `heck` (for real this time) [#1785](https://github.com/async-graphql/async-graphql/pull/1785)
+- Remove CBOR feature
+- Remove BSON integration
+- Remove hashbrown integration
+- Remove `tokio-sync` feature
+- Remove `uuid-validator`feature
+- Remove `zxcvbn` integration
+- Remove `smol_str` integration
+- Remove `bigdecimal` integration
 
 # [7.2.0] 2026-01-16
 
