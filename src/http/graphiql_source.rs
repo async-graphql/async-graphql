@@ -147,113 +147,114 @@ mod tests {
     #[test]
     fn test_with_only_url() {
         let graphiql_source = GraphiQLSource::build().endpoint("/").finish();
-        let expected = expect![[r#"
-            <!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <meta name="robots" content="noindex">
-                <meta name="referrer" content="origin">
+        let mut expected = expect![[r#"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="origin">
 
     
-                  <title>GraphiQL</title>
+      <title>GraphiQL</title>
     
     
-                <style>
-                  body {
-                    margin: 0;
-                  }
+    <style>
+      body {
+        margin: 0;
+      }
 
-                  #graphiql {
-                    height: 100dvh;
-                  }
+      #graphiql {
+        height: 100dvh;
+      }
 
-                  .loading {
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 4rem;
-                  }
-                </style>
+      .loading {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+    </style>
 
-                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
-                <link
-                  rel="stylesheet"
-                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
-                />
+    <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+    />
 
-                <script type="importmap">
-                  {
-                    "imports": {
-                      "react": "https://esm.sh/react@19.1.0",
-                      "react/": "https://esm.sh/react@19.1.0/",
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.1.0",
+          "react/": "https://esm.sh/react@19.1.0/",
 
-                      "react-dom": "https://esm.sh/react-dom@19.1.0",
-                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
+          "react-dom": "https://esm.sh/react-dom@19.1.0",
+          "react-dom/": "https://esm.sh/react-dom@19.1.0/",
 
-                      "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
-                      "graphiql/": "https://esm.sh/graphiql@5.2.2/",
-                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
-                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+          "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
+          "graphiql/": "https://esm.sh/graphiql@5.2.2/",
+          "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+          "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
 
-                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
-                      "graphql": "https://esm.sh/graphql@16.11.0",
-                      "@emotion/is-prop-valid": "data:text/javascript,"
-                    }
-                  }
-                </script>
+          "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+          "graphql": "https://esm.sh/graphql@16.11.0",
+          "@emotion/is-prop-valid": "data:text/javascript,"
+        }
+      }
+    </script>
 
-                <script type="module">
-                  import React from 'react';
-                  import ReactDOM from 'react-dom/client';
-                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
-                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
-                  import { explorerPlugin } from '@graphiql/plugin-explorer';
-                  import 'graphiql/setup-workers/esm.sh';
+    <script type="module">
+      import React from 'react';
+      import ReactDOM from 'react-dom/client';
+      import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+      import { createGraphiQLFetcher } from '@graphiql/toolkit';
+      import { explorerPlugin } from '@graphiql/plugin-explorer';
+      import 'graphiql/setup-workers/esm.sh';
 
-                  const customFetch = (url, opts = {}) => {
-                    return fetch(url, {...opts, credentials: 'same-origin'})
-                  }
+      const customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'same-origin'})
+      }
 
-                  const createUrl = (endpoint, subscription = false) => {
-                    const url = new URL(endpoint, window.location.origin);
-                    if (subscription) {
-                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-                    }
-                    return url.toString();
-                  }
+      const createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
 
-                  const fetcher = createGraphiQLFetcher({
-                    url: createUrl('/'),
-                    fetch: customFetch,
+      const fetcher = createGraphiQLFetcher({
+        url: createUrl('/'),
+        fetch: customFetch,
         
         
         
-                  });
-                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+      });
+      const plugins = [HISTORY_PLUGIN, explorerPlugin()];
 
-                  function App() {
-                    return React.createElement(GraphiQL, {
-                      fetcher,
-                      plugins,
-                      defaultEditorToolsVisibility: true,
-                    });
-                  }
+      function App() {
+        return React.createElement(GraphiQL, {
+          fetcher,
+          plugins,
+          defaultEditorToolsVisibility: true,
+        });
+      }
 
-                  const container = document.getElementById('graphiql');
-                  const root = ReactDOM.createRoot(container);
-                  root.render(React.createElement(App));
-                </script>
-              </head>
-              <body>
-                <div id="graphiql">
-                  <div class="loading">Loading…</div>
-                </div>
-              </body>
-            </html>"#]];
+      const container = document.getElementById('graphiql');
+      const root = ReactDOM.createRoot(container);
+      root.render(React.createElement(App));
+    </script>
+  </head>
+  <body>
+    <div id="graphiql">
+      <div class="loading">Loading…</div>
+    </div>
+  </body>
+</html>"#]];
 
+        expected.indent(false);
         expected.assert_eq(&graphiql_source);
     }
 
@@ -264,115 +265,116 @@ mod tests {
             .subscription_endpoint("/ws")
             .finish();
 
-        let expected = expect![[r#"
-            <!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <meta name="robots" content="noindex">
-                <meta name="referrer" content="origin">
+        let mut expected = expect![[r#"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="origin">
 
     
-                  <title>GraphiQL</title>
+      <title>GraphiQL</title>
     
     
-                <style>
-                  body {
-                    margin: 0;
-                  }
+    <style>
+      body {
+        margin: 0;
+      }
 
-                  #graphiql {
-                    height: 100dvh;
-                  }
+      #graphiql {
+        height: 100dvh;
+      }
 
-                  .loading {
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 4rem;
-                  }
-                </style>
+      .loading {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+    </style>
 
-                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
-                <link
-                  rel="stylesheet"
-                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
-                />
+    <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+    />
 
-                <script type="importmap">
-                  {
-                    "imports": {
-                      "react": "https://esm.sh/react@19.1.0",
-                      "react/": "https://esm.sh/react@19.1.0/",
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.1.0",
+          "react/": "https://esm.sh/react@19.1.0/",
 
-                      "react-dom": "https://esm.sh/react-dom@19.1.0",
-                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
+          "react-dom": "https://esm.sh/react-dom@19.1.0",
+          "react-dom/": "https://esm.sh/react-dom@19.1.0/",
 
-                      "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
-                      "graphiql/": "https://esm.sh/graphiql@5.2.2/",
-                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
-                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+          "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
+          "graphiql/": "https://esm.sh/graphiql@5.2.2/",
+          "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+          "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
 
-                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
-                      "graphql": "https://esm.sh/graphql@16.11.0",
-                      "@emotion/is-prop-valid": "data:text/javascript,"
-                    }
-                  }
-                </script>
+          "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+          "graphql": "https://esm.sh/graphql@16.11.0",
+          "@emotion/is-prop-valid": "data:text/javascript,"
+        }
+      }
+    </script>
 
-                <script type="module">
-                  import React from 'react';
-                  import ReactDOM from 'react-dom/client';
-                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
-                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
-                  import { explorerPlugin } from '@graphiql/plugin-explorer';
-                  import 'graphiql/setup-workers/esm.sh';
+    <script type="module">
+      import React from 'react';
+      import ReactDOM from 'react-dom/client';
+      import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+      import { createGraphiQLFetcher } from '@graphiql/toolkit';
+      import { explorerPlugin } from '@graphiql/plugin-explorer';
+      import 'graphiql/setup-workers/esm.sh';
 
-                  const customFetch = (url, opts = {}) => {
-                    return fetch(url, {...opts, credentials: 'same-origin'})
-                  }
+      const customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'same-origin'})
+      }
 
-                  const createUrl = (endpoint, subscription = false) => {
-                    const url = new URL(endpoint, window.location.origin);
-                    if (subscription) {
-                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-                    }
-                    return url.toString();
-                  }
+      const createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
 
-                  const fetcher = createGraphiQLFetcher({
-                    url: createUrl('/'),
-                    fetch: customFetch,
+      const fetcher = createGraphiQLFetcher({
+        url: createUrl('/'),
+        fetch: customFetch,
         
-                    subscriptionUrl: createUrl('/ws'),
+        subscriptionUrl: createUrl('/ws'),
         
         
         
-                  });
-                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+      });
+      const plugins = [HISTORY_PLUGIN, explorerPlugin()];
 
-                  function App() {
-                    return React.createElement(GraphiQL, {
-                      fetcher,
-                      plugins,
-                      defaultEditorToolsVisibility: true,
-                    });
-                  }
+      function App() {
+        return React.createElement(GraphiQL, {
+          fetcher,
+          plugins,
+          defaultEditorToolsVisibility: true,
+        });
+      }
 
-                  const container = document.getElementById('graphiql');
-                  const root = ReactDOM.createRoot(container);
-                  root.render(React.createElement(App));
-                </script>
-              </head>
-              <body>
-                <div id="graphiql">
-                  <div class="loading">Loading…</div>
-                </div>
-              </body>
-            </html>"#]];
+      const container = document.getElementById('graphiql');
+      const root = ReactDOM.createRoot(container);
+      root.render(React.createElement(App));
+    </script>
+  </head>
+  <body>
+    <div id="graphiql">
+      <div class="loading">Loading…</div>
+    </div>
+  </body>
+</html>"#]];
 
+        expected.indent(false);
         expected.assert_eq(&graphiql_source);
     }
 
@@ -388,127 +390,128 @@ mod tests {
             .credentials(Credentials::Include)
             .finish();
 
-        let expected = expect![[r#"
-            <!DOCTYPE html>
-            <html lang="en">
-              <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-                <meta name="robots" content="noindex">
-                <meta name="referrer" content="origin">
+        let mut expected = expect![[r#"
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex">
+    <meta name="referrer" content="origin">
 
     
-                  <title>Awesome GraphiQL IDE Test</title>
+      <title>Awesome GraphiQL IDE Test</title>
     
     
-                <style>
-                  body {
-                    margin: 0;
-                  }
+    <style>
+      body {
+        margin: 0;
+      }
 
-                  #graphiql {
-                    height: 100dvh;
-                  }
+      #graphiql {
+        height: 100dvh;
+      }
 
-                  .loading {
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 4rem;
-                  }
-                </style>
+      .loading {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+      }
+    </style>
 
-                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
-                <link
-                  rel="stylesheet"
-                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
-                />
+    <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+    />
 
-                <script type="importmap">
-                  {
-                    "imports": {
-                      "react": "https://esm.sh/react@19.1.0",
-                      "react/": "https://esm.sh/react@19.1.0/",
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@19.1.0",
+          "react/": "https://esm.sh/react@19.1.0/",
 
-                      "react-dom": "https://esm.sh/react-dom@19.1.0",
-                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
+          "react-dom": "https://esm.sh/react-dom@19.1.0",
+          "react-dom/": "https://esm.sh/react-dom@19.1.0/",
 
-                      "graphiql": "https://esm.sh/graphiql@3.9.0?standalone&external=react,react-dom,@graphiql/react,graphql",
-                      "graphiql/": "https://esm.sh/graphiql@3.9.0/",
-                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
-                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+          "graphiql": "https://esm.sh/graphiql@3.9.0?standalone&external=react,react-dom,@graphiql/react,graphql",
+          "graphiql/": "https://esm.sh/graphiql@3.9.0/",
+          "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+          "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
 
-                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
-                      "graphql": "https://esm.sh/graphql@16.11.0",
-                      "@emotion/is-prop-valid": "data:text/javascript,"
-                    }
-                  }
-                </script>
+          "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+          "graphql": "https://esm.sh/graphql@16.11.0",
+          "@emotion/is-prop-valid": "data:text/javascript,"
+        }
+      }
+    </script>
 
-                <script type="module">
-                  import React from 'react';
-                  import ReactDOM from 'react-dom/client';
-                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
-                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
-                  import { explorerPlugin } from '@graphiql/plugin-explorer';
-                  import 'graphiql/setup-workers/esm.sh';
+    <script type="module">
+      import React from 'react';
+      import ReactDOM from 'react-dom/client';
+      import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+      import { createGraphiQLFetcher } from '@graphiql/toolkit';
+      import { explorerPlugin } from '@graphiql/plugin-explorer';
+      import 'graphiql/setup-workers/esm.sh';
 
-                  const customFetch = (url, opts = {}) => {
-                    return fetch(url, {...opts, credentials: 'include'})
-                  }
+      const customFetch = (url, opts = {}) => {
+        return fetch(url, {...opts, credentials: 'include'})
+      }
 
-                  const createUrl = (endpoint, subscription = false) => {
-                    const url = new URL(endpoint, window.location.origin);
-                    if (subscription) {
-                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-                    }
-                    return url.toString();
-                  }
+      const createUrl = (endpoint, subscription = false) => {
+        const url = new URL(endpoint, window.location.origin);
+        if (subscription) {
+          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+        }
+        return url.toString();
+      }
 
-                  const fetcher = createGraphiQLFetcher({
-                    url: createUrl('/'),
-                    fetch: customFetch,
+      const fetcher = createGraphiQLFetcher({
+        url: createUrl('/'),
+        fetch: customFetch,
         
-                    subscriptionUrl: createUrl('/ws'),
+        subscriptionUrl: createUrl('/ws'),
         
         
-                    headers: {
+        headers: {
           
-                      'Authorization': 'Bearer [token]',
+          'Authorization': 'Bearer [token]',
           
-                    }
+        }
         
         
-                    wsConnectionParams: {
+        wsConnectionParams: {
           
-                      'token': '[token]',
+          'token': '[token]',
           
-                    }
+        }
         
-                  });
-                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+      });
+      const plugins = [HISTORY_PLUGIN, explorerPlugin()];
 
-                  function App() {
-                    return React.createElement(GraphiQL, {
-                      fetcher,
-                      plugins,
-                      defaultEditorToolsVisibility: true,
-                    });
-                  }
+      function App() {
+        return React.createElement(GraphiQL, {
+          fetcher,
+          plugins,
+          defaultEditorToolsVisibility: true,
+        });
+      }
 
-                  const container = document.getElementById('graphiql');
-                  const root = ReactDOM.createRoot(container);
-                  root.render(React.createElement(App));
-                </script>
-              </head>
-              <body>
-                <div id="graphiql">
-                  <div class="loading">Loading…</div>
-                </div>
-              </body>
-            </html>"#]];
+      const container = document.getElementById('graphiql');
+      const root = ReactDOM.createRoot(container);
+      root.render(React.createElement(App));
+    </script>
+  </head>
+  <body>
+    <div id="graphiql">
+      <div class="loading">Loading…</div>
+    </div>
+  </body>
+</html>"#]];
 
+        expected.indent(false);
         expected.assert_eq(&graphiql_source);
     }
 }
