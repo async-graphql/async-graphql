@@ -11,17 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove allocations from `Delay` impl
 - Delete `tide` integration (it's been umaintained for a while, just like async-std)
 - Replace `Inflector` with `heck` (for real this time) [#1785](https://github.com/async-graphql/async-graphql/pull/1785)
-- Remove CBOR feature
-- Remove BSON integration
-- Remove hashbrown integration
-- Remove `tokio-sync` feature
-- Remove `uuid-validator`feature
-- Remove `zxcvbn` integration
-- Remove `smol_str` integration
-- Remove `bigdecimal` integration
-- Remove Altair integration
-- Remove GraphQL Playground integration
-- Upgrade GraphiQL to v5
+- Remove CBOR feature [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove BSON integration [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove hashbrown integration [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove `tokio-sync` feature [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove `uuid-validator`feature [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove `zxcvbn` integration [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove `smol_str` integration [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove `bigdecimal` integration [#1786](https://github.com/async-graphql/async-graphql/pull/1786)
+- Remove Altair integration [#1791](https://github.com/async-graphql/async-graphql/pull/1791)
+- Remove GraphQL Playground integration [#1791](https://github.com/async-graphql/async-graphql/pull/1791)
+- Upgrade GraphiQL to v5 [#1791](https://github.com/async-graphql/async-graphql/pull/1791)
+- Abstract over timers and spawn methods [#1789](https://github.com/async-graphql/async-graphql/pull/1789)
 
 # [7.2.0] 2026-01-16
 
