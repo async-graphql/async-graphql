@@ -30,7 +30,7 @@ http2 = ["actix-web/http2"]
 default = ["http2"]
 
 [dev-dependencies]
-async-graphql = { workspace = true, features = ["playground"] }
+async-graphql = { workspace = true, features = ["graphiql"] }
 actix-rt = "2.9.0"
 async-lock = "3.4.0"
 serde = { version = "1", features = ["derive"] }

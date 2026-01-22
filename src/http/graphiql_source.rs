@@ -1,15 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
 
-use handlebars::Handlebars;
-use serde::Serialize;
-
-use crate::http::graphiql_plugin::GraphiQLPlugin;
+use askama::Template;
 
 /// Indicates whether the user agent should send or receive user credentials
 /// (cookies, basic http auth, etc.) from the other domain in the case of
 /// cross-origin requests.
-#[derive(Debug, Serialize, Default)]
-#[serde(rename_all = "kebab-case")]
+#[derive(Debug, Default)]
 pub enum Credentials {
     /// Send user credentials if the URL is on the same origin as the calling
     /// script. This is the default value.
@@ -21,12 +17,27 @@ pub enum Credentials {
     Omit,
 }
 
-#[derive(Serialize)]
+impl fmt::Display for Credentials {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::SameOrigin => write!(f, "same-origin"),
+            Self::Include => write!(f, "include"),
+            Self::Omit => write!(f, "omit"),
+        }
+    }
+}
+
 struct GraphiQLVersion<'a>(&'a str);
 
 impl Default for GraphiQLVersion<'_> {
     fn default() -> Self {
-        Self("4")
+        Self("5.2.2")
+    }
+}
+
+impl fmt::Display for GraphiQLVersion<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
@@ -45,7 +56,8 @@ impl Default for GraphiQLVersion<'_> {
 ///     .credentials(Credentials::Include)
 ///     .finish();
 /// ```
-#[derive(Default, Serialize)]
+#[derive(Default, Template)]
+#[template(path = "graphiql_source.jinja")]
 pub struct GraphiQLSource<'a> {
     endpoint: &'a str,
     subscription_endpoint: Option<&'a str>,
@@ -54,7 +66,6 @@ pub struct GraphiQLSource<'a> {
     ws_connection_params: Option<HashMap<&'a str, &'a str>>,
     title: Option<&'a str>,
     credentials: Credentials,
-    plugins: &'a [GraphiQLPlugin<'a>],
 }
 
 impl<'a> GraphiQLSource<'a> {
@@ -121,103 +132,129 @@ impl<'a> GraphiQLSource<'a> {
         }
     }
 
-    /// Sets plugins
-    pub fn plugins(self, plugins: &'a [GraphiQLPlugin]) -> GraphiQLSource<'a> {
-        GraphiQLSource { plugins, ..self }
-    }
-
     /// Returns a GraphiQL (v2) HTML page.
     pub fn finish(self) -> String {
-        let mut handlebars = Handlebars::new();
-        handlebars
-            .register_template_string(
-                "graphiql_v2_source",
-                include_str!("./graphiql_source.hbs"),
-            )
-            .expect("Failed to register template");
-
-        handlebars
-            .render("graphiql_v2_source", &self)
-            .expect("Failed to render template")
+        self.render().expect("Failed to render template")
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use expect_test::expect;
+
     use super::*;
 
     #[test]
     fn test_with_only_url() {
         let graphiql_source = GraphiQLSource::build().endpoint("/").finish();
+        let expected = expect![[r#"
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta name="robots" content="noindex">
+                <meta name="referrer" content="origin">
 
-        assert_eq!(
-            graphiql_source,
-            r#"<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="origin">
+    
+                  <title>GraphiQL</title>
+    
+    
+                <style>
+                  body {
+                    margin: 0;
+                  }
 
-    <title>GraphiQL IDE</title>
+                  #graphiql {
+                    height: 100dvh;
+                  }
 
-    <style>
-      body {
-        height: 100%;
-        margin: 0;
-        width: 100%;
-        overflow: hidden;
-      }
+                  .loading {
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 4rem;
+                  }
+                </style>
 
-      #graphiql {
-        height: 100vh;
-      }
-    </style>
-    <script
-      crossorigin
-      src="https://unpkg.com/react@18/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-    ></script>
-    <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql@4/graphiql.min.css" />
-  </head>
+                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+                <link
+                  rel="stylesheet"
+                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+                />
 
-  <body>
-    <div id="graphiql">Loading...</div>
-    <script
-      src="https://unpkg.com/graphiql@4/graphiql.min.js"
-      type="application/javascript"
-    ></script>
-    <script>
-      customFetch = (url, opts = {}) => {
-        return fetch(url, {...opts, credentials: 'same-origin'})
-      }
+                <script type="importmap">
+                  {
+                    "imports": {
+                      "react": "https://esm.sh/react@19.1.0",
+                      "react/": "https://esm.sh/react@19.1.0/",
 
-      createUrl = (endpoint, subscription = false) => {
-        const url = new URL(endpoint, window.location.origin);
-        if (subscription) {
-          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-        }
-        return url.toString();
-      }
+                      "react-dom": "https://esm.sh/react-dom@19.1.0",
+                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
 
-      ReactDOM.createRoot(document.getElementById("graphiql")).render(
-        React.createElement(GraphiQL, {
-          fetcher: GraphiQL.createFetcher({
-            url: createUrl('/'),
-            fetch: customFetch,
-          }),
-          defaultEditorToolsVisibility: true,
-        })
-      );
-    </script>
-  </body>
-</html>"#
-        )
+                      "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
+                      "graphiql/": "https://esm.sh/graphiql@5.2.2/",
+                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+
+                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+                      "graphql": "https://esm.sh/graphql@16.11.0",
+                      "@emotion/is-prop-valid": "data:text/javascript,"
+                    }
+                  }
+                </script>
+
+                <script type="module">
+                  import React from 'react';
+                  import ReactDOM from 'react-dom/client';
+                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
+                  import { explorerPlugin } from '@graphiql/plugin-explorer';
+                  import 'graphiql/setup-workers/esm.sh';
+
+                  const customFetch = (url, opts = {}) => {
+                    return fetch(url, {...opts, credentials: 'same-origin'})
+                  }
+
+                  const createUrl = (endpoint, subscription = false) => {
+                    const url = new URL(endpoint, window.location.origin);
+                    if (subscription) {
+                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    }
+                    return url.toString();
+                  }
+
+                  const fetcher = createGraphiQLFetcher({
+                    url: createUrl('/'),
+                    fetch: customFetch,
+        
+        
+        
+                  });
+                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+
+                  function App() {
+                    return React.createElement(GraphiQL, {
+                      fetcher,
+                      plugins,
+                      defaultEditorToolsVisibility: true,
+                    });
+                  }
+
+                  const container = document.getElementById('graphiql');
+                  const root = ReactDOM.createRoot(container);
+                  root.render(React.createElement(App));
+                </script>
+              </head>
+              <body>
+                <div id="graphiql">
+                  <div class="loading">Loading…</div>
+                </div>
+              </body>
+            </html>"#]];
+
+        expected.assert_eq(&graphiql_source);
     }
 
     #[test]
@@ -227,80 +264,120 @@ mod tests {
             .subscription_endpoint("/ws")
             .finish();
 
-        assert_eq!(
-            graphiql_source,
-            r#"<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="origin">
+        let expected = expect![[r#"
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta name="robots" content="noindex">
+                <meta name="referrer" content="origin">
 
-    <title>GraphiQL IDE</title>
+    
+                  <title>GraphiQL</title>
+    
+    
+                <style>
+                  body {
+                    margin: 0;
+                  }
 
-    <style>
-      body {
-        height: 100%;
-        margin: 0;
-        width: 100%;
-        overflow: hidden;
-      }
+                  #graphiql {
+                    height: 100dvh;
+                  }
 
-      #graphiql {
-        height: 100vh;
-      }
-    </style>
-    <script
-      crossorigin
-      src="https://unpkg.com/react@18/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-    ></script>
-    <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql@4/graphiql.min.css" />
-  </head>
+                  .loading {
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 4rem;
+                  }
+                </style>
 
-  <body>
-    <div id="graphiql">Loading...</div>
-    <script
-      src="https://unpkg.com/graphiql@4/graphiql.min.js"
-      type="application/javascript"
-    ></script>
-    <script>
-      customFetch = (url, opts = {}) => {
-        return fetch(url, {...opts, credentials: 'same-origin'})
-      }
+                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+                <link
+                  rel="stylesheet"
+                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+                />
 
-      createUrl = (endpoint, subscription = false) => {
-        const url = new URL(endpoint, window.location.origin);
-        if (subscription) {
-          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-        }
-        return url.toString();
-      }
+                <script type="importmap">
+                  {
+                    "imports": {
+                      "react": "https://esm.sh/react@19.1.0",
+                      "react/": "https://esm.sh/react@19.1.0/",
 
-      ReactDOM.createRoot(document.getElementById("graphiql")).render(
-        React.createElement(GraphiQL, {
-          fetcher: GraphiQL.createFetcher({
-            url: createUrl('/'),
-            fetch: customFetch,
-            subscriptionUrl: createUrl('/ws', true),
-          }),
-          defaultEditorToolsVisibility: true,
-        })
-      );
-    </script>
-  </body>
-</html>"#
-        )
+                      "react-dom": "https://esm.sh/react-dom@19.1.0",
+                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
+
+                      "graphiql": "https://esm.sh/graphiql@5.2.2?standalone&external=react,react-dom,@graphiql/react,graphql",
+                      "graphiql/": "https://esm.sh/graphiql@5.2.2/",
+                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+
+                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+                      "graphql": "https://esm.sh/graphql@16.11.0",
+                      "@emotion/is-prop-valid": "data:text/javascript,"
+                    }
+                  }
+                </script>
+
+                <script type="module">
+                  import React from 'react';
+                  import ReactDOM from 'react-dom/client';
+                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
+                  import { explorerPlugin } from '@graphiql/plugin-explorer';
+                  import 'graphiql/setup-workers/esm.sh';
+
+                  const customFetch = (url, opts = {}) => {
+                    return fetch(url, {...opts, credentials: 'same-origin'})
+                  }
+
+                  const createUrl = (endpoint, subscription = false) => {
+                    const url = new URL(endpoint, window.location.origin);
+                    if (subscription) {
+                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    }
+                    return url.toString();
+                  }
+
+                  const fetcher = createGraphiQLFetcher({
+                    url: createUrl('/'),
+                    fetch: customFetch,
+        
+                    subscriptionUrl: createUrl('/ws'),
+        
+        
+        
+                  });
+                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+
+                  function App() {
+                    return React.createElement(GraphiQL, {
+                      fetcher,
+                      plugins,
+                      defaultEditorToolsVisibility: true,
+                    });
+                  }
+
+                  const container = document.getElementById('graphiql');
+                  const root = ReactDOM.createRoot(container);
+                  root.render(React.createElement(App));
+                </script>
+              </head>
+              <body>
+                <div id="graphiql">
+                  <div class="loading">Loading…</div>
+                </div>
+              </body>
+            </html>"#]];
+
+        expected.assert_eq(&graphiql_source);
     }
 
     #[test]
     fn test_with_all_options() {
-        use crate::http::graphiql_plugin_explorer;
         let graphiql_source = GraphiQLSource::build()
             .endpoint("/")
             .subscription_endpoint("/ws")
@@ -309,92 +386,129 @@ mod tests {
             .ws_connection_param("token", "[token]")
             .title("Awesome GraphiQL IDE Test")
             .credentials(Credentials::Include)
-            .plugins(&[graphiql_plugin_explorer()])
             .finish();
 
-        assert_eq!(
-            graphiql_source,
-            r#"<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="robots" content="noindex">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="referrer" content="origin">
+        let expected = expect![[r#"
+            <!DOCTYPE html>
+            <html lang="en">
+              <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <meta name="robots" content="noindex">
+                <meta name="referrer" content="origin">
 
-    <title>Awesome GraphiQL IDE Test</title>
+    
+                  <title>Awesome GraphiQL IDE Test</title>
+    
+    
+                <style>
+                  body {
+                    margin: 0;
+                  }
 
-    <style>
-      body {
-        height: 100%;
-        margin: 0;
-        width: 100%;
-        overflow: hidden;
-      }
+                  #graphiql {
+                    height: 100dvh;
+                  }
 
-      #graphiql {
-        height: 100vh;
-      }
-    </style>
-    <script
-      crossorigin
-      src="https://unpkg.com/react@18/umd/react.development.js"
-    ></script>
-    <script
-      crossorigin
-      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
-    ></script>
-    <link rel="icon" href="https://graphql.org/favicon.ico">
-    <link rel="stylesheet" href="https://unpkg.com/graphiql@3.9.0/graphiql.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/@graphiql/plugin-explorer/dist/style.css" />
-  </head>
+                  .loading {
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 4rem;
+                  }
+                </style>
 
-  <body>
-    <div id="graphiql">Loading...</div>
-    <script
-      src="https://unpkg.com/graphiql@3.9.0/graphiql.min.js"
-      type="application/javascript"
-    ></script>
-    <script
-      src="https://unpkg.com/@graphiql/plugin-explorer/dist/index.umd.js"
-      crossorigin
-    ></script>
-    <script>
-      customFetch = (url, opts = {}) => {
-        return fetch(url, {...opts, credentials: 'include'})
-      }
+                <link rel="stylesheet" href="https://esm.sh/graphiql/dist/style.css" />
+                <link
+                  rel="stylesheet"
+                  href="https://esm.sh/@graphiql/plugin-explorer/dist/style.css"
+                />
 
-      createUrl = (endpoint, subscription = false) => {
-        const url = new URL(endpoint, window.location.origin);
-        if (subscription) {
-          url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-        }
-        return url.toString();
-      }
+                <script type="importmap">
+                  {
+                    "imports": {
+                      "react": "https://esm.sh/react@19.1.0",
+                      "react/": "https://esm.sh/react@19.1.0/",
 
-      const plugins = [];
-      plugins.push(GraphiQLPluginExplorer.explorerPlugin());
+                      "react-dom": "https://esm.sh/react-dom@19.1.0",
+                      "react-dom/": "https://esm.sh/react-dom@19.1.0/",
 
-      ReactDOM.createRoot(document.getElementById("graphiql")).render(
-        React.createElement(GraphiQL, {
-          fetcher: GraphiQL.createFetcher({
-            url: createUrl('/'),
-            fetch: customFetch,
-            subscriptionUrl: createUrl('/ws', true),
-            headers: {
-              'Authorization': 'Bearer [token]',
-            },
-            wsConnectionParams: {
-              'token': '[token]',
-            },
-          }),
-          defaultEditorToolsVisibility: true,
-          plugins,
-        })
-      );
-    </script>
-  </body>
-</html>"#
-        )
+                      "graphiql": "https://esm.sh/graphiql@3.9.0?standalone&external=react,react-dom,@graphiql/react,graphql",
+                      "graphiql/": "https://esm.sh/graphiql@3.9.0/",
+                      "@graphiql/plugin-explorer": "https://esm.sh/@graphiql/plugin-explorer?standalone&external=react,@graphiql/react,graphql",
+                      "@graphiql/react": "https://esm.sh/@graphiql/react?standalone&external=react,react-dom,graphql,@graphiql/toolkit,@emotion/is-prop-valid",
+
+                      "@graphiql/toolkit": "https://esm.sh/@graphiql/toolkit?standalone&external=graphql",
+                      "graphql": "https://esm.sh/graphql@16.11.0",
+                      "@emotion/is-prop-valid": "data:text/javascript,"
+                    }
+                  }
+                </script>
+
+                <script type="module">
+                  import React from 'react';
+                  import ReactDOM from 'react-dom/client';
+                  import { GraphiQL, HISTORY_PLUGIN } from 'graphiql';
+                  import { createGraphiQLFetcher } from '@graphiql/toolkit';
+                  import { explorerPlugin } from '@graphiql/plugin-explorer';
+                  import 'graphiql/setup-workers/esm.sh';
+
+                  const customFetch = (url, opts = {}) => {
+                    return fetch(url, {...opts, credentials: 'include'})
+                  }
+
+                  const createUrl = (endpoint, subscription = false) => {
+                    const url = new URL(endpoint, window.location.origin);
+                    if (subscription) {
+                      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+                    }
+                    return url.toString();
+                  }
+
+                  const fetcher = createGraphiQLFetcher({
+                    url: createUrl('/'),
+                    fetch: customFetch,
+        
+                    subscriptionUrl: createUrl('/ws'),
+        
+        
+                    headers: {
+          
+                      'Authorization': 'Bearer [token]',
+          
+                    }
+        
+        
+                    wsConnectionParams: {
+          
+                      'token': '[token]',
+          
+                    }
+        
+                  });
+                  const plugins = [HISTORY_PLUGIN, explorerPlugin()];
+
+                  function App() {
+                    return React.createElement(GraphiQL, {
+                      fetcher,
+                      plugins,
+                      defaultEditorToolsVisibility: true,
+                    });
+                  }
+
+                  const container = document.getElementById('graphiql');
+                  const root = ReactDOM.createRoot(container);
+                  root.render(React.createElement(App));
+                </script>
+              </head>
+              <body>
+                <div id="graphiql">
+                  <div class="loading">Loading…</div>
+                </div>
+              </body>
+            </html>"#]];
+
+        expected.assert_eq(&graphiql_source);
     }
 }

@@ -1,16 +1,12 @@
 //! A helper module that supports HTTP
 
 #[cfg(feature = "graphiql")]
-mod graphiql_plugin;
-#[cfg(feature = "graphiql")]
 mod graphiql_source;
 mod multipart;
 mod multipart_subscribe;
 mod websocket;
 
 use futures_util::io::{AsyncRead, AsyncReadExt};
-#[cfg(feature = "graphiql")]
-pub use graphiql_plugin::{GraphiQLPlugin, graphiql_plugin_explorer};
 #[cfg(feature = "graphiql")]
 pub use graphiql_source::{Credentials, GraphiQLSource};
 pub use multipart::MultipartOptions;
