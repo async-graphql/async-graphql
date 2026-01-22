@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # Unreleased
 
+# [8.0.0-rc.1] 2026-01-22
+
 - Replace mutexes with lock-free data structures
 - Replace `fnv` with `rustc-hash` for faster hashing on 64-bit architectures
 - Remove allocations from `Delay` impl
