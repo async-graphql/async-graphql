@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove GraphQL Playground integration [#1791](https://github.com/async-graphql/async-graphql/pull/1791)
 - Upgrade GraphiQL to v5 [#1791](https://github.com/async-graphql/async-graphql/pull/1791)
 - Abstract over timers and spawn methods [#1789](https://github.com/async-graphql/async-graphql/pull/1789)
+- Upgrade warp integration to v0.4
+- Move OpenTelemetry to extras crate and upgrade [#1792](https://github.com/async-graphql/async-graphql/pull/1792)
 
 # [7.2.0] 2026-01-16
 
