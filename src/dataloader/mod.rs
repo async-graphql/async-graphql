@@ -332,7 +332,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 for key in keys {
                     if let Some(value) = typed_requests.cache_storage.get(&key) {
                         // Already in cache
-                        use_cache_values.insert(key.clone(), value.clone());
+                        use_cache_values.insert(key.clone(), value);
                     } else {
                         keys_set.insert(key);
                     }
