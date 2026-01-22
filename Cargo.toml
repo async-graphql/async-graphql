@@ -126,9 +126,6 @@ slab = "0.4.9"
 uuid = { version = "1.8.0", features = ["serde", "v4"] }
 expect-test = "1.5.1"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-async-io = "2.6.0"
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
