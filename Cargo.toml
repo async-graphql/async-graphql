@@ -21,7 +21,7 @@ chrono = ["dep:chrono"]
 chrono-duration = ["dep:chrono", "dep:iso8601"]
 dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
 decimal = ["dep:rust_decimal"]
-default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
+default = ["dynamic-schema", "email-validator", "tempfile", "graphiql"]
 log = ["dep:log"]
 opentelemetry = ["dep:opentelemetry"]
 jiff = ["dep:jiff"]
@@ -35,9 +35,7 @@ uuid = ["dep:uuid"]
 tracing = ["dep:tracing", "dep:tracing-futures"]
 unblock = ["dep:blocking"]
 dynamic-schema = []
-graphiql = ["dep:handlebars"]
-altair = ["dep:handlebars", "dep:schemars"]
-playground = []
+graphiql = ["dep:askama"]
 raw_value = ["async-graphql-value/raw_value"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 custom-error-conversion = []
@@ -100,20 +98,20 @@ tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracing = { version = "0.1.41", features = [
-  "attributes",
-], optional = true }
+tracing = { version = "0.1.41", features = ["attributes"], optional = true }
 url = { version = "2.5.0", optional = true }
 uuid = { version = "1.8.0", optional = true, features = ["v4", "serde"] }
 tempfile = { version = "3.10.1", optional = true }
 
 # Non-feature optional dependencies
+askama = { version = "0.15.1", default-features = false, features = [
+  "derive",
+  "std",
+], optional = true }
 blocking = { version = "1.6.1", optional = true }
 futures-channel = { version = "0.3.30", optional = true }
 lru = { version = "0.16.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-handlebars = { version = "6.3.2", optional = true }
-schemars = { version = "1.2.0", optional = true }
 scc = { version = "3.4.13", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -134,6 +132,7 @@ tokio = { version = "1.37.0", features = [
 criterion = { version = "0.8.1", features = ["html_reports", "async_tokio"] }
 slab = "0.4.9"
 uuid = { version = "1.8.0", features = ["serde", "v4"] }
+expect-test = "1.5.1"
 
 [package.metadata.docs.rs]
 all-features = true

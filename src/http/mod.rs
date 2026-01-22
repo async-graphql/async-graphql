@@ -1,32 +1,16 @@
 //! A helper module that supports HTTP
 
-#[cfg(feature = "altair")]
-mod altair_source;
-#[cfg(feature = "graphiql")]
-mod graphiql_plugin;
 #[cfg(feature = "graphiql")]
 mod graphiql_source;
-#[cfg(feature = "graphiql")]
-mod graphiql_v2_source;
 mod multipart;
 mod multipart_subscribe;
-#[cfg(feature = "playground")]
-mod playground_source;
 mod websocket;
 
-#[cfg(feature = "altair")]
-pub use altair_source::*;
 use futures_util::io::{AsyncRead, AsyncReadExt};
 #[cfg(feature = "graphiql")]
-pub use graphiql_plugin::{GraphiQLPlugin, graphiql_plugin_explorer};
-#[cfg(feature = "graphiql")]
-pub use graphiql_source::graphiql_source;
-#[cfg(feature = "graphiql")]
-pub use graphiql_v2_source::{Credentials, GraphiQLSource};
+pub use graphiql_source::{Credentials, GraphiQLSource};
 pub use multipart::MultipartOptions;
 pub use multipart_subscribe::{create_multipart_mixed_stream, is_accept_multipart_mixed};
-#[cfg(feature = "playground")]
-pub use playground_source::{GraphQLPlaygroundConfig, playground_source};
 use serde::Deserialize;
 pub use websocket::{
     ALL_WEBSOCKET_PROTOCOLS, ClientMessage, DefaultOnConnInitType, DefaultOnPingType,
