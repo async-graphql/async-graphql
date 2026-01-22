@@ -24,7 +24,6 @@ pub use self::analyzer::Analyzer;
 pub use self::apollo_tracing::ApolloTracing;
 #[cfg(feature = "log")]
 pub use self::logger::Logger;
-
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::{

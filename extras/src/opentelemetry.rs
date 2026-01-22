@@ -1,13 +1,5 @@
 use std::sync::Arc;
 
-use async_graphql_parser::types::ExecutableDocument;
-use async_graphql_value::Variables;
-use futures_util::{TryFutureExt, stream::BoxStream};
-use opentelemetry::{
-    Context as OpenTelemetryContext, Key, KeyValue,
-    trace::{FutureExt, SpanKind, TraceContextExt, Tracer},
-};
-
 use async_graphql::{
     Response, ServerError, ServerResult, ValidationResult, Value,
     extensions::{
@@ -15,6 +7,13 @@ use async_graphql::{
         NextResolve, NextSubscribe, NextValidation, ResolveInfo,
     },
     registry::MetaTypeName,
+};
+use async_graphql_parser::types::ExecutableDocument;
+use async_graphql_value::Variables;
+use futures_util::{TryFutureExt, stream::BoxStream};
+use opentelemetry::{
+    Context as OpenTelemetryContext, Key, KeyValue,
+    trace::{FutureExt, SpanKind, TraceContextExt, Tracer},
 };
 
 const KEY_SOURCE: Key = Key::from_static_str("graphql.source");
