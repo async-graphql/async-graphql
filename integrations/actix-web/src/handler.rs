@@ -45,8 +45,8 @@ impl<E: Executor> Handler<(HttpRequest, GraphQLRequest)> for GraphQL<E> {
                     .streaming(
                         create_multipart_mixed_stream(
                             stream,
-                            Duration::from_secs(30),
                             TokioTimer::default(),
+                            Duration::from_secs(30),
                         )
                         .map(Ok::<_, actix_web::Error>),
                     )

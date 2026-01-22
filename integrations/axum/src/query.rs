@@ -72,8 +72,8 @@ where
                 let body = Body::from_stream(
                     create_multipart_mixed_stream(
                         stream,
-                        Duration::from_secs(30),
                         TokioTimer::default(),
+                        Duration::from_secs(30),
                     )
                     .map(Ok::<_, std::io::Error>),
                 );

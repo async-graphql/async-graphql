@@ -17,8 +17,8 @@ static HEARTBEAT: Bytes = Bytes::from_static(b"{}\r\n");
 /// Reference: <https://www.apollographql.com/docs/router/executing-operations/subscription-multipart-protocol/>
 pub fn create_multipart_mixed_stream<'a, T>(
     input: impl Stream<Item = Response> + Send + Unpin + 'a,
-    heartbeat_interval: Duration,
     timer: T,
+    heartbeat_interval: Duration,
 ) -> BoxStream<'a, Bytes>
 where
     T: Timer,
