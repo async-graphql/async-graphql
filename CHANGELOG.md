@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `zxcvbn` integration
 - Remove `smol_str` integration
 - Remove `bigdecimal` integration
+- Remove Altair integration
+- Remove GraphQL Playground integration
+- Upgrade GraphiQL to v5
 
 # [7.2.0] 2026-01-16
 
