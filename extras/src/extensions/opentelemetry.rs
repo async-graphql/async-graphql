@@ -29,15 +29,15 @@ const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 /// # Example
 ///
 /// ```ignore
-/// use async_graphql::extensions::OpenTelemetry;
-/// use async_graphql_extras::OpenTelemetry as ExtrasOpenTelemetry;
+/// use async_graphql_extras::OpenTelemetry;
 ///
 /// let tracer = todo!("create your OpenTelemetry tracer");
 ///
 /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-///     .extension(ExtrasOpenTelemetry::new(tracer))
+///     .extension(OpenTelemetry::new(tracer))
 ///     .finish();
 /// ```
+#[cfg_attr(docsrs, doc(cfg(feature = "opentelemetry")))]
 pub struct OpenTelemetry<T> {
     tracer: Arc<T>,
     trace_scalars: bool,

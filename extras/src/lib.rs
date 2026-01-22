@@ -1,5 +1,4 @@
-//! Extra integrations for async-graphql
-
+#![doc = include_str!("../README.md")]
 #![deny(clippy::all)]
 #![deny(clippy::pedantic)]
 #![allow(clippy::cast_possible_wrap)]
