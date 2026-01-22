@@ -27,6 +27,9 @@ jobs:
           - name: async-graphql
             registryName: async-graphql
             path: .
+          - name: async-graphql-extras
+            registryName: async-graphql-extras
+            path: extras
           - name: async-graphql-actix-web
             registryName: async-graphql-actix-web
             path: integrations/actix-web

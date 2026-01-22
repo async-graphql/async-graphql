@@ -8,7 +8,7 @@ use opentelemetry::{
     trace::{FutureExt, SpanKind, TraceContextExt, Tracer},
 };
 
-use crate::{
+use async_graphql::{
     Response, ServerError, ServerResult, ValidationResult, Value,
     extensions::{
         Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
@@ -30,15 +30,15 @@ const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 /// # Example
 ///
 /// ```ignore
-/// use async_graphql::{extensions::OpenTelemetry, *};
+/// use async_graphql::extensions::OpenTelemetry;
+/// use async_graphql_extras::OpenTelemetry as ExtrasOpenTelemetry;
 ///
 /// let tracer = todo!("create your OpenTelemetry tracer");
 ///
 /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-///     .extension(OpenTelemetry::new(tracer))
+///     .extension(ExtrasOpenTelemetry::new(tracer))
 ///     .finish();
 /// ```
-#[cfg_attr(docsrs, doc(cfg(feature = "opentelemetry")))]
 pub struct OpenTelemetry<T> {
     tracer: Arc<T>,
     trace_scalars: bool,
@@ -69,13 +69,14 @@ impl<T> OpenTelemetry<T> {
     /// # Example
     ///
     /// ```ignore
-    /// use async_graphql::{extensions::OpenTelemetry, *};
+    /// use async_graphql::extensions::OpenTelemetry;
+    /// use async_graphql_extras::OpenTelemetry as ExtrasOpenTelemetry;
     ///
     /// let tracer = todo!("create your OpenTelemetry tracer");
     ///
     /// // Trace all fields including scalars
     /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    ///     .extension(OpenTelemetry::new(tracer).with_trace_scalars(true))
+    ///     .extension(ExtrasOpenTelemetry::new(tracer).with_trace_scalars(true))
     ///     .finish();
     /// ```
     pub fn with_trace_scalars(mut self, trace_scalars: bool) -> Self {
