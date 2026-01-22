@@ -1,3 +1,5 @@
+#![cfg(feature = "tokio")]
+
 use std::{
     pin::Pin,
     sync::{Arc, Mutex},
@@ -6,6 +8,7 @@ use std::{
 
 use async_graphql::{
     http::{WebSocketProtocols, WsMessage},
+    runtime::TokioTimer,
     *,
 };
 use futures_channel::mpsc;
@@ -810,7 +813,7 @@ pub async fn test_keepalive_timeout_1() {
     let schema = Schema::new(Query, EmptyMutation, Subscription);
     let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS)
-        .keepalive_timeout(Duration::from_secs(3));
+        .keepalive_timeout(TokioTimer::default(), Duration::from_secs(3));
 
     tx.send(
         serde_json::to_string(&value!({
@@ -866,7 +869,7 @@ pub async fn test_keepalive_timeout_2() {
     let schema = Schema::new(Query, EmptyMutation, Subscription);
     let (mut tx, rx) = mpsc::unbounded();
     let mut stream = http::WebSocket::new(schema, rx, WebSocketProtocols::GraphQLWS)
-        .keepalive_timeout(Duration::from_secs(3));
+        .keepalive_timeout(TokioTimer::default(), Duration::from_secs(3));
 
     tx.send(
         serde_json::to_string(&value!({

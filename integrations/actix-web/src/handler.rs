@@ -5,6 +5,7 @@ use actix_web::{Handler, HttpRequest, HttpResponse, Responder};
 use async_graphql::{
     Executor,
     http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
+    runtime::TokioTimer,
 };
 use futures_util::{FutureExt, StreamExt, future::LocalBoxFuture};
 
@@ -42,8 +43,12 @@ impl<E: Executor> Handler<(HttpRequest, GraphQLRequest)> for GraphQL<E> {
                 HttpResponse::build(StatusCode::OK)
                     .insert_header(("content-type", "multipart/mixed; boundary=graphql"))
                     .streaming(
-                        create_multipart_mixed_stream(stream, Duration::from_secs(30))
-                            .map(Ok::<_, actix_web::Error>),
+                        create_multipart_mixed_stream(
+                            stream,
+                            TokioTimer::default(),
+                            Duration::from_secs(30),
+                        )
+                        .map(Ok::<_, actix_web::Error>),
                     )
             } else {
                 GraphQLResponse(executor.execute(graphql_req.into_inner()).await.into())

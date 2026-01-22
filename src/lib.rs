@@ -182,7 +182,6 @@ mod request;
 mod response;
 mod schema;
 mod subscription;
-mod util;
 mod validation;
 
 pub mod context;
@@ -195,6 +194,7 @@ pub mod dynamic;
 pub mod extensions;
 pub mod http;
 pub mod resolver_utils;
+pub mod runtime;
 pub mod types;
 #[doc(hidden)]
 pub mod validators;
