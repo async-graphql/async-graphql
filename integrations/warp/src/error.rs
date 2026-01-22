@@ -4,12 +4,7 @@ use std::{
 };
 
 use async_graphql::ParseRequestError;
-use warp::{
-    Reply,
-    http::{Response, StatusCode},
-    hyper::Body,
-    reject::Reject,
-};
+use warp::{Reply, http::StatusCode, reject::Reject};
 
 /// Bad request error.
 ///
@@ -45,11 +40,8 @@ impl Error for GraphQLBadRequest {
 impl Reject for GraphQLBadRequest {}
 
 impl Reply for GraphQLBadRequest {
-    fn into_response(self) -> Response<Body> {
-        Response::builder()
-            .status(self.status())
-            .body(Body::from(self.0.to_string()))
-            .unwrap()
+    fn into_response(self) -> warp::reply::Response {
+        warp::reply::with_status(self.0.to_string(), self.status()).into_response()
     }
 }
 
