@@ -1,4 +1,5 @@
 #![allow(clippy::uninlined_format_args)]
+#![allow(dead_code)]
 
 use async_graphql::{
     registry::{MetaType, Registry},
