@@ -9,7 +9,7 @@ keywords = ["futures", "async", "graphql"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-derive"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.2.1"
+version = "8.0.0-rc.1"
 
 [lib]
 proc-macro = true
@@ -21,10 +21,10 @@ boxed-trait = []
 async-graphql-parser.workspace = true
 
 darling = "0.23.0"
+heck = "0.5.0"
 proc-macro-crate = "3.1.0"
 proc-macro2 = "1.0.79"
 quote = "1.0.35"
 syn = { version = "2.0", features = ["extra-traits", "visit-mut", "visit"] }
 thiserror.workspace = true
 strum = { version = "0.27.2", features = ["derive"] }
-Inflector = { version = "0.11.4", default-features = false }

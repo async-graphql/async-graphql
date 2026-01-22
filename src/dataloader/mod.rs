@@ -8,6 +8,7 @@
 //! use std::collections::{HashSet, HashMap};
 //! use std::convert::Infallible;
 //! use async_graphql::dataloader::Loader;
+//! use async_graphql::runtime::{TokioSpawner, TokioTimer};
 //!
 //! /// This loader simply converts the integer key into a string value.
 //! struct MyLoader;
@@ -43,7 +44,7 @@
 //!         v5: value(n: 5)
 //!     }
 //! "#;
-//! let request = Request::new(query).data(DataLoader::new(MyLoader, tokio::spawn));
+//! let request = Request::new(query).data(DataLoader::new(MyLoader, TokioSpawner::current(), TokioTimer::default()));
 //! let res = schema.execute(request).await.into_result().unwrap().data;
 //!
 //! assert_eq!(res, value!({
@@ -66,20 +67,22 @@ use std::{
     collections::{HashMap, HashSet},
     hash::Hash,
     sync::{
-        Arc, Mutex,
+        Arc,
         atomic::{AtomicBool, Ordering},
     },
     time::Duration,
 };
 
 pub use cache::{CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache};
-use fnv::FnvHashMap;
 use futures_channel::oneshot;
-use futures_util::future::BoxFuture;
+use futures_util::task::{Spawn, SpawnExt};
+use rustc_hash::FxBuildHasher;
 #[cfg(feature = "tracing")]
 use tracing::{Instrument, info_span, instrument};
 
-use crate::util::Delay;
+use crate::runtime::Timer;
+
+type FxHashMap<K, V> = scc::HashMap<K, V, FxBuildHasher>;
 
 #[allow(clippy::type_complexity)]
 struct ResSender<K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K>> {
@@ -136,7 +139,7 @@ pub trait Loader<K: Send + Sync + Hash + Eq + Clone + 'static>: Send + Sync + 's
 }
 
 struct DataLoaderInner<T> {
-    requests: Mutex<FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>>,
+    requests: FxHashMap<TypeId, Box<dyn Any + Sync + Send>>,
     loader: T,
 }
 
@@ -153,12 +156,10 @@ impl<T> DataLoaderInner<T> {
         match self.loader.load(&keys).await {
             Ok(values) => {
                 // update cache
-                let mut request = self.requests.lock().unwrap();
-                let typed_requests = request
-                    .get_mut(&tid)
-                    .unwrap()
-                    .downcast_mut::<Requests<K, T>>()
-                    .unwrap();
+                let mut entry = self.requests.get_async(&tid).await.unwrap();
+
+                let typed_requests = entry.get_mut().downcast_mut::<Requests<K, T>>().unwrap();
+
                 let disable_cache = typed_requests.disable_cache || disable_cache;
                 if !disable_cache {
                     for (key, value) in &values {
@@ -196,49 +197,50 @@ pub struct DataLoader<T, C = NoCache> {
     delay: Duration,
     max_batch_size: usize,
     disable_cache: AtomicBool,
-    spawner: Box<dyn Fn(BoxFuture<'static, ()>) + Send + Sync>,
+    spawner: Box<dyn Spawn + Send + Sync>,
+    timer: Arc<dyn Timer>,
 }
 
 impl<T> DataLoader<T, NoCache> {
     /// Use `Loader` to create a [DataLoader] that does not cache records.
-    pub fn new<S, R>(loader: T, spawner: S) -> Self
+    pub fn new<S, TR>(loader: T, spawner: S, timer: TR) -> Self
     where
-        S: Fn(BoxFuture<'static, ()>) -> R + Send + Sync + 'static,
+        S: Spawn + Send + Sync + 'static,
+        TR: Timer,
     {
         Self {
             inner: Arc::new(DataLoaderInner {
-                requests: Mutex::new(Default::default()),
+                requests: Default::default(),
                 loader,
             }),
             cache_factory: NoCache,
             delay: Duration::from_millis(1),
             max_batch_size: 1000,
             disable_cache: false.into(),
-            spawner: Box::new(move |fut| {
-                spawner(fut);
-            }),
+            spawner: Box::new(spawner),
+            timer: Arc::new(timer),
         }
     }
 }
 
 impl<T, C: CacheFactory> DataLoader<T, C> {
     /// Use `Loader` to create a [DataLoader] with a cache factory.
-    pub fn with_cache<S, R>(loader: T, spawner: S, cache_factory: C) -> Self
+    pub fn with_cache<S, TR>(loader: T, spawner: S, timer: TR, cache_factory: C) -> Self
     where
-        S: Fn(BoxFuture<'static, ()>) -> R + Send + Sync + 'static,
+        S: Spawn + Send + Sync + 'static,
+        TR: Timer,
     {
         Self {
             inner: Arc::new(DataLoaderInner {
-                requests: Mutex::new(Default::default()),
+                requests: Default::default(),
                 loader,
             }),
             cache_factory,
             delay: Duration::from_millis(1),
             max_batch_size: 1000,
             disable_cache: false.into(),
-            spawner: Box::new(move |fut| {
-                spawner(fut);
-            }),
+            spawner: Box::new(spawner),
+            timer: Arc::new(timer),
         }
     }
 
@@ -273,18 +275,14 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Enable/Disable cache of specified loader.
-    pub fn enable_cache<K>(&self, enable: bool)
+    pub async fn enable_cache<K>(&self, enable: bool)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        let mut requests = self.inner.requests.lock().unwrap();
-        let typed_requests = requests
-            .get_mut(&tid)
-            .unwrap()
-            .downcast_mut::<Requests<K, T>>()
-            .unwrap();
+        let mut entry = self.inner.requests.get_async(&tid).await.unwrap();
+        let typed_requests = entry.get_mut().downcast_mut::<Requests<K, T>>().unwrap();
         typed_requests.disable_cache = !enable;
     }
 
@@ -316,12 +314,15 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         let tid = TypeId::of::<K>();
 
         let (action, rx) = {
-            let mut requests = self.inner.requests.lock().unwrap();
-            let typed_requests = requests
-                .entry(tid)
-                .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)))
-                .downcast_mut::<Requests<K, T>>()
-                .unwrap();
+            let mut entry = self
+                .inner
+                .requests
+                .entry_async(tid)
+                .await
+                .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)));
+
+            let typed_requests = entry.downcast_mut::<Requests<K, T>>().unwrap();
+
             let prev_count = typed_requests.keys.len();
             let mut keys_set = HashSet::new();
             let mut use_cache_values = HashMap::new();
@@ -332,7 +333,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 for key in keys {
                     if let Some(value) = typed_requests.cache_storage.get(&key) {
                         // Already in cache
-                        use_cache_values.insert(key.clone(), value.clone());
+                        use_cache_values.insert(key.clone(), value);
                     } else {
                         keys_set.insert(key);
                     }
@@ -379,23 +380,20 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                     .instrument(info_span!("immediate_load"))
                     .in_current_span();
 
-                (self.spawner)(Box::pin(task));
+                let _ = self.spawner.spawn(task);
             }
             Action::StartFetch => {
                 let inner = self.inner.clone();
                 let disable_cache = self.disable_cache.load(Ordering::SeqCst);
                 let delay = self.delay;
+                let timer = self.timer.clone();
 
                 let task = async move {
-                    Delay::new(delay).await;
+                    timer.delay(delay).await;
 
                     let keys = {
-                        let mut request = inner.requests.lock().unwrap();
-                        let typed_requests = request
-                            .get_mut(&tid)
-                            .unwrap()
-                            .downcast_mut::<Requests<K, T>>()
-                            .unwrap();
+                        let mut entry = inner.requests.get_async(&tid).await.unwrap();
+                        let typed_requests = entry.downcast_mut::<Requests<K, T>>().unwrap();
                         typed_requests.take()
                     };
 
@@ -405,7 +403,7 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
                 };
                 #[cfg(feature = "tracing")]
                 let task = task.instrument(info_span!("start_fetch")).in_current_span();
-                (self.spawner)(Box::pin(task))
+                let _ = self.spawner.spawn(task);
             }
             Action::Delay => {}
         }
@@ -425,12 +423,15 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        let mut requests = self.inner.requests.lock().unwrap();
-        let typed_requests = requests
-            .entry(tid)
-            .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)))
-            .downcast_mut::<Requests<K, T>>()
-            .unwrap();
+        let mut entry = self
+            .inner
+            .requests
+            .entry_async(tid)
+            .await
+            .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)));
+
+        let typed_requests = entry.downcast_mut::<Requests<K, T>>().unwrap();
+
         for (key, value) in values {
             typed_requests
                 .cache_storage
@@ -462,27 +463,27 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        let mut requests = self.inner.requests.lock().unwrap();
-        let typed_requests = requests
-            .entry(tid)
-            .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)))
-            .downcast_mut::<Requests<K, T>>()
-            .unwrap();
+        let mut entry = self
+            .inner
+            .requests
+            .entry_sync(tid)
+            .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)));
+
+        let typed_requests = entry.downcast_mut::<Requests<K, T>>().unwrap();
         typed_requests.cache_storage.clear();
     }
 
     /// Gets all values in the cache.
-    pub fn get_cached_values<K>(&self) -> HashMap<K, T::Value>
+    pub async fn get_cached_values<K>(&self) -> HashMap<K, T::Value>
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        let requests = self.inner.requests.lock().unwrap();
-        match requests.get(&tid) {
+        match self.inner.requests.get_async(&tid).await {
             None => HashMap::new(),
             Some(requests) => {
-                let typed_requests = requests.downcast_ref::<Requests<K, T>>().unwrap();
+                let typed_requests = requests.get().downcast_ref::<Requests<K, T>>().unwrap();
                 typed_requests
                     .cache_storage
                     .iter()
@@ -495,9 +496,10 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
 
 #[cfg(test)]
 mod tests {
-    use fnv::FnvBuildHasher;
+    use rustc_hash::FxBuildHasher;
 
     use super::*;
+    use crate::runtime::{TokioSpawner, TokioTimer};
 
     struct MyLoader;
 
@@ -525,7 +527,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_dataloader() {
-        let loader = Arc::new(DataLoader::new(MyLoader, tokio::spawn).max_batch_size(10));
+        let loader = Arc::new(
+            DataLoader::new(MyLoader, TokioSpawner::current(), TokioTimer::default())
+                .max_batch_size(10),
+        );
         assert_eq!(
             futures_util::future::try_join_all((0..100i32).map({
                 let loader = loader.clone();
@@ -555,7 +560,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_duplicate_keys() {
-        let loader = Arc::new(DataLoader::new(MyLoader, tokio::spawn).max_batch_size(10));
+        let loader = Arc::new(
+            DataLoader::new(MyLoader, TokioSpawner::current(), TokioTimer::default())
+                .max_batch_size(10),
+        );
         assert_eq!(
             futures_util::future::try_join_all([1, 3, 5, 1, 7, 8, 3, 7].iter().copied().map({
                 let loader = loader.clone();
@@ -576,13 +584,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_dataloader_load_empty() {
-        let loader = DataLoader::new(MyLoader, tokio::spawn);
+        let loader = DataLoader::new(MyLoader, TokioSpawner::current(), TokioTimer::default());
         assert!(loader.load_many::<i32, _>(vec![]).await.unwrap().is_empty());
     }
 
     #[tokio::test]
     async fn test_dataloader_with_cache() {
-        let loader = DataLoader::with_cache(MyLoader, tokio::spawn, HashMapCache::default());
+        let loader = DataLoader::with_cache(
+            MyLoader,
+            TokioSpawner::current(),
+            TokioTimer::default(),
+            HashMapCache::default(),
+        );
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
         // All from the cache
@@ -612,11 +625,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_dataloader_with_cache_hashmap_fnv() {
+    async fn test_dataloader_with_cache_hashmap_fx() {
         let loader = DataLoader::with_cache(
             MyLoader,
-            tokio::spawn,
-            HashMapCache::<FnvBuildHasher>::new(),
+            TokioSpawner::current(),
+            TokioTimer::default(),
+            HashMapCache::<FxBuildHasher>::new(),
         );
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
@@ -648,7 +662,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_dataloader_disable_all_cache() {
-        let loader = DataLoader::with_cache(MyLoader, tokio::spawn, HashMapCache::default());
+        let loader = DataLoader::with_cache(
+            MyLoader,
+            TokioSpawner::current(),
+            TokioTimer::default(),
+            HashMapCache::default(),
+        );
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
         // All from the loader
@@ -668,18 +687,23 @@ mod tests {
 
     #[tokio::test]
     async fn test_dataloader_disable_cache() {
-        let loader = DataLoader::with_cache(MyLoader, tokio::spawn, HashMapCache::default());
+        let loader = DataLoader::with_cache(
+            MyLoader,
+            TokioSpawner::current(),
+            TokioTimer::default(),
+            HashMapCache::default(),
+        );
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
         // All from the loader
-        loader.enable_cache::<i32>(false);
+        loader.enable_cache::<i32>(false).await;
         assert_eq!(
             loader.load_many(vec![1, 2, 3]).await.unwrap(),
             vec![(1, 1), (2, 2), (3, 3)].into_iter().collect()
         );
 
         // All from the cache
-        loader.enable_cache::<i32>(true);
+        loader.enable_cache::<i32>(true).await;
         assert_eq!(
             loader.load_many(vec![1, 2, 3]).await.unwrap(),
             vec![(1, 10), (2, 20), (3, 30)].into_iter().collect()
@@ -702,8 +726,13 @@ mod tests {
         }
 
         let loader = Arc::new(
-            DataLoader::with_cache(MyDelayLoader, tokio::spawn, NoCache)
-                .delay(Duration::from_secs(1)),
+            DataLoader::with_cache(
+                MyDelayLoader,
+                TokioSpawner::current(),
+                TokioTimer::default(),
+                NoCache,
+            )
+            .delay(Duration::from_secs(1)),
         );
         let handle = tokio::spawn({
             let loader = loader.clone();

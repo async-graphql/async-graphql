@@ -1,20 +1,19 @@
 use std::sync::Arc;
 
+use async_graphql::{
+    Response, ServerError, ServerResult, ValidationResult, Value,
+    extensions::{
+        Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
+        NextResolve, NextSubscribe, NextValidation, ResolveInfo,
+    },
+    registry::{MetaType, MetaTypeName},
+};
 use async_graphql_parser::types::ExecutableDocument;
 use async_graphql_value::Variables;
 use futures_util::{TryFutureExt, stream::BoxStream};
 use opentelemetry::{
     Context as OpenTelemetryContext, Key, KeyValue,
     trace::{FutureExt, SpanKind, TraceContextExt, Tracer},
-};
-
-use crate::{
-    Response, ServerError, ServerResult, ValidationResult, Value,
-    extensions::{
-        Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
-        NextResolve, NextSubscribe, NextValidation, ResolveInfo,
-    },
-    registry::MetaTypeName,
 };
 
 const KEY_SOURCE: Key = Key::from_static_str("graphql.source");
@@ -30,7 +29,7 @@ const KEY_DEPTH: Key = Key::from_static_str("graphql.depth");
 /// # Example
 ///
 /// ```ignore
-/// use async_graphql::{extensions::OpenTelemetry, *};
+/// use async_graphql_extras::OpenTelemetry;
 ///
 /// let tracer = todo!("create your OpenTelemetry tracer");
 ///
@@ -69,15 +68,17 @@ impl<T> OpenTelemetry<T> {
     /// # Example
     ///
     /// ```ignore
-    /// use async_graphql::{extensions::OpenTelemetry, *};
+    /// use async_graphql::extensions::OpenTelemetry;
+    /// use async_graphql_extras::OpenTelemetry as ExtrasOpenTelemetry;
     ///
     /// let tracer = todo!("create your OpenTelemetry tracer");
     ///
     /// // Trace all fields including scalars
     /// let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-    ///     .extension(OpenTelemetry::new(tracer).with_trace_scalars(true))
+    ///     .extension(ExtrasOpenTelemetry::new(tracer).with_trace_scalars(true))
     ///     .finish();
     /// ```
+    #[must_use]
     pub fn with_trace_scalars(mut self, trace_scalars: bool) -> Self {
         self.trace_scalars = trace_scalars;
         self
@@ -224,8 +225,7 @@ where
                 .registry
                 .types
                 .get(concrete_type)
-                .map(|ty| ty.is_leaf())
-                .unwrap_or(false)
+                .is_some_and(MetaType::is_leaf)
         } else {
             true
         };

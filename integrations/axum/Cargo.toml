@@ -9,10 +9,10 @@ keywords = ["futures", "async", "graphql", "axum"]
 license = "MIT OR Apache-2.0"
 name = "async-graphql-axum"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.2.1"
+version = "8.0.0-rc.1"
 
 [dependencies]
-async-graphql.workspace = true
+async-graphql = { workspace = true, features = ["tokio"] }
 
 bytes.workspace = true
 futures-util.workspace = true

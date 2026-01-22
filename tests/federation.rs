@@ -1,4 +1,5 @@
 #![cfg(feature = "dataloader")]
+#![cfg(feature = "tokio")]
 #![allow(unreachable_code)]
 #![allow(dead_code)]
 #![allow(clippy::diverging_sub_expression)]
@@ -7,6 +8,7 @@ use std::{collections::HashMap, convert::Infallible};
 
 use async_graphql::{
     dataloader::{DataLoader, Loader},
+    runtime::{TokioSpawner, TokioTimer},
     *,
 };
 
@@ -203,7 +205,11 @@ pub async fn test_find_entity_with_context() {
     }
 
     let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
-        .data(DataLoader::new(MyLoader, tokio::spawn))
+        .data(DataLoader::new(
+            MyLoader,
+            TokioSpawner::current(),
+            TokioTimer::default(),
+        ))
         .finish();
     let query = r#"{
             _entities(representations: [

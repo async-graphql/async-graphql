@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[tokio::test]
 pub async fn test_object() {
     macro_rules! test_data {

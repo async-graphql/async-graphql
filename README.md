@@ -114,7 +114,7 @@ I strongly recommend limiting the [complexity and depth](https://async-graphql.g
 - Rustfmt friendly (Procedural Macro)
 - Custom scalars
 - Minimal overhead
-- Easy integration ([poem](https://crates.io/crates/poem), [axum](https://crates.io/crates/axum), [actix-web](https://crates.io/crates/actix-web), [tide](https://crates.io/crates/tide), [warp](https://crates.io/crates/warp), [rocket](https://crates.io/crates/rocket) ...)
+- Easy integration ([poem](https://crates.io/crates/poem), [axum](https://crates.io/crates/axum), [actix-web](https://crates.io/crates/actix-web), [warp](https://crates.io/crates/warp), [rocket](https://crates.io/crates/rocket) ...)
 - Upload files (Multipart request)
 - Subscriptions (WebSocket transport)
 - Custom extensions
@@ -145,45 +145,40 @@ Integrations are what glue `async-graphql` with your web server, here are provid
 - Poem [async-graphql-poem](https://crates.io/crates/async-graphql-poem)
 - Actix-web [async-graphql-actix-web](https://crates.io/crates/async-graphql-actix-web)
 - Warp [async-graphql-warp](https://crates.io/crates/async-graphql-warp)
-- Tide [async-graphql-tide](https://crates.io/crates/async-graphql-tide)
 - Rocket [async-graphql-rocket](https://github.com/async-graphql/async-graphql/tree/master/integrations/rocket)
 - Axum [async-graphql-axum](https://github.com/async-graphql/async-graphql/tree/master/integrations/axum)
 
 ## Crate features
 
-This crate offers the following features. Most are not activated by default, except the integrations of GraphiQL (`graphiql`) and GraphQL Playground (`playground`):
+This crate offers the following features. Most are not activated by default, except the integrations of GraphiQL (`graphiql`): 
 
 | feature                        | enables                                                                                                                                                                                       |
 | :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`apollo_tracing`**           | Enable the [Apollo tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.ApolloTracing.html).                                                               |
 | **`apollo_persisted_queries`** | Enable the [Apollo persisted queries extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/apollo_persisted_queries/struct.ApolloPersistedQueries.html).                   |
 | **`boxed-trait`**              | Enables [`async-trait`](https://crates.io/crates/async-trait) for all traits.                                                                                                                 |
-| **`bson`**                     | Integrate with the [`bson` crate](https://crates.io/crates/bson).                                                                                                                             |
-| **`bigdecimal`**               | Integrate with the [`bigdecimal` crate](https://crates.io/crates/bigdecimal).                                                                                                                 |
-| **`cbor`**                     | Support for [serde_cbor](https://crates.io/crates/serde_cbor).                                                                                                                                |
 | **`chrono`**                   | Integrate with the [`chrono` crate](https://crates.io/crates/chrono).                                                                                                                         |
 | **`chrono-tz`**                | Integrate with the [`chrono-tz` crate](https://crates.io/crates/chrono-tz).                                                                                                                   |
 | **`dataloader`**               | Support [DataLoader](dataloader/struct.DataLoader.html).                                                                                                                                      |
 | **`decimal`**                  | Integrate with the [`rust_decimal` crate](https://crates.io/crates/rust_decimal).                                                                                                             |
 | **`dynamic-schema`**           | Support dynamic schema                                                                                                                                                                        |
-| **`fast_chemail`**             | Integrate with the [`fast_chemail` crate](https://crates.io/crates/fast_chemail).                                                                                                             |
 | **`graphiql`**                 | Enables the [GraphiQL IDE](https://github.com/graphql/graphiql) integration                                                                                                                   |
-| **`hashbrown`**                | Integrate with the [`hashbrown` crate](https://github.com/rust-lang/hashbrown).                                                                                                               |
 | **`log`**                      | Enable the [Logger extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.Logger.html).                                                                              |
-| **`opentelemetry`**            | Enable the [OpenTelemetry extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.OpenTelemetry.html).                                                                |
-| **`playground`**               | Enables the [GraphQL playground IDE](https://github.com/graphql/graphql-playground) integration                                                                                               |
 | **`rawvalue`**                 | Support raw values from [`serde_json`](https://crates.io/crates/serde_json)                                                                                                                   |
 | **`secrecy`**                  | Integrate with the [`secrecy` crate](https://crates.io/crates/secrecy).                                                                                                                       |
-| **`smol_str`**                 | Integrate with the [`smol_str` crate](https://crates.io/crates/smol_str).                                                                                                                     |
 | **`string_number`**            | Enable the [StringNumber](types/struct.StringNumber.html).                                                                                                                                    |
 | **`time`**                     | Integrate with the [`time` crate](https://github.com/time-rs/time).                                                                                                                           |
 | **`tracing`**                  | Enable the [Tracing extension](https://docs.rs/async-graphql/latest/async_graphql/extensions/struct.Tracing.html).                                                                            |
 | **`tempfile`**                 | Save the uploaded content in the temporary file.                                                                                                                                              |
-| **`tokio-sync`**               | Integrate with the [`tokio::sync::RwLock`](https://docs.rs/tokio/latest/tokio/sync/struct.RwLock.html) and [`tokio::sync::Mutex`](https://docs.rs/tokio/latest/tokio/sync/struct.Mutex.html). |
-| **`tokio-timer`**              | Use the [`tokio::time`](https://docs.rs/tokio/latest/tokio/time/index.html) module for delay and timing events when available.                                                                |
 | **`unblock`**                  | Support [Asynchronous reader for Upload](types/struct.Upload.html)                                                                                                                            |
 | **`uuid`**                     | Integrate with the [`uuid` crate](https://crates.io/crates/uuid).                                                                                                                             |
 | **`url`**                      | Integrate with the [`url` crate](https://crates.io/crates/url).                                                                                                                               |
+
+### Extra Extensions
+
+Additional extensions are available in the [`async-graphql-extras`](./extras) crate. These extensions require additional dependencies and are maintained separately.
+
+See the [extras crate README](./extras/README.md) for more information.
 
 ### Observability
 

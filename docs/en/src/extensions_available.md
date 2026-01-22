@@ -44,9 +44,11 @@ Apollo Studio is a cloud platform that helps you build, validate, and secure you
 Logger is a simple extension allowing you to add some logging feature to `async-graphql`. It's also a good example to learn how to create your own extension. 
 
 ## OpenTelemetry
-*Available in the repository*
+*Available in the `async-graphql-extras` crate*
 
-OpenTelemetry is an extension providing an integration with the [opentelemetry crate](https://crates.io/crates/opentelemetry) to allow your application to capture distributed traces and metrics from `async-graphql`.
+OpenTelemetry is an extension providing an integration with the [opentelemetry crate](https://crates.io/crates/opentelemetry) to allow your application to capture distributed traces and metrics from `async-graphql`. 
+
+This extension is available in the [`async-graphql-extras`](https://crates.io/crates/async-graphql-extras) crate. See the [extras crate README](https://github.com/async-graphql/async-graphql/tree/master/extras) for installation instructions and usage examples.
 
 ## Tracing
 *Available in the repository*

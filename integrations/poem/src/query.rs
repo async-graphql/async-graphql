@@ -3,6 +3,7 @@ use std::time::Duration;
 use async_graphql::{
     Executor,
     http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
+    runtime::TokioTimer,
 };
 use futures_util::StreamExt;
 use poem::{Body, Endpoint, FromRequest, IntoResponse, Request, Response, Result};
@@ -62,8 +63,12 @@ where
             Ok(Response::builder()
                 .header("content-type", "multipart/mixed; boundary=graphql")
                 .body(Body::from_bytes_stream(
-                    create_multipart_mixed_stream(stream, Duration::from_secs(30))
-                        .map(Ok::<_, std::io::Error>),
+                    create_multipart_mixed_stream(
+                        stream,
+                        TokioTimer::default(),
+                        Duration::from_secs(30),
+                    )
+                    .map(Ok::<_, std::io::Error>),
                 )))
         } else {
             let (req, mut body) = req.split();

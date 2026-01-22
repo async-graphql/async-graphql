@@ -45,9 +45,11 @@ References: [Apollo doc - Persisted Queries](https://www.apollographql.com/docs/
 `Logger` 是一个简单的扩展，允许你向 `async-graphql` 添加一些日志记录功能。这也是学习如何创建自己的扩展的一个很好的例子。 
 
 ## OpenTelemetry
-*Available in the repository*
+*Available in the `async-graphql-extras` crate*
 
 `OpenTelemetry` 扩展提供 [opentelemetry crate](https://crates.io/crates/opentelemetry) 的集成，以允许你的应用程序从 `async-graphql` 捕获分布式跟踪和指标。
+
+此扩展位于 [`async-graphql-extras`](https://crates.io/crates/async-graphql-extras) crate 中。有关安装说明和使用示例，请参阅 [extras crate README](https://github.com/async-graphql/async-graphql/tree/master/extras)。
 
 ## Tracing
 *Available in the repository*

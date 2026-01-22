@@ -118,6 +118,26 @@ jobs:
       - name: Check with clippy
         run: cargo clippy --all
 
+  clippy_wasm:
+    name: Check default on Wasm (no features) - Rust (${{ matrix.rust }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rust: stable }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: wasm32-unknown-unknown
+      - name: Check code
+        run: cargo check --no-default-features --target wasm32-unknown-unknown
+
   book_examples:
     name: Test book examples
     runs-on: ubuntu-22.04

@@ -168,30 +168,10 @@ impl From<async_graphql::BatchResponse> for GraphQLResponse {
     }
 }
 
-#[cfg(feature = "cbor")]
-mod cbor {
-    use core::fmt;
-
-    use actix_web::{ResponseError, http::StatusCode};
-
-    #[derive(Debug)]
-    pub struct Error(pub serde_cbor::Error);
-    impl fmt::Display for Error {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", self.0)
-        }
-    }
-    impl ResponseError for Error {
-        fn status_code(&self) -> StatusCode {
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
-}
-
 impl Responder for GraphQLResponse {
     type Body = BoxBody;
 
-    fn respond_to(self, req: &HttpRequest) -> HttpResponse {
+    fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
         let mut builder = HttpResponse::build(StatusCode::OK);
 
         if self.0.is_ok()
@@ -200,29 +180,13 @@ impl Responder for GraphQLResponse {
             builder.append_header((http::header::CACHE_CONTROL, cache_control));
         }
 
-        let accept = req
-            .headers()
-            .get(http::header::ACCEPT)
-            .and_then(|val| val.to_str().ok());
-        let (ct, body) = match accept {
-            // optional cbor support
-            #[cfg(feature = "cbor")]
-            // this avoids copy-pasting the mime type
-            Some(ct @ "application/cbor") => (
-                ct,
-                match serde_cbor::to_vec(&self.0) {
-                    Ok(body) => body,
-                    Err(e) => return HttpResponse::from_error(cbor::Error(e)),
-                },
-            ),
-            _ => (
-                "application/graphql-response+json",
-                match serde_json::to_vec(&self.0) {
-                    Ok(body) => body,
-                    Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),
-                },
-            ),
-        };
+        let (ct, body) = (
+            "application/graphql-response+json",
+            match serde_json::to_vec(&self.0) {
+                Ok(body) => body,
+                Err(e) => return HttpResponse::from_error(JsonPayloadError::Serialize(e)),
+            },
+        );
 
         let mut resp = builder.content_type(ct).body(body);
 

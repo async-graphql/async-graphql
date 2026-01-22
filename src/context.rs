@@ -10,7 +10,7 @@ use std::{
 
 use async_graphql_parser::types::ConstDirective;
 use async_graphql_value::{Value as InputValue, Variables};
-use fnv::FnvHashMap;
+use rustc_hash::FxHashMap;
 use serde::{
     Serialize,
     ser::{SerializeSeq, Serializer},
@@ -54,10 +54,10 @@ pub trait DataContext<'a> {
 ///
 /// This is a type map, allowing you to store anything inside it.
 #[derive(Default)]
-pub struct Data(FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>);
+pub struct Data(FxHashMap<TypeId, Box<dyn Any + Sync + Send>>);
 
 impl Deref for Data {
-    type Target = FnvHashMap<TypeId, Box<dyn Any + Sync + Send>>;
+    type Target = FxHashMap<TypeId, Box<dyn Any + Sync + Send>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

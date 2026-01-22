@@ -17,6 +17,7 @@ use async_graphql::{
         ALL_WEBSOCKET_PROTOCOLS, DefaultOnConnInitType, DefaultOnPingType, WebSocket,
         WebSocketProtocols, WsMessage, default_on_connection_init, default_on_ping,
     },
+    runtime::TokioTimer,
 };
 use futures_util::stream::Stream;
 
@@ -217,7 +218,7 @@ where
             .connection_data(self.data.take().unwrap())
             .on_connection_init(self.on_connection_init.take().unwrap())
             .on_ping(self.on_ping.clone())
-            .keepalive_timeout(self.keepalive_timeout)
+            .keepalive_timeout(TokioTimer::default(), self.keepalive_timeout)
             .into_actor(self)
             .map(|response, _act, ctx| match response {
                 WsMessage::Text(text) => ctx.text(text),

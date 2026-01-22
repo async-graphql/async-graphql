@@ -1,7 +1,9 @@
+#![allow(dead_code)]
+
 use actix_web::{HttpRequest, HttpResponse, web};
 use async_graphql::{
     Context, EmptyMutation, EmptySubscription, Object, ObjectType, Schema, SubscriptionType,
-    http::{GraphQLPlaygroundConfig, playground_source},
+    http::GraphiQLSource,
 };
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use async_lock::Mutex;
@@ -9,7 +11,7 @@ use async_lock::Mutex;
 pub async fn gql_playgound() -> HttpResponse {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(playground_source(GraphQLPlaygroundConfig::new("/")))
+        .body(GraphiQLSource::build().endpoint("/").finish())
 }
 
 pub(crate) struct AddQueryRoot;

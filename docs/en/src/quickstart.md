@@ -7,7 +7,6 @@
 async-graphql = "4.0"
 async-graphql-actix-web = "4.0" # If you need to integrate into actix-web
 async-graphql-warp = "4.0" # If you need to integrate into warp
-async-graphql-tide = "4.0" # If you need to integrate into tide
 ```
 
 ## Write a Schema

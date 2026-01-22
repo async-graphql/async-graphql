@@ -11,30 +11,32 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "7.2.1"
+version = "8.0.0-rc.1"
 
 [features]
-apollo_persisted_queries = ["lru", "sha2"]
-apollo_tracing = ["chrono"]
-email-validator = ["fast_chemail"]
-cbor = ["serde_cbor"]
-chrono-duration = ["chrono", "iso8601"]
-dataloader = ["futures-channel", "lru"]
-decimal = ["rust_decimal"]
-default = ["dynamic-schema", "email-validator", "tempfile", "playground", "graphiql"]
+apollo_persisted_queries = ["dep:scc", "dep:sha2"]
+apollo_tracing = ["dep:chrono"]
+email-validator = ["dep:fast_chemail"]
+chrono = ["dep:chrono"]
+chrono-duration = ["dep:chrono", "dep:iso8601"]
+dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
+decimal = ["dep:rust_decimal"]
+default = ["dynamic-schema", "email-validator", "tempfile", "graphiql"]
+log = ["dep:log"]
+
 jiff = ["dep:jiff"]
-password-strength-validator = ["zxcvbn"]
 string_number = []
-tokio-sync = ["dep:tokio", "tokio/sync"]
-tokio-timer = ["dep:tokio", "tokio/time", "tokio/rt"]
-tracing = ["tracinglib", "tracing-futures"]
-unblock = ["blocking"]
+tempfile = ["dep:tempfile"]
+secrecy = ["dep:secrecy"]
+time = ["dep:time"]
+tokio = ["dep:tokio"]
+url = ["dep:url"]
+uuid = ["dep:uuid"]
+tracing = ["dep:tracing", "dep:tracing-futures"]
+unblock = ["dep:blocking"]
 dynamic-schema = []
-graphiql = ["handlebars"]
-altair = ["handlebars", "schemars"]
-playground = []
+graphiql = ["dep:askama"]
 raw_value = ["async-graphql-value/raw_value"]
-uuid-validator = ["uuid"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
 custom-error-conversion = []
 
@@ -47,15 +49,14 @@ async-graphql-derive.workspace = true
 async-graphql-parser.workspace = true
 async-graphql-value.workspace = true
 
+
 asynk-strim = "0.1.5"
 async-trait.workspace = true
 bytes.workspace = true
-fnv = "1.0.7"
 futures-util = { workspace = true, features = [
   "std",
   "io",
   "sink",
-  "async-await",
   "async-await-macro",
 ] }
 indexmap.workspace = true
@@ -71,58 +72,49 @@ thiserror.workspace = true
 base64 = "0.22.0"
 serde_urlencoded = "0.7.1"
 http.workspace = true
+rustc-hash = "2.1.1"
 
 # Feature optional dependencies
-bson = { version = "2.9.0", optional = true, features = [
-  "chrono-0_4",
-  "uuid-1",
-] }
 chrono = { version = "0.4.37", optional = true, default-features = false, features = [
   "clock",
   "std",
 ] }
 chrono-tz = { version = "0.10.0", optional = true }
 fast_chemail = { version = "0.9.6", optional = true }
-hashbrown = { version = "0.16.1", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
 jiff = { version = "0.2.18", optional = true }
 log = { version = "0.4.21", optional = true }
-opentelemetry = { version = "0.27.0", optional = true, default-features = false, features = [
-  "trace",
-] }
+
 rust_decimal = { version = "1.35.0", optional = true, default-features = false }
-bigdecimal = { version = ">=0.3.0, <0.5.0", optional = true, default-features = false }
 secrecy = { version = "0.10.3", optional = true }
-smol_str = { version = "0.3.1", optional = true }
 time = { version = "0.3.36", optional = true, features = [
   "parsing",
   "formatting",
   "macros",
 ] }
-tokio = { version = "1.37.0", optional = true }
+tokio = { version = "1.37.0", features = ["rt", "time"], optional = true }
 tracing-futures = { version = "0.2.5", optional = true, features = [
   "std-future",
   "futures-03",
 ] }
-tracinglib = { version = "0.1.41", features = [
-  "attributes",
-], optional = true, package = "tracing" }
+tracing = { version = "0.1.41", features = ["attributes"], optional = true }
 url = { version = "2.5.0", optional = true }
 uuid = { version = "1.8.0", optional = true, features = ["v4", "serde"] }
 tempfile = { version = "3.10.1", optional = true }
 
 # Non-feature optional dependencies
+askama = { version = "0.15.1", default-features = false, features = [
+  "derive",
+  "std",
+], optional = true }
 blocking = { version = "1.6.1", optional = true }
 futures-channel = { version = "0.3.30", optional = true }
 lru = { version = "0.16.2", optional = true }
-serde_cbor = { version = "0.11.2", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-zxcvbn = { version = "3.1.0", optional = true }
-handlebars = { version = "6.3.2", optional = true }
-schemars = { version = "1.2.0", optional = true }
+scc = { version = "3.4.13", optional = true }
 
 [dev-dependencies]
-futures-channel = "0.3.30"
+futures-channel = { version = "0.3.30", features = ["sink"] }
 tokio = { version = "1.37.0", features = [
   "macros",
   "rt-multi-thread",
@@ -132,6 +124,7 @@ tokio = { version = "1.37.0", features = [
 criterion = { version = "0.8.1", features = ["html_reports", "async_tokio"] }
 slab = "0.4.9"
 uuid = { version = "1.8.0", features = ["serde", "v4"] }
+expect-test = "1.5.1"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 async-io = "2.6.0"
@@ -151,14 +144,15 @@ members = [
   "integrations/rocket",
   "integrations/warp",
   "integrations/axum",
-  "integrations/tide",
+  "extras",
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "7.2.1", default-features = false }
-async-graphql-derive = { path = "derive", version = "7.2.1" }
-async-graphql-parser = { path = "parser", version = "7.2.1" }
-async-graphql-value = { path = "value", version = "7.2.1" }
+async-graphql = { path = ".", version = "8.0.0-rc.1", default-features = false }
+async-graphql-derive = { path = "derive", version = "8.0.0-rc.1" }
+async-graphql-parser = { path = "parser", version = "8.0.0-rc.1" }
+async-graphql-value = { path = "value", version = "8.0.0-rc.1" }
+
 
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"

@@ -1,5 +1,6 @@
 #![allow(clippy::uninlined_format_args)]
 #![allow(clippy::diverging_sub_expression)]
+#![allow(dead_code)]
 
 use std::sync::Arc;
 

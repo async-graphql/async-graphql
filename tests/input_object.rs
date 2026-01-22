@@ -487,14 +487,14 @@ pub async fn test_both_input_output_generic_with_nesting() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
     assert_eq!(
         schema
-            .execute("{ obj(input: {a: OPTION_1}) { a } }")
+            .execute("{ obj(input: {a: OPTION1}) { a } }")
             .await
             .into_result()
             .unwrap()
             .data,
         value!({
             "obj": {
-                "a": "OPTION_1",
+                "a": "OPTION1",
             }
         }),
     );

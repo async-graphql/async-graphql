@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use async_graphql::*;
 
 #[tokio::test]

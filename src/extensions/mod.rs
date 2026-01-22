@@ -7,8 +7,7 @@ pub mod apollo_persisted_queries;
 mod apollo_tracing;
 #[cfg(feature = "log")]
 mod logger;
-#[cfg(feature = "opentelemetry")]
-mod opentelemetry;
+
 #[cfg(feature = "tracing")]
 mod tracing;
 
@@ -25,8 +24,6 @@ pub use self::analyzer::Analyzer;
 pub use self::apollo_tracing::ApolloTracing;
 #[cfg(feature = "log")]
 pub use self::logger::Logger;
-#[cfg(feature = "opentelemetry")]
-pub use self::opentelemetry::OpenTelemetry;
 #[cfg(feature = "tracing")]
 pub use self::tracing::Tracing;
 use crate::{

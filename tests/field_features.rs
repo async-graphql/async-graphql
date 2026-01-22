@@ -9,8 +9,6 @@ pub async fn test_field_features() {
     #[derive(SimpleObject)]
     struct MyObj {
         value: i32,
-        #[cfg(feature = "bson")]
-        value_bson: i32,
         #[cfg(feature = "abc")]
         value_abc: i32,
     }
@@ -20,11 +18,6 @@ pub async fn test_field_features() {
     #[Subscription]
     impl Subscription {
         async fn values(&self) -> impl Stream<Item = i32> {
-            futures_util::stream::once(async move { 10 })
-        }
-
-        #[cfg(feature = "bson")]
-        async fn values_bson(&self) -> impl Stream<Item = i32> {
             futures_util::stream::once(async move { 10 })
         }
 
@@ -39,11 +32,6 @@ pub async fn test_field_features() {
     #[Object]
     impl Query {
         async fn value(&self) -> i32 {
-            10
-        }
-
-        #[cfg(feature = "bson")]
-        async fn value_bson(&self) -> i32 {
             10
         }
 
@@ -72,14 +60,6 @@ pub async fn test_field_features() {
         })
     );
 
-    let query = "{ valueBson }";
-    assert_eq!(
-        schema.execute(query).await.data,
-        value!({
-            "valueBson": 10,
-        })
-    );
-
     let query = "{ valueAbc }";
     assert_eq!(
         schema.execute(query).await.into_result().unwrap_err(),
@@ -98,14 +78,6 @@ pub async fn test_field_features() {
         schema.execute(query).await.data,
         value!({
             "obj": { "value": 10 }
-        })
-    );
-
-    let query = "{ obj { valueBson } }";
-    assert_eq!(
-        schema.execute(query).await.data,
-        value!({
-            "obj": { "valueBson": 10 }
         })
     );
 
@@ -134,14 +106,6 @@ pub async fn test_field_features() {
         })
     );
 
-    let mut stream = schema.execute_stream("subscription { valuesBson }");
-    assert_eq!(
-        stream.next().await.map(|resp| resp.data).unwrap(),
-        value!({
-            "valuesBson": 10
-        })
-    );
-
     assert_eq!(
         schema
             .execute_stream("subscription { valuesAbc }")
@@ -150,7 +114,8 @@ pub async fn test_field_features() {
             .unwrap()
             .errors,
         vec![ServerError {
-            message: r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values", "valuesBson"?"#.to_owned(),
+            message: r#"Unknown field "valuesAbc" on type "Subscription". Did you mean "values"?"#
+                .to_owned(),
             source: None,
             locations: vec![Pos {
                 column: 16,
