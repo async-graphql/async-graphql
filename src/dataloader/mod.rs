@@ -273,14 +273,13 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Enable/Disable cache of specified loader.
-    pub fn enable_cache<K>(&self, enable: bool)
+    pub async fn enable_cache<K>(&self, enable: bool)
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        // TODO: make async in v8
-        let mut entry = self.inner.requests.get_sync(&tid).unwrap();
+        let mut entry = self.inner.requests.get_async(&tid).await.unwrap();
         let typed_requests = entry.get_mut().downcast_mut::<Requests<K, T>>().unwrap();
         typed_requests.disable_cache = !enable;
     }
@@ -472,14 +471,13 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Gets all values in the cache.
-    pub fn get_cached_values<K>(&self) -> HashMap<K, T::Value>
+    pub async fn get_cached_values<K>(&self) -> HashMap<K, T::Value>
     where
         K: Send + Sync + Hash + Eq + Clone + 'static,
         T: Loader<K>,
     {
         let tid = TypeId::of::<K>();
-        // TODO: make async in v8
-        match self.inner.requests.get_sync(&tid) {
+        match self.inner.requests.get_async(&tid).await {
             None => HashMap::new(),
             Some(requests) => {
                 let typed_requests = requests.get().downcast_ref::<Requests<K, T>>().unwrap();
@@ -669,14 +667,14 @@ mod tests {
         loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
 
         // All from the loader
-        loader.enable_cache::<i32>(false);
+        loader.enable_cache::<i32>(false).await;
         assert_eq!(
             loader.load_many(vec![1, 2, 3]).await.unwrap(),
             vec![(1, 1), (2, 2), (3, 3)].into_iter().collect()
         );
 
         // All from the cache
-        loader.enable_cache::<i32>(true);
+        loader.enable_cache::<i32>(true).await;
         assert_eq!(
             loader.load_many(vec![1, 2, 3]).await.unwrap(),
             vec![(1, 10), (2, 20), (3, 30)].into_iter().collect()
