@@ -7,6 +7,7 @@ use std::{
 use async_graphql::{
     Executor,
     http::{create_multipart_mixed_stream, is_accept_multipart_mixed},
+    runtime::TokioTimer,
 };
 use axum::{
     BoxError,
@@ -69,8 +70,12 @@ where
                 };
                 let stream = executor.execute_stream(req.0, None);
                 let body = Body::from_stream(
-                    create_multipart_mixed_stream(stream, Duration::from_secs(30))
-                        .map(Ok::<_, std::io::Error>),
+                    create_multipart_mixed_stream(
+                        stream,
+                        Duration::from_secs(30),
+                        TokioTimer::default(),
+                    )
+                    .map(Ok::<_, std::io::Error>),
                 );
                 Ok(HttpResponse::builder()
                     .header("content-type", "multipart/mixed; boundary=graphql")

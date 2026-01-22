@@ -8,6 +8,7 @@
 //! use std::collections::{HashSet, HashMap};
 //! use std::convert::Infallible;
 //! use async_graphql::dataloader::Loader;
+//! use async_graphql::runtime::{TokioSpawner, TokioTimer};
 //!
 //! /// This loader simply converts the integer key into a string value.
 //! struct MyLoader;
@@ -43,7 +44,7 @@
 //!         v5: value(n: 5)
 //!     }
 //! "#;
-//! let request = Request::new(query).data(DataLoader::new(MyLoader, tokio::spawn));
+//! let request = Request::new(query).data(DataLoader::new(MyLoader, TokioSpawner::current(), TokioTimer::default()));
 //! let res = schema.execute(request).await.into_result().unwrap().data;
 //!
 //! assert_eq!(res, value!({

@@ -6,6 +6,7 @@ use async_graphql::{
         DefaultOnConnInitType, DefaultOnPingType, WebSocketProtocols, WsMessage,
         default_on_connection_init, default_on_ping,
     },
+    runtime::TokioTimer,
 };
 use futures_util::{
     Sink, Stream, StreamExt, future,
@@ -311,7 +312,7 @@ where
             .connection_data(self.data)
             .on_connection_init(self.on_init)
             .on_ping(self.on_ping)
-            .keepalive_timeout(self.keepalive_timeout)
+            .keepalive_timeout(TokioTimer::default(), self.keepalive_timeout)
             .map(|msg| match msg {
                 WsMessage::Text(text) => ws::Message::text(text),
                 WsMessage::Close(code, status) => ws::Message::close_with(code, status),
