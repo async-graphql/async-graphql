@@ -6,7 +6,7 @@ use async_graphql::{
         Extension, ExtensionContext, ExtensionFactory, NextExecute, NextParseQuery, NextRequest,
         NextResolve, NextSubscribe, NextValidation, ResolveInfo,
     },
-    registry::MetaTypeName,
+    registry::{MetaType, MetaTypeName},
 };
 use async_graphql_parser::types::ExecutableDocument;
 use async_graphql_value::Variables;
@@ -78,6 +78,7 @@ impl<T> OpenTelemetry<T> {
     ///     .extension(ExtrasOpenTelemetry::new(tracer).with_trace_scalars(true))
     ///     .finish();
     /// ```
+    #[must_use]
     pub fn with_trace_scalars(mut self, trace_scalars: bool) -> Self {
         self.trace_scalars = trace_scalars;
         self
@@ -224,8 +225,7 @@ where
                 .registry
                 .types
                 .get(concrete_type)
-                .map(|ty| ty.is_leaf())
-                .unwrap_or(false)
+                .is_some_and(MetaType::is_leaf)
         } else {
             true
         };
