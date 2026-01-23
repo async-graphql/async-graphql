@@ -8,6 +8,10 @@ use crate::{CacheControl, Result, ServerError, Value};
 #[non_exhaustive]
 #[derive(Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Response {
+    /// Errors
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub errors: Vec<ServerError>,
+
     /// Data of query result
     #[serde(default)]
     pub data: Value,
@@ -19,10 +23,6 @@ pub struct Response {
     /// Cache control value
     #[serde(skip)]
     pub cache_control: CacheControl,
-
-    /// Errors
-    #[serde(skip_serializing_if = "Vec::is_empty", default)]
-    pub errors: Vec<ServerError>,
 
     /// HTTP headers
     #[serde(skip)]
@@ -188,6 +188,17 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&resp).unwrap(),
             r#"[{"data":true},{"data":"1"}]"#
+        );
+    }
+
+    #[test]
+    fn test_response_errors_serialized_before_data() {
+        let mut resp = Response::new(Value::Boolean(true));
+        resp.errors.push(ServerError::new("Test error", None));
+
+        assert_eq!(
+            serde_json::to_string(&resp).unwrap(),
+            r#"{"errors":[{"message":"Test error"}],"data":true}"#
         );
     }
 }
