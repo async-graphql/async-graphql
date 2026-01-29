@@ -252,3 +252,16 @@ fn test_type_directive_2() {
     let expected = include_str!("schemas/test_fed2_compose_2.schema.graphql");
     assert_eq!(expected, sdl);
 }
+
+/// Some module docs
+#[deny(missing_docs)]
+pub mod test_type_directive_docs {
+    use async_graphql_derive::TypeDirective;
+
+    /// Some directive docs
+    #[TypeDirective(
+        location = "FieldDefinition",
+        composable = "https://custom.spec.dev/extension/v1.0"
+    )]
+    pub fn testDirectiveDocLints() {}
+}
