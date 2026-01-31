@@ -141,6 +141,7 @@ pub fn generate(
         .collect::<Vec<_>>();
 
     let expanded = quote! {
+        #[allow(missing_docs)]
         #[allow(non_camel_case_types)]
         #vis struct #ident;
 
@@ -172,6 +173,7 @@ pub fn generate(
        #(impl #crate_name::registry::location_traits::#location_traits for #ident {})*
 
         impl #ident {
+            #[allow(missing_docs)]
             pub fn apply(#(#input_args),*) -> #crate_name::registry::MetaDirectiveInvocation {
                 let directive = ::std::borrow::Cow::into_owned(#directive_name);
                 let mut args = #crate_name::indexmap::IndexMap::new();
