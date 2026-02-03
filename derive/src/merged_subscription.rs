@@ -23,6 +23,15 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
     let desc = get_rustdoc(&object_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
@@ -73,7 +82,7 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
                     }
 
                     #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
+                        name: #gql_typename_string,
                         description: #desc,
                         fields,
                         cache_control: ::std::default::Default::default(),

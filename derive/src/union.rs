@@ -35,6 +35,15 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !union_args.name_type {
+        let name = union_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
     let inaccessible = union_args.inaccessible;
     let tags = union_args
@@ -235,7 +244,7 @@ pub fn generate(union_args: &args::Union) -> GeneratorResult<TokenStream> {
                         #(#registry_types)*
 
                         #crate_name::registry::MetaType::Union {
-                            name: ::std::borrow::Cow::into_owned(#gql_typename),
+                            name: #gql_typename_string,
                             description: #desc,
                             possible_types: {
                                 let mut possible_types = #crate_name::indexmap::IndexSet::new();

@@ -62,6 +62,15 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !interface_args.name_type {
+        let name = interface_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
     let desc = get_rustdoc(&interface_args.attrs)?
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
@@ -243,46 +252,69 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                 let (_, #ident) = ctx.param_value::<#ty>(#name, #get_default)?;
             });
 
-            let desc = desc
-                .as_ref()
-                .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
-                .unwrap_or_else(|| quote! {::std::option::Option::None});
-            let schema_default = default
-                .as_ref()
-                .map(|value| {
-                    quote! {
-                        ::std::option::Option::Some(::std::string::ToString::to_string(
-                            &<#ty as #crate_name::InputType>::to_value(&#value)
-                        ))
-                    }
-                })
-                .unwrap_or_else(|| quote! {::std::option::Option::None});
+            let has_desc = desc.is_some();
+            let schema_default = default.as_ref().map(|value| {
+                quote! {
+                    ::std::option::Option::Some(::std::string::ToString::to_string(
+                        &<#ty as #crate_name::InputType>::to_value(&#value)
+                    ))
+                }
+            });
+            let has_visible = visible.is_some();
             let visible = visible_fn(visible);
+            let has_tags = !tags.is_empty();
             let tags = tags
                 .iter()
                 .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                 .collect::<Vec<_>>();
+            let has_directives = !directives.is_empty();
             let directives = gen_directive_calls(
                 &crate_name,
                 directives,
                 TypeDirectiveLocation::ArgumentDefinition,
             );
-            let deprecation = gen_deprecation(deprecation, &crate_name);
+            let has_deprecation = !matches!(deprecation, args::Deprecation::NoDeprecated);
+            let deprecation_expr = gen_deprecation(deprecation, &crate_name);
+
+            let mut arg_sets = Vec::new();
+            if has_desc {
+                let desc = desc.as_ref().expect("checked desc");
+                arg_sets.push(quote! {
+                    arg.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
+                });
+            }
+            if let Some(schema_default) = schema_default {
+                arg_sets.push(quote!(arg.default_value = #schema_default;));
+            }
+            if has_deprecation {
+                arg_sets.push(quote!(arg.deprecation = #deprecation_expr;));
+            }
+            if has_visible {
+                arg_sets.push(quote!(arg.visible = #visible;));
+            }
+            if *inaccessible {
+                arg_sets.push(quote!(arg.inaccessible = true;));
+            }
+            if has_tags {
+                arg_sets.push(quote!(arg.tags = ::std::vec![ #(#tags),* ];));
+            }
+            if *secret {
+                arg_sets.push(quote!(arg.is_secret = true;));
+            }
+            if has_directives {
+                arg_sets.push(quote!(arg.directive_invocations = ::std::vec![ #(#directives),* ];));
+            }
 
             schema_args.push(quote! {
-                    args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                        name: ::std::string::ToString::to_string(#name),
-                        description: #desc,
-                        ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                        deprecation: #deprecation,
-                        default_value: #schema_default,
-                        visible: #visible,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        is_secret: #secret,
-                        directive_invocations: ::std::vec![ #(#directives),* ],
-                    });
-                });
+                {
+                    let mut arg = #crate_name::registry::MetaInputValue::new(
+                        ::std::string::ToString::to_string(#name),
+                        <#ty as #crate_name::InputType>::create_type_info(registry),
+                    );
+                    #(#arg_sets)*
+                    field.args.insert(::std::string::ToString::to_string(#name), arg);
+                }
+            });
         }
 
         for enum_name in &enum_names {
@@ -293,6 +325,8 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             });
         }
 
+        let has_desc = desc.is_some();
+        let has_deprecation = !matches!(deprecation, args::Deprecation::NoDeprecated);
         let desc = desc
             .as_ref()
             .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
@@ -316,6 +350,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             }
         });
 
+        let has_visible = !matches!(visible, None | Some(args::Visible::None));
         let visible = visible_fn(visible);
         let tags = tags
             .iter()
@@ -325,6 +360,15 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
             .collect::<Vec<_>>();
+        let has_external = *external;
+        let has_provides = provides.is_empty();
+        let has_requires = requires.is_empty();
+        let has_shareable = *shareable;
+        let has_inaccessible = *inaccessible;
+        let has_override_from = override_from.is_empty();
+        let has_tags = !tags.is_empty();
+        let has_directives = !directives.is_empty();
+        let has_requires_scopes = !requires_scopes.is_empty();
 
         let directives = gen_directive_calls(
             &crate_name,
@@ -332,30 +376,52 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             TypeDirectiveLocation::FieldDefinition,
         );
 
+        let mut field_sets = Vec::new();
+        if has_desc {
+            field_sets.push(quote!(field.description = #desc;));
+        }
+        if has_deprecation {
+            field_sets.push(quote!(field.deprecation = #deprecation;));
+        }
+        if has_external {
+            field_sets.push(quote!(field.external = true;));
+        }
+        if has_provides {
+            field_sets.push(quote!(field.provides = #provides;));
+        }
+        if has_requires {
+            field_sets.push(quote!(field.requires = #requires;));
+        }
+        if has_shareable {
+            field_sets.push(quote!(field.shareable = true;));
+        }
+        if has_inaccessible {
+            field_sets.push(quote!(field.inaccessible = true;));
+        }
+        if has_tags {
+            field_sets.push(quote!(field.tags = ::std::vec![ #(#tags),* ];));
+        }
+        if has_override_from {
+            field_sets.push(quote!(field.override_from = #override_from;));
+        }
+        if has_visible {
+            field_sets.push(quote!(field.visible = #visible;));
+        }
+        if has_directives {
+            field_sets.push(quote!(field.directive_invocations = ::std::vec![ #(#directives),* ];));
+        }
+        if has_requires_scopes {
+            field_sets.push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+        }
+
         schema_fields.push(quote! {
-            fields.insert(::std::string::ToString::to_string(#name), #crate_name::registry::MetaField {
-                name: ::std::string::ToString::to_string(#name),
-                description: #desc,
-                args: {
-                    let mut args = #crate_name::indexmap::IndexMap::new();
-                    #(#schema_args)*
-                    args
-                },
-                ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
-                deprecation: #deprecation,
-                cache_control: ::std::default::Default::default(),
-                external: #external,
-                provides: #provides,
-                requires: #requires,
-                shareable: #shareable,
-                inaccessible: #inaccessible,
-                tags: ::std::vec![ #(#tags),* ],
-                override_from: #override_from,
-                visible: #visible,
-                compute_complexity: ::std::option::Option::None,
-                directive_invocations: ::std::vec![ #(#directives),* ],
-                requires_scopes: ::std::vec![ #(#requires_scopes),* ],
-            });
+            let mut field = #crate_name::registry::MetaField::new(
+                ::std::string::ToString::to_string(#name),
+                <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+            );
+            #(#schema_args)*
+            #(#field_sets)*
+            fields.insert(::std::string::ToString::to_string(#name), field);
         });
 
         let resolve_obj = quote! {
@@ -384,6 +450,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     };
 
     let visible = visible_fn(&interface_args.visible);
+    let field_count = schema_fields.len();
     let expanded = quote! {
         #(#type_into_impls)*
 
@@ -423,10 +490,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                     #(#registry_types)*
 
                     #crate_name::registry::MetaType::Interface {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
+                        name: #gql_typename_string,
                         description: #desc,
                         fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
+                            let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
                             #(#schema_fields)*
                             fields
                         },

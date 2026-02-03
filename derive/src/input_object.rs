@@ -52,8 +52,20 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .input_name
+            .clone()
+            .or_else(|| object_args.name.clone())
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
-    let desc = get_rustdoc(&object_args.attrs)?
+    let desc = get_rustdoc(&object_args.attrs)?;
+    let has_desc = desc.is_some();
+    let desc = desc
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
@@ -141,20 +153,16 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             continue;
         }
 
-        let desc = get_rustdoc(&field.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let desc = get_rustdoc(&field.attrs)?;
+        let has_desc = desc.is_some();
         let default = generate_default(&field.default, &field.default_with)?;
-        let schema_default = default
-            .as_ref()
-            .map(|value| {
-                quote! {
-                    ::std::option::Option::Some(::std::string::ToString::to_string(
-                        &<#ty as #crate_name::InputType>::to_value(&#value)
-                    ))
-                }
-            })
-            .unwrap_or_else(|| quote!(::std::option::Option::None));
+        let schema_default = default.as_ref().map(|value| {
+            quote! {
+                ::std::option::Option::Some(::std::string::ToString::to_string(
+                    &<#ty as #crate_name::InputType>::to_value(&#value)
+                ))
+            }
+        });
         let secret = field.secret;
 
         if let Some(default) = default {
@@ -194,22 +202,53 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
 
         fields.push(ident);
 
+        let has_visible = field.visible.is_some();
         let visible = visible_fn(&field.visible);
-        let deprecation = gen_deprecation(&field.deprecation, &crate_name);
+        let has_deprecation = !matches!(field.deprecation, args::Deprecation::NoDeprecated);
+        let deprecation_expr = gen_deprecation(&field.deprecation, &crate_name);
+        let has_tags = !tags.is_empty();
+        let has_directive_invocations = !directive_invocations.is_empty();
+
+        let mut input_sets = Vec::new();
+        if has_desc {
+            let desc = desc.as_ref().expect("checked desc");
+            input_sets.push(quote! {
+                input_value.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
+            });
+        }
+        if let Some(schema_default) = schema_default {
+            input_sets.push(quote!(input_value.default_value = #schema_default;));
+        }
+        if has_deprecation {
+            input_sets.push(quote!(input_value.deprecation = #deprecation_expr;));
+        }
+        if has_visible {
+            input_sets.push(quote!(input_value.visible = #visible;));
+        }
+        if inaccessible {
+            input_sets.push(quote!(input_value.inaccessible = true;));
+        }
+        if has_tags {
+            input_sets.push(quote!(input_value.tags = ::std::vec![ #(#tags),* ];));
+        }
+        if secret {
+            input_sets.push(quote!(input_value.is_secret = true;));
+        }
+        if has_directive_invocations {
+            input_sets.push(
+                quote!(input_value.directive_invocations = ::std::vec![ #(#directive_invocations),* ];),
+            );
+        }
 
         schema_fields.push(quote! {
-            fields.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                name: ::std::string::ToString::to_string(#name),
-                description: #desc,
-                ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                deprecation: #deprecation,
-                default_value: #schema_default,
-                visible: #visible,
-                inaccessible: #inaccessible,
-                tags: ::std::vec![ #(#tags),* ],
-                is_secret: #secret,
-                directive_invocations: ::std::vec![ #(#directive_invocations),* ],
-            });
+            {
+                let mut input_value = #crate_name::registry::MetaInputValue::new(
+                    ::std::string::ToString::to_string(#name),
+                    <#ty as #crate_name::InputType>::create_type_info(registry),
+                );
+                #(#input_sets)*
+                fields.insert(::std::borrow::ToOwned::to_owned(#name), input_value);
+            }
         })
     }
 
@@ -245,6 +284,24 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
         .as_ref()
         .map(|expr| quote! { #crate_name::CustomValidator::check(&#expr, &obj)?; });
 
+    let mut input_object_builder = Vec::new();
+    input_object_builder.push(quote!(.rust_typename(::std::any::type_name::<Self>())));
+    if has_desc {
+        input_object_builder.push(quote!(.description(#desc)));
+    }
+    if object_args.visible.is_some() {
+        input_object_builder.push(quote!(.visible(#visible)));
+    }
+    if object_args.inaccessible {
+        input_object_builder.push(quote!(.inaccessible(true)));
+    }
+    if !object_args.tags.is_empty() {
+        input_object_builder.push(quote!(.tags(::std::vec![ #(#tags),* ])));
+    }
+    if !object_args.directives.is_empty() {
+        input_object_builder.push(quote!(.directive_invocations(::std::vec![ #(#directives),* ])));
+    }
+
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
@@ -256,20 +313,17 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
-                        description: #desc,
-                        input_fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            fields
-                        },
-                        visible: #visible,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        oneof: false,
-                        directive_invocations: ::std::vec![ #(#directives),* ],
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| {
+                        #crate_name::registry::InputObjectBuilder::new(
+                            #gql_typename_string,
+                            {
+                                let mut fields = #crate_name::indexmap::IndexMap::new();
+                                #(#schema_fields)*
+                                fields
+                            },
+                        )
+                        #(#input_object_builder)*
+                        .build()
                     })
                 }
 
@@ -308,20 +362,17 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
             #[allow(clippy::all, clippy::pedantic)]
             impl #impl_generics #ident #ty_generics #where_clause {
                 fn __internal_create_type_info_input_object(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String where Self: #crate_name::InputType {
-                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::ToOwned::to_owned(name),
-                        description: #desc,
-                        input_fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            fields
-                        },
-                        visible: #visible,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        oneof: false,
-                        directive_invocations: ::std::vec![ #(#directives),* ],
+                    registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| {
+                        #crate_name::registry::InputObjectBuilder::new(
+                            ::std::string::ToString::to_string(name),
+                            {
+                                let mut fields = #crate_name::indexmap::IndexMap::new();
+                                #(#schema_fields)*
+                                fields
+                            },
+                        )
+                        #(#input_object_builder)*
+                        .build()
                     })
                 }
 
