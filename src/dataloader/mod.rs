@@ -453,11 +453,15 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
     }
 
     /// Clear a specific entry from the cache.
-    /// 
+    ///
     /// **NOTE: if the cache type is [NoCache], this function will not take
     /// effect. **
     #[cfg_attr(feature = "tracing", instrument(skip_all))]
-    pub fn clear_one<K>(&self, key: &K) where K: Send + Sync + Hash + Eq + Clone + 'static, T: Loader<K> {
+    pub fn clear_one<K>(&self, key: &K)
+    where
+        K: Send + Sync + Hash + Eq + Clone + 'static,
+        T: Loader<K>,
+    {
         let tid = TypeId::of::<K>();
         let mut entry = self
             .inner
