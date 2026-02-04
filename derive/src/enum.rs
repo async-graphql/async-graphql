@@ -29,6 +29,15 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !enum_args.name_type {
+        let name = enum_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
     let inaccessible = enum_args.inaccessible;
     let tags = enum_args
@@ -47,9 +56,8 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         &enum_args.directives,
         TypeDirectiveLocation::Enum,
     );
-    let desc = get_rustdoc(&enum_args.attrs)?
-        .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
-        .unwrap_or_else(|| quote! {::std::option::Option::None});
+    let desc = get_rustdoc(&enum_args.attrs)?;
+    let has_desc = desc.is_some();
 
     let mut enum_items = Vec::new();
     let mut enum_names = Vec::new();
@@ -86,9 +94,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
             TypeDirectiveLocation::EnumValue,
         );
         let item_deprecation = gen_deprecation(&variant.deprecation, &crate_name);
-        let item_desc = get_rustdoc(&variant.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let item_desc = get_rustdoc(&variant.attrs)?;
 
         enum_items.push(item_ident);
         enum_names.push(gql_item_name.clone());
@@ -100,16 +106,43 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         });
 
         let visible = visible_fn(&variant.visible);
-        schema_enum_items.push(quote! {
-            enum_items.insert(::std::string::ToString::to_string(#gql_item_name), #crate_name::registry::MetaEnumValue {
-                name: ::std::string::ToString::to_string(#gql_item_name),
-                description: #item_desc,
-                deprecation: #item_deprecation,
-                visible: #visible,
-                inaccessible: #inaccessible,
-                tags: ::std::vec![ #(#tags),* ],
-                directive_invocations: ::std::vec![ #(#directives),* ]
+        let has_desc = item_desc.is_some();
+        let has_deprecation = !matches!(variant.deprecation, args::Deprecation::NoDeprecated);
+        let has_visible = !matches!(variant.visible, None | Some(args::Visible::None));
+        let has_tags = !variant.tags.is_empty();
+        let has_directives = !variant.directives.is_empty();
+
+        let mut value_sets = Vec::new();
+        if has_desc {
+            let desc = item_desc.as_ref().expect("checked desc");
+            value_sets.push(quote! {
+                value.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
             });
+        }
+        if has_deprecation {
+            value_sets.push(quote!(value.deprecation = #item_deprecation;));
+        }
+        if has_visible {
+            value_sets.push(quote!(value.visible = #visible;));
+        }
+        if inaccessible {
+            value_sets.push(quote!(value.inaccessible = true;));
+        }
+        if has_tags {
+            value_sets.push(quote!(value.tags = ::std::vec![ #(#tags),* ];));
+        }
+        if has_directives {
+            value_sets.push(quote!(value.directive_invocations = ::std::vec![ #(#directives),* ];));
+        }
+
+        schema_enum_items.push(quote! {
+            {
+                let mut value = #crate_name::registry::MetaEnumValue::new(
+                    ::std::string::ToString::to_string(#gql_item_name),
+                );
+                #(#value_sets)*
+                enum_items.insert(::std::string::ToString::to_string(#gql_item_name), value);
+            }
         });
     }
 
@@ -173,6 +206,33 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     };
 
     let visible = visible_fn(&enum_args.visible);
+    let has_visible = !matches!(enum_args.visible, None | Some(args::Visible::None));
+    let has_tags = !enum_args.tags.is_empty();
+    let has_directives = !enum_args.directives.is_empty();
+    let has_requires_scopes = !enum_args.requires_scopes.is_empty();
+    let mut enum_builder_calls = Vec::new();
+    if has_desc {
+        let desc = desc.as_ref().expect("checked desc");
+        enum_builder_calls.push(quote! {
+            .description(::std::option::Option::Some(::std::string::ToString::to_string(#desc)))
+        });
+    }
+    if has_visible {
+        enum_builder_calls.push(quote!(.visible(#visible)));
+    }
+    if inaccessible {
+        enum_builder_calls.push(quote!(.inaccessible(true)));
+    }
+    if has_tags {
+        enum_builder_calls.push(quote!(.tags(::std::vec![ #(#tags),* ])));
+    }
+    enum_builder_calls.push(quote!(.rust_typename(::std::any::type_name::<Self>())));
+    if has_directives {
+        enum_builder_calls.push(quote!(.directive_invocations(::std::vec![ #(#directives),* ])));
+    }
+    if has_requires_scopes {
+        enum_builder_calls.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]
         impl #crate_name::resolver_utils::EnumType for #ident {
@@ -189,21 +249,16 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
 
             fn __create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                 registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::Enum, |registry| {
-                    #crate_name::registry::MetaType::Enum {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
-                        description: #desc,
-                        enum_values: {
+                    #crate_name::registry::EnumBuilder::new(
+                        #gql_typename_string,
+                        {
                             let mut enum_items = #crate_name::indexmap::IndexMap::new();
                             #(#schema_enum_items)*
                             enum_items
                         },
-                        visible: #visible,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#directives),* ],
-                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
-                    }
+                    )
+                    #(#enum_builder_calls)*
+                    .build()
                 })
             }
         }

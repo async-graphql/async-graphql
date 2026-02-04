@@ -161,6 +161,23 @@ pub struct MetaInputValue {
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
 }
 
+impl MetaInputValue {
+    pub fn new(name: impl Into<String>, ty: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            ty: ty.into(),
+            deprecation: Deprecation::NoDeprecated,
+            default_value: None,
+            visible: None,
+            inaccessible: false,
+            tags: Vec::new(),
+            is_secret: false,
+            directive_invocations: Vec::new(),
+        }
+    }
+}
+
 type ComputeComplexityFn = fn(
     &VisitorContext<'_>,
     &[Positioned<VariableDefinition>],
@@ -244,6 +261,30 @@ pub struct MetaField {
     pub requires_scopes: Vec<String>,
 }
 
+impl MetaField {
+    pub fn new(name: impl Into<String>, ty: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            args: IndexMap::new(),
+            ty: ty.into(),
+            deprecation: Deprecation::NoDeprecated,
+            cache_control: Default::default(),
+            external: false,
+            requires: None,
+            provides: None,
+            visible: None,
+            shareable: false,
+            inaccessible: false,
+            tags: Vec::new(),
+            override_from: None,
+            compute_complexity: None,
+            directive_invocations: Vec::new(),
+            requires_scopes: Vec::new(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct MetaEnumValue {
     pub name: String,
@@ -253,6 +294,20 @@ pub struct MetaEnumValue {
     pub inaccessible: bool,
     pub tags: Vec<String>,
     pub directive_invocations: Vec<MetaDirectiveInvocation>,
+}
+
+impl MetaEnumValue {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            deprecation: Deprecation::NoDeprecated,
+            visible: None,
+            inaccessible: false,
+            tags: Vec::new(),
+            directive_invocations: Vec::new(),
+        }
+    }
 }
 
 type MetaVisibleFn = fn(&Context<'_>) -> bool;
@@ -611,6 +666,333 @@ pub enum MetaType {
         /// custom directive invocations
         directive_invocations: Vec<MetaDirectiveInvocation>,
     },
+}
+
+#[derive(Clone)]
+pub struct ObjectBuilder {
+    name: String,
+    description: Option<String>,
+    fields: IndexMap<String, MetaField>,
+    cache_control: CacheControl,
+    extends: bool,
+    shareable: bool,
+    resolvable: bool,
+    keys: Option<Vec<String>>,
+    visible: Option<MetaVisibleFn>,
+    inaccessible: bool,
+    interface_object: bool,
+    tags: Vec<String>,
+    is_subscription: bool,
+    rust_typename: Option<&'static str>,
+    directive_invocations: Vec<MetaDirectiveInvocation>,
+    requires_scopes: Vec<String>,
+}
+
+impl ObjectBuilder {
+    pub fn new(name: impl Into<String>, fields: IndexMap<String, MetaField>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            fields,
+            cache_control: Default::default(),
+            extends: false,
+            shareable: false,
+            resolvable: true,
+            keys: None,
+            visible: None,
+            inaccessible: false,
+            interface_object: false,
+            tags: Vec::new(),
+            is_subscription: false,
+            rust_typename: None,
+            directive_invocations: Vec::new(),
+            requires_scopes: Vec::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn description(mut self, description: Option<String>) -> Self {
+        self.description = description;
+        self
+    }
+
+    #[must_use]
+    pub fn cache_control(mut self, cache_control: CacheControl) -> Self {
+        self.cache_control = cache_control;
+        self
+    }
+
+    #[must_use]
+    pub fn extends(mut self, extends: bool) -> Self {
+        self.extends = extends;
+        self
+    }
+
+    #[must_use]
+    pub fn shareable(mut self, shareable: bool) -> Self {
+        self.shareable = shareable;
+        self
+    }
+
+    #[must_use]
+    pub fn resolvable(mut self, resolvable: bool) -> Self {
+        self.resolvable = resolvable;
+        self
+    }
+
+    #[must_use]
+    pub fn keys(mut self, keys: Option<Vec<String>>) -> Self {
+        self.keys = keys;
+        self
+    }
+
+    #[must_use]
+    pub fn visible(mut self, visible: Option<MetaVisibleFn>) -> Self {
+        self.visible = visible;
+        self
+    }
+
+    #[must_use]
+    pub fn inaccessible(mut self, inaccessible: bool) -> Self {
+        self.inaccessible = inaccessible;
+        self
+    }
+
+    #[must_use]
+    pub fn interface_object(mut self, interface_object: bool) -> Self {
+        self.interface_object = interface_object;
+        self
+    }
+
+    #[must_use]
+    pub fn tags(mut self, tags: Vec<String>) -> Self {
+        self.tags = tags;
+        self
+    }
+
+    #[must_use]
+    pub fn is_subscription(mut self, is_subscription: bool) -> Self {
+        self.is_subscription = is_subscription;
+        self
+    }
+
+    #[must_use]
+    pub fn rust_typename(mut self, rust_typename: &'static str) -> Self {
+        self.rust_typename = Some(rust_typename);
+        self
+    }
+
+    #[must_use]
+    pub fn directive_invocations(
+        mut self,
+        directive_invocations: Vec<MetaDirectiveInvocation>,
+    ) -> Self {
+        self.directive_invocations = directive_invocations;
+        self
+    }
+
+    #[must_use]
+    pub fn requires_scopes(mut self, requires_scopes: Vec<String>) -> Self {
+        self.requires_scopes = requires_scopes;
+        self
+    }
+
+    pub fn build(self) -> MetaType {
+        MetaType::Object {
+            name: self.name,
+            description: self.description,
+            fields: self.fields,
+            cache_control: self.cache_control,
+            extends: self.extends,
+            shareable: self.shareable,
+            resolvable: self.resolvable,
+            keys: self.keys,
+            visible: self.visible,
+            inaccessible: self.inaccessible,
+            interface_object: self.interface_object,
+            tags: self.tags,
+            is_subscription: self.is_subscription,
+            rust_typename: self.rust_typename,
+            directive_invocations: self.directive_invocations,
+            requires_scopes: self.requires_scopes,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct EnumBuilder {
+    name: String,
+    description: Option<String>,
+    enum_values: IndexMap<String, MetaEnumValue>,
+    visible: Option<MetaVisibleFn>,
+    inaccessible: bool,
+    tags: Vec<String>,
+    rust_typename: Option<&'static str>,
+    directive_invocations: Vec<MetaDirectiveInvocation>,
+    requires_scopes: Vec<String>,
+}
+
+impl EnumBuilder {
+    pub fn new(name: impl Into<String>, enum_values: IndexMap<String, MetaEnumValue>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            enum_values,
+            visible: None,
+            inaccessible: false,
+            tags: Vec::new(),
+            rust_typename: None,
+            directive_invocations: Vec::new(),
+            requires_scopes: Vec::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn description(mut self, description: Option<String>) -> Self {
+        self.description = description;
+        self
+    }
+
+    #[must_use]
+    pub fn visible(mut self, visible: Option<MetaVisibleFn>) -> Self {
+        self.visible = visible;
+        self
+    }
+
+    #[must_use]
+    pub fn inaccessible(mut self, inaccessible: bool) -> Self {
+        self.inaccessible = inaccessible;
+        self
+    }
+
+    #[must_use]
+    pub fn tags(mut self, tags: Vec<String>) -> Self {
+        self.tags = tags;
+        self
+    }
+
+    #[must_use]
+    pub fn rust_typename(mut self, rust_typename: &'static str) -> Self {
+        self.rust_typename = Some(rust_typename);
+        self
+    }
+
+    #[must_use]
+    pub fn directive_invocations(
+        mut self,
+        directive_invocations: Vec<MetaDirectiveInvocation>,
+    ) -> Self {
+        self.directive_invocations = directive_invocations;
+        self
+    }
+
+    #[must_use]
+    pub fn requires_scopes(mut self, requires_scopes: Vec<String>) -> Self {
+        self.requires_scopes = requires_scopes;
+        self
+    }
+
+    pub fn build(self) -> MetaType {
+        MetaType::Enum {
+            name: self.name,
+            description: self.description,
+            enum_values: self.enum_values,
+            visible: self.visible,
+            inaccessible: self.inaccessible,
+            tags: self.tags,
+            rust_typename: self.rust_typename,
+            directive_invocations: self.directive_invocations,
+            requires_scopes: self.requires_scopes,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct InputObjectBuilder {
+    name: String,
+    description: Option<String>,
+    input_fields: IndexMap<String, MetaInputValue>,
+    visible: Option<MetaVisibleFn>,
+    inaccessible: bool,
+    tags: Vec<String>,
+    rust_typename: Option<&'static str>,
+    oneof: bool,
+    directive_invocations: Vec<MetaDirectiveInvocation>,
+}
+
+impl InputObjectBuilder {
+    pub fn new(name: impl Into<String>, input_fields: IndexMap<String, MetaInputValue>) -> Self {
+        Self {
+            name: name.into(),
+            description: None,
+            input_fields,
+            visible: None,
+            inaccessible: false,
+            tags: Vec::new(),
+            rust_typename: None,
+            oneof: false,
+            directive_invocations: Vec::new(),
+        }
+    }
+
+    #[must_use]
+    pub fn description(mut self, description: Option<String>) -> Self {
+        self.description = description;
+        self
+    }
+
+    #[must_use]
+    pub fn visible(mut self, visible: Option<MetaVisibleFn>) -> Self {
+        self.visible = visible;
+        self
+    }
+
+    #[must_use]
+    pub fn inaccessible(mut self, inaccessible: bool) -> Self {
+        self.inaccessible = inaccessible;
+        self
+    }
+
+    #[must_use]
+    pub fn tags(mut self, tags: Vec<String>) -> Self {
+        self.tags = tags;
+        self
+    }
+
+    #[must_use]
+    pub fn rust_typename(mut self, rust_typename: &'static str) -> Self {
+        self.rust_typename = Some(rust_typename);
+        self
+    }
+
+    #[must_use]
+    pub fn oneof(mut self, oneof: bool) -> Self {
+        self.oneof = oneof;
+        self
+    }
+
+    #[must_use]
+    pub fn directive_invocations(
+        mut self,
+        directive_invocations: Vec<MetaDirectiveInvocation>,
+    ) -> Self {
+        self.directive_invocations = directive_invocations;
+        self
+    }
+
+    pub fn build(self) -> MetaType {
+        MetaType::InputObject {
+            name: self.name,
+            description: self.description,
+            input_fields: self.input_fields,
+            visible: self.visible,
+            inaccessible: self.inaccessible,
+            tags: self.tags,
+            rust_typename: self.rust_typename,
+            oneof: self.oneof,
+            directive_invocations: self.directive_invocations,
+        }
+    }
 }
 
 impl MetaType {

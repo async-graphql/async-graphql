@@ -42,6 +42,59 @@ async fn test_complex_object_process_with_method_field() {
 }
 
 #[tokio::test]
+async fn test_complex_object_non_async_resolvers() {
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyObj {
+        value: i32,
+    }
+
+    #[ComplexObject]
+    impl MyObj {
+        fn a(&self) -> i32 {
+            self.value + 1
+        }
+
+        fn b(&self, ctx: &Context<'_>, v: i32) -> Result<i32> {
+            Ok(self.value + v + ctx.data_unchecked::<i32>())
+        }
+
+        fn c(&self) -> Result<bool> {
+            Ok(true)
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> MyObj {
+            MyObj { value: 10 }
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription)
+        .data(30i32)
+        .finish();
+    let res = schema
+        .execute("{ obj { a b(v: 2) c } }")
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        res,
+        value!({
+            "obj": {
+                "a": 11,
+                "b": 42,
+                "c": true,
+            }
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_complex_object() {
     /// A complex object.
     #[derive(SimpleObject)]

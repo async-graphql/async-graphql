@@ -117,6 +117,7 @@ pub fn generate(
                 remove_graphql_attrs(&mut method.attrs);
                 continue;
             }
+            let is_async = method.sig.asyncness.is_some();
             let cfg_attrs = get_cfg_attrs(&method.attrs);
 
             if method_args.flatten {
@@ -145,12 +146,23 @@ pub fn generate(
                     }
                 });
 
-                resolvers.push(quote! {
-                    #(#cfg_attrs)*
-                    if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
-                        return ::std::result::Result::Ok(std::option::Option::Some(value));
+                let flattened_resolver = if is_async {
+                    quote! {
+                        #(#cfg_attrs)*
+                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
+                            return ::std::result::Result::Ok(std::option::Option::Some(value));
+                        }
                     }
-                });
+                } else {
+                    quote! {
+                        #(#cfg_attrs)*
+                        let value = self.#ident(ctx);
+                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&value, ctx).await? {
+                            return ::std::result::Result::Ok(std::option::Option::Some(value));
+                        }
+                    }
+                };
+                resolvers.push(flattened_resolver);
 
                 remove_graphql_attrs(&mut method.attrs);
                 continue;
@@ -161,7 +173,9 @@ pub fn generate(
                     .rename_fields
                     .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
             });
-            let field_desc = get_rustdoc(&method.attrs)?
+            let field_desc_value = get_rustdoc(&method.attrs)?;
+            let has_field_desc = field_desc_value.is_some();
+            let field_desc = field_desc_value
                 .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
                 .unwrap_or_else(|| quote! {::std::option::Option::None});
             let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
@@ -216,6 +230,23 @@ pub fn generate(
                 }
             };
 
+            let has_cache_control = method_args.cache_control.no_cache
+                || method_args.cache_control.max_age != 0
+                || !method_args.cache_control.is_public();
+            let has_deprecation =
+                !matches!(method_args.deprecation, args::Deprecation::NoDeprecated);
+            let has_external = external;
+            let has_shareable = shareable;
+            let has_inaccessible = inaccessible;
+            let has_requires = method_args.requires.is_some();
+            let has_provides = method_args.provides.is_some();
+            let has_override_from = method_args.override_from.is_some();
+            let has_visible = !matches!(method_args.visible, None | Some(args::Visible::None));
+            let has_tags = !method_args.tags.is_empty();
+            let has_complexity = method_args.complexity.is_some();
+            let has_directives = !method_args.directives.is_empty();
+            let has_requires_scopes = !method_args.requires_scopes.is_empty();
+
             let args = extract_input_args::<args::Argument>(&crate_name, method)?;
             let mut schema_args = Vec::new();
             let mut use_params = Vec::new();
@@ -246,48 +277,72 @@ pub fn generate(
                         .rename_args
                         .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
                 });
-                let desc = desc
-                    .as_ref()
-                    .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let has_desc = desc.is_some();
                 let default = generate_default(default, default_with)?;
-                let schema_default = default
-                    .as_ref()
-                    .map(|value| {
-                        quote! {
-                            ::std::option::Option::Some(::std::string::ToString::to_string(
-                                &<#ty as #crate_name::InputType>::to_value(&#value)
-                            ))
-                        }
-                    })
-                    .unwrap_or_else(|| quote! {::std::option::Option::None});
+                let schema_default = default.as_ref().map(|value| {
+                    quote! {
+                        ::std::option::Option::Some(::std::string::ToString::to_string(
+                            &<#ty as #crate_name::InputType>::to_value(&#value)
+                        ))
+                    }
+                });
 
+                let has_visible = visible.is_some();
                 let visible = visible_fn(visible);
+                let has_tags = !tags.is_empty();
                 let tags = tags
                     .iter()
                     .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                     .collect::<Vec<_>>();
+                let has_directives = !directives.is_empty();
                 let directives = gen_directive_calls(
                     &crate_name,
                     directives,
                     TypeDirectiveLocation::ArgumentDefinition,
                 );
-                let deprecation = gen_deprecation(deprecation, &crate_name);
+                let has_deprecation = !matches!(deprecation, args::Deprecation::NoDeprecated);
+                let deprecation_expr = gen_deprecation(deprecation, &crate_name);
+
+                let mut arg_sets = Vec::new();
+                if has_desc {
+                    let desc = desc.as_ref().expect("checked desc");
+                    arg_sets.push(quote! {
+                        arg.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
+                    });
+                }
+                if let Some(schema_default) = schema_default {
+                    arg_sets.push(quote!(arg.default_value = #schema_default;));
+                }
+                if has_deprecation {
+                    arg_sets.push(quote!(arg.deprecation = #deprecation_expr;));
+                }
+                if has_visible {
+                    arg_sets.push(quote!(arg.visible = #visible;));
+                }
+                if *inaccessible {
+                    arg_sets.push(quote!(arg.inaccessible = true;));
+                }
+                if has_tags {
+                    arg_sets.push(quote!(arg.tags = ::std::vec![ #(#tags),* ];));
+                }
+                if *secret {
+                    arg_sets.push(quote!(arg.is_secret = true;));
+                }
+                if has_directives {
+                    arg_sets
+                        .push(quote!(arg.directive_invocations = ::std::vec![ #(#directives),* ];));
+                }
 
                 schema_args.push(quote! {
-                        args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                            name: ::std::string::ToString::to_string(#name),
-                            description: #desc,
-                            ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                            deprecation: #deprecation,
-                            default_value: #schema_default,
-                            visible: #visible,
-                            inaccessible: #inaccessible,
-                            tags: ::std::vec![ #(#tags),* ],
-                            is_secret: #secret,
-                            directive_invocations: ::std::vec![ #(#directives),* ],
-                        });
-                    });
+                    {
+                        let mut arg = #crate_name::registry::MetaInputValue::new(
+                            ::std::string::ToString::to_string(#name),
+                            <#ty as #crate_name::InputType>::create_type_info(registry),
+                        );
+                        #(#arg_sets)*
+                        field.args.insert(::std::string::ToString::to_string(#name), arg);
+                    }
+                });
 
                 let param_ident = &ident.ident;
                 use_params.push(quote! { #param_ident });
@@ -323,14 +378,13 @@ pub fn generate(
                 });
             }
 
-            let ty = match &method.sig.output {
+            let output = method.sig.output.clone();
+            let ty = match &output {
                 ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                 ReturnType::Default => {
-                    return Err(Error::new_spanned(
-                        &method.sig.output,
-                        "Resolver must have a return type",
-                    )
-                    .into());
+                    return Err(
+                        Error::new_spanned(&output, "Resolver must have a return type").into(),
+                    );
                 }
             };
             let schema_ty = ty.value_type();
@@ -379,54 +433,107 @@ pub fn generate(
                 quote! { ::std::option::Option::None }
             };
 
+            let mut field_sets = Vec::new();
+            if has_field_desc {
+                field_sets.push(quote!(field.description = #field_desc;));
+            }
+            if has_deprecation {
+                field_sets.push(quote!(field.deprecation = #field_deprecation;));
+            }
+            if has_cache_control {
+                field_sets.push(quote!(field.cache_control = #cache_control;));
+            }
+            if has_external {
+                field_sets.push(quote!(field.external = true;));
+            }
+            if has_provides {
+                field_sets.push(quote!(field.provides = #provides;));
+            }
+            if has_requires {
+                field_sets.push(quote!(field.requires = #requires;));
+            }
+            if has_shareable {
+                field_sets.push(quote!(field.shareable = true;));
+            }
+            if has_inaccessible {
+                field_sets.push(quote!(field.inaccessible = true;));
+            }
+            if has_tags {
+                field_sets.push(quote!(field.tags = ::std::vec![ #(#tags),* ];));
+            }
+            if has_override_from {
+                field_sets.push(quote!(field.override_from = #override_from;));
+            }
+            if has_visible {
+                field_sets.push(quote!(field.visible = #visible;));
+            }
+            if has_complexity {
+                field_sets.push(quote!(field.compute_complexity = #complexity;));
+            }
+            if has_directives {
+                field_sets
+                    .push(quote!(field.directive_invocations = ::std::vec![ #(#directives),* ];));
+            }
+            if has_requires_scopes {
+                field_sets
+                    .push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+            }
+
             schema_fields.push(quote! {
                 #(#cfg_attrs)*
-                fields.push((#field_name.to_string(), #crate_name::registry::MetaField {
-                    name: ::std::borrow::ToOwned::to_owned(#field_name),
-                    description: #field_desc,
-                    args: {
-                        let mut args = #crate_name::indexmap::IndexMap::new();
-                        #(#schema_args)*
-                        args
-                    },
-                    ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
-                    deprecation: #field_deprecation,
-                    cache_control: #cache_control,
-                    external: #external,
-                    provides: #provides,
-                    requires: #requires,
-                    shareable: #shareable,
-                    inaccessible: #inaccessible,
-                    tags: ::std::vec![ #(#tags),* ],
-                    override_from: #override_from,
-                    visible: #visible,
-                    compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ],
-                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
-                }));
+                {
+                    let mut field = #crate_name::registry::MetaField::new(
+                        ::std::string::ToString::to_string(#field_name),
+                        <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+                    );
+                    #(#schema_args)*
+                    #(#field_sets)*
+                    fields.push((::std::string::ToString::to_string(#field_name), field));
+                }
             });
 
             let field_ident = &method.sig.ident;
-            if let OutputType::Value(inner_ty) = &ty {
-                let block = &method.block;
-                let new_block = quote!({
-                    {
-                        ::std::result::Result::Ok(async move {
-                            let value:#inner_ty = #block;
-                            value
-                        }.await)
-                    }
-                });
-                method.block = syn::parse2::<Block>(new_block).expect("invalid block");
-                method.sig.output =
-                    syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
-                        .expect("invalid result type");
+            if is_async {
+                if let OutputType::Value(inner_ty) = &ty {
+                    let block = &method.block;
+                    let new_block = quote!({
+                        {
+                            ::std::result::Result::Ok(async move {
+                                let value:#inner_ty = #block;
+                                value
+                            }.await)
+                        }
+                    });
+                    method.block = syn::parse2::<Block>(new_block).expect("invalid block");
+                    method.sig.output =
+                        syn::parse2::<ReturnType>(quote! { -> #crate_name::Result<#inner_ty> })
+                            .expect("invalid result type");
+                }
             }
 
-            let resolve_obj = quote! {
-                {
-                    let res = self.#field_ident(ctx, #(#use_params),*).await;
-                    res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
+            let resolve_obj = if is_async {
+                quote! {
+                    {
+                        let res = self.#field_ident(ctx, #(#use_params),*).await;
+                        res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
+                    }
+                }
+            } else {
+                match &ty {
+                    OutputType::Value(_) => {
+                        quote! {
+                            ::std::result::Result::Ok(self.#field_ident(ctx, #(#use_params),*))
+                        }
+                    }
+                    OutputType::Result(_) => {
+                        quote! {
+                            self.#field_ident(ctx, #(#use_params),*)
+                                .map_err(|err| {
+                                    ::std::convert::Into::<#crate_name::Error>::into(err)
+                                        .into_server_error(ctx.item.pos)
+                                })
+                        }
+                    }
                 }
             };
 
@@ -438,9 +545,8 @@ pub fn generate(
                 None => None,
             };
 
-            resolvers.push(quote! {
-                #(#cfg_attrs)*
-                if ctx.item.node.name.node == #field_name {
+            let resolve_block = if is_async {
+                quote! {
                     let f = async move {
                         #(#get_params)*
                         #guard
@@ -448,7 +554,23 @@ pub fn generate(
                     };
                     let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
                     let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
+                        .await
+                        .map(::std::option::Option::Some);
+                }
+            } else {
+                quote! {
+                    #(#get_params)*
+                    #guard
+                    let obj = #resolve_obj.map_err(|err| ctx.set_error_path(err))?;
+                    return #crate_name::resolver_utils::resolve_simple_field_value(ctx, &obj).await;
+                }
+            };
+
+            resolvers.push(quote! {
+                #(#cfg_attrs)*
+                if ctx.item.node.name.node == #field_name {
+                    #resolve_block
                 }
             });
 
