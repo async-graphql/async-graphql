@@ -1,13 +1,11 @@
 use std::{
     collections::HashMap,
     io,
-    io::SeekFrom,
     pin::Pin,
     task::{Context, Poll},
 };
 
-use blocking::Unblock;
-use futures_util::{AsyncSeekExt, AsyncWriteExt, io::AsyncRead, stream::Stream};
+use futures_util::{io::AsyncRead, stream::Stream};
 use multer::{Constraints, Multipart, SizeLimit};
 use pin_project_lite::pin_project;
 
@@ -100,6 +98,11 @@ pub(super) async fn receive_batch_multipart(
 
                     #[cfg(feature = "tempfile")]
                     let content = {
+                        use std::io::SeekFrom;
+
+                        use blocking::Unblock;
+                        use futures_util::{AsyncSeekExt, AsyncWriteExt};
+
                         let mut field = field;
 
                         let mut file =
