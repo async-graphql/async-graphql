@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove email validator (use newtype from `async-graphql-extras`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
 - Remove URL validator (use `Url` type from `url`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
 - Remove IP validator (use the `IpAddr` type from `std`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
+- Add `clear_one` function to the DataLoder [#1799](https://github.com/async-graphql/async-graphql/pull/1799)
 
 # [8.0.0-rc.1] 2026-01-22
 
