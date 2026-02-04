@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     io,
+    io::SeekFrom,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -9,7 +10,6 @@ use blocking::Unblock;
 use futures_util::{AsyncSeekExt, AsyncWriteExt, io::AsyncRead, stream::Stream};
 use multer::{Constraints, Multipart, SizeLimit};
 use pin_project_lite::pin_project;
-use std::io::SeekFrom;
 
 use crate::{BatchRequest, ParseRequestError, UploadValue};
 
