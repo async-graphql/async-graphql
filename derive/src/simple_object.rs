@@ -66,8 +66,20 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .name
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
-    let desc = get_rustdoc(&object_args.attrs)?
+    let desc_value = get_rustdoc(&object_args.attrs)?;
+    let has_desc = desc_value.is_some();
+    let desc = desc_value
         .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
         .unwrap_or_else(|| quote! {::std::option::Option::None});
 
@@ -146,7 +158,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 .rename_fields
                 .rename(ident.unraw().to_string(), RenameTarget::Field)
         });
-        let field_desc = get_rustdoc(&field.attrs)?
+        let field_desc_value = get_rustdoc(&field.attrs)?;
+        let has_field_desc = field_desc_value.is_some();
+        let field_desc = field_desc_value
             .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
             .unwrap_or_else(|| quote! {::std::option::Option::None});
         let field_deprecation = gen_deprecation(&field.deprecation, &crate_name);
@@ -181,8 +195,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             }
             None => quote! { ::std::option::Option::None },
         };
-        let vis = &field.vis;
-
         let ty = if let Some(derived) = derived {
             &derived.into
         } else {
@@ -210,6 +222,22 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 }
         };
 
+        let has_cache_control = field.cache_control.no_cache
+            || field.cache_control.max_age != 0
+            || !field.cache_control.is_public();
+        let has_deprecation = !matches!(field.deprecation, args::Deprecation::NoDeprecated);
+        let has_external = external;
+        let has_shareable = shareable;
+        let has_inaccessible = inaccessible;
+        let has_requires = field.requires.is_some();
+        let has_provides = field.provides.is_some();
+        let has_override_from = field.override_from.is_some();
+        let has_visible = !matches!(field.visible, None | Some(args::Visible::None));
+        let has_tags = !field.tags.is_empty();
+        let has_complexity = field.complexity.is_some();
+        let has_directives = !field.directives.is_empty();
+        let has_requires_scopes = !field.requires_scopes.is_empty();
+
         let visible = visible_fn(&field.visible);
         let directives = gen_directive_calls(
             &crate_name,
@@ -229,26 +257,59 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
 
         if !field.flatten {
+            let mut field_sets = Vec::new();
+            if has_field_desc {
+                field_sets.push(quote!(field.description = #field_desc;));
+            }
+            if has_deprecation {
+                field_sets.push(quote!(field.deprecation = #field_deprecation;));
+            }
+            if has_cache_control {
+                field_sets.push(quote!(field.cache_control = #cache_control;));
+            }
+            if has_external {
+                field_sets.push(quote!(field.external = true;));
+            }
+            if has_provides {
+                field_sets.push(quote!(field.provides = #provides;));
+            }
+            if has_requires {
+                field_sets.push(quote!(field.requires = #requires;));
+            }
+            if has_shareable {
+                field_sets.push(quote!(field.shareable = true;));
+            }
+            if has_inaccessible {
+                field_sets.push(quote!(field.inaccessible = true;));
+            }
+            if has_tags {
+                field_sets.push(quote!(field.tags = ::std::vec![ #(#tags),* ];));
+            }
+            if has_override_from {
+                field_sets.push(quote!(field.override_from = #override_from;));
+            }
+            if has_visible {
+                field_sets.push(quote!(field.visible = #visible;));
+            }
+            if has_complexity {
+                field_sets.push(quote!(field.compute_complexity = #complexity;));
+            }
+            if has_directives {
+                field_sets
+                    .push(quote!(field.directive_invocations = ::std::vec![ #(#directives),* ];));
+            }
+            if has_requires_scopes {
+                field_sets
+                    .push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+            }
+
             schema_fields.push(quote! {
-                fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
-                    name: ::std::borrow::ToOwned::to_owned(#field_name),
-                    description: #field_desc,
-                    args: ::std::default::Default::default(),
-                    ty: <#ty as #crate_name::OutputType>::create_type_info(registry),
-                    deprecation: #field_deprecation,
-                    cache_control: #cache_control,
-                    external: #external,
-                    provides: #provides,
-                    requires: #requires,
-                    shareable: #shareable,
-                    inaccessible: #inaccessible,
-                    tags: ::std::vec![ #(#tags),* ],
-                    override_from: #override_from,
-                    visible: #visible,
-                    compute_complexity: #complexity,
-                    directive_invocations: ::std::vec![ #(#directives),* ],
-                    requires_scopes: ::std::vec![ #(#requires_scopes),* ],
-                });
+                let mut field = #crate_name::registry::MetaField::new(
+                    ::std::string::ToString::to_string(#field_name),
+                    <#ty as #crate_name::OutputType>::create_type_info(registry),
+                );
+                #(#field_sets)*
+                fields.insert(::std::string::ToString::to_string(#field_name), field);
             });
         } else {
             schema_fields.push(quote! {
@@ -261,7 +322,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         }
 
         let guard_map_err = quote! {
-            .map_err(|err| err.into_server_error(ctx.item.pos))
+            .map_err(|err| ctx.set_error_path(err.into_server_error(ctx.item.pos)))
         };
         let guard = match field.guard.as_ref().or(object_args.guard.as_ref()) {
             Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
@@ -289,6 +350,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             (_, _) => block,
         };
 
+        let vis = &field.vis;
         let ty = match !owned {
             true => quote! { &#ty },
             false => quote! { #ty },
@@ -305,13 +367,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
 
             resolvers.push(quote! {
                 if ctx.item.node.name.node == #field_name {
-                    let f = async move {
-                        #guard
-                        self.#ident(ctx).await.map_err(|err| err.into_server_error(ctx.item.pos))
-                    };
-                    let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                    let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
+                    #guard
+                    let obj: #ty = #block;
+                    return #crate_name::resolver_utils::resolve_simple_field_value(ctx, &obj).await;
                 }
             });
         } else {
@@ -345,7 +403,6 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             }
         }
     };
-
     let keys = match &object_args.resolvability {
         Resolvability::Resolvable => quote!(::std::option::Option::None),
         Resolvability::Unresolvable { key: Some(key) } => quote!(::std::option::Option::Some(
@@ -381,6 +438,58 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     };
 
     let visible = visible_fn(&object_args.visible);
+    let has_cache_control = object_args.cache_control.no_cache
+        || object_args.cache_control.max_age != 0
+        || !object_args.cache_control.is_public();
+    let has_keys = !matches!(object_args.resolvability, Resolvability::Resolvable);
+    let has_visible = !matches!(object_args.visible, None | Some(args::Visible::None));
+    let has_tags = !object_args.tags.is_empty();
+    let has_directives = !object_directives.is_empty();
+    let has_requires_scopes = !object_args.requires_scopes.is_empty();
+    let field_count = schema_fields.len();
+
+    let mut object_builder_base = Vec::new();
+    object_builder_base.push(quote!(.rust_typename(::std::any::type_name::<Self>())));
+    if has_desc {
+        object_builder_base.push(quote!(.description(#desc)));
+    }
+    if has_cache_control {
+        object_builder_base.push(quote!(.cache_control(#cache_control)));
+    }
+    if extends {
+        object_builder_base.push(quote!(.extends(true)));
+    }
+    if shareable {
+        object_builder_base.push(quote!(.shareable(true)));
+    }
+    if !resolvable {
+        object_builder_base.push(quote!(.resolvable(false)));
+    }
+    if has_visible {
+        object_builder_base.push(quote!(.visible(#visible)));
+    }
+    if inaccessible {
+        object_builder_base.push(quote!(.inaccessible(true)));
+    }
+    if interface_object {
+        object_builder_base.push(quote!(.interface_object(true)));
+    }
+    if has_tags {
+        object_builder_base.push(quote!(.tags(::std::vec![ #(#tags),* ])));
+    }
+    if has_directives {
+        object_builder_base
+            .push(quote!(.directive_invocations(::std::vec![ #(#object_directives),* ])));
+    }
+    if has_requires_scopes {
+        object_builder_base.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
+
+    let mut object_builder = object_builder_base.clone();
+    if has_keys {
+        object_builder.push(quote!(.keys(#keys)));
+    }
+    let object_builder_concretes = object_builder_base;
 
     let mut concat_complex_fields = quote!();
     let mut complex_resolver = quote!();
@@ -427,28 +536,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                 }
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                    registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
-                        description: #desc,
-                        fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            #concat_complex_fields
-                            fields
-                        },
-                        cache_control: #cache_control,
-                        extends: #extends,
-                        shareable: #shareable,
-                        resolvable: #resolvable,
-                        inaccessible: #inaccessible,
-                        interface_object: #interface_object,
-                        tags: ::std::vec![ #(#tags),* ],
-                        keys: #keys,
-                        visible: #visible,
-                        is_subscription: false,
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#object_directives),* ],
-                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                    registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| {
+                        #crate_name::registry::ObjectBuilder::new(
+                            #gql_typename_string,
+                            {
+                                let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
+                                #(#schema_fields)*
+                                #concat_complex_fields
+                                fields
+                            },
+                        )
+                        #(#object_builder)*
+                        .build()
                     })
                 }
 
@@ -492,28 +591,18 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     name: &str,
                     complex_fields: #crate_name::indexmap::IndexMap<::std::string::String, #crate_name::registry::MetaField>,
                 ) -> ::std::string::String where Self: #crate_name::OutputType {
-                    registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::ToOwned::to_owned(name),
-                        description: #desc,
-                        fields: {
-                            let mut fields = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_fields)*
-                            ::std::iter::Extend::extend(&mut fields, complex_fields.clone());
-                            fields
-                        },
-                        cache_control: #cache_control,
-                        extends: #extends,
-                        shareable: #shareable,
-                        resolvable: #resolvable,
-                        inaccessible: #inaccessible,
-                        interface_object: #interface_object,
-                        tags: ::std::vec![ #(#tags),* ],
-                        keys: ::std::option::Option::None,
-                        visible: #visible,
-                        is_subscription: false,
-                        rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                        directive_invocations: ::std::vec![ #(#object_directives),* ],
-                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                    registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| {
+                        #crate_name::registry::ObjectBuilder::new(
+                            ::std::string::ToString::to_string(name),
+                            {
+                                let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
+                                #(#schema_fields)*
+                                ::std::iter::Extend::extend(&mut fields, complex_fields.clone());
+                                fields
+                            },
+                        )
+                        #(#object_builder_concretes)*
+                        .build()
                     })
                 }
 
@@ -557,7 +646,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        let mut fields = #crate_name::indexmap::IndexMap::new();
+                        let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
                         #concat_complex_fields
                         Self::__internal_create_type_info_simple_object(registry, #gql_typename, fields)
                     }

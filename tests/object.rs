@@ -60,6 +60,42 @@ async fn test_flatten() {
 }
 
 #[tokio::test]
+async fn test_non_async_resolvers() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        fn a(&self) -> i32 {
+            1
+        }
+
+        fn b(&self, ctx: &Context<'_>, v: i32) -> Result<i32> {
+            Ok(v + ctx.data_unchecked::<i32>())
+        }
+
+        fn c(&self) -> Result<bool> {
+            Ok(true)
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let res = schema
+        .execute(Request::from("{ a b(v: 2) c }").data(40i32))
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        res,
+        value!({
+            "a": 1,
+            "b": 42,
+            "c": true,
+        })
+    );
+}
+
+#[tokio::test]
 async fn test_flatten_with_context() {
     #[derive(SimpleObject)]
     struct A {

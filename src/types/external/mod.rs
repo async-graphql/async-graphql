@@ -6,6 +6,7 @@ mod char;
 mod cow;
 mod floats;
 mod integers;
+mod ip;
 mod json_object;
 mod list;
 mod non_zero_integers;

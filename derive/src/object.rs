@@ -1,11 +1,11 @@
 use std::str::FromStr;
 
 use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
+use proc_macro2::Ident;
 use quote::quote;
 use syn::{
-    Attribute, Block, Error, Expr, FnArg, ImplItem, ItemImpl, Pat, PatIdent, ReturnType, Token,
-    Type, TypeReference, ext::IdentExt, punctuated::Punctuated,
+    Block, Error, Expr, FnArg, ImplItem, ItemImpl, Pat, PatIdent, ReturnType, Token, Type,
+    TypeReference, ext::IdentExt, punctuated::Punctuated,
 };
 
 use crate::{
@@ -61,19 +61,29 @@ pub fn generate(
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .name
+            .as_ref()
+            .cloned()
+            .unwrap_or_else(|| RenameTarget::Type.rename(self_name.clone()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
+    let rustdoc = get_rustdoc(&item_impl.attrs)?;
+    let has_desc = object_args.use_type_description || rustdoc.is_some();
     let desc = if object_args.use_type_description {
         quote! { ::std::option::Option::Some(::std::string::ToString::to_string(<Self as #crate_name::Description>::description())) }
     } else {
-        get_rustdoc(&item_impl.attrs)?
+        rustdoc
             .map(|s| quote!(::std::option::Option::Some(::std::string::ToString::to_string(#s))))
             .unwrap_or_else(|| quote!(::std::option::Option::None))
     };
 
     let mut flattened_resolvers = Vec::new();
     let mut resolvers = Vec::new();
-    let mut resolver_idents = Vec::new();
-    let mut resolver_fns = Vec::new();
     let mut schema_fields = Vec::new();
     let mut find_entities = Vec::new();
     let mut add_keys = Vec::new();
@@ -89,13 +99,12 @@ pub fn generate(
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
             for derived in method_args.derived {
-                if derived.name.is_some() && derived.into.is_some() {
+                if let Some(name) = derived.name
+                    && let Some(into) = derived.into
+                {
                     let base_function_name = &method.sig.ident;
-                    let name = derived.name.unwrap();
                     let with = derived.with;
-                    let into = Type::Verbatim(
-                        proc_macro2::TokenStream::from_str(&derived.into.unwrap()).unwrap(),
-                    );
+                    let into = Type::Verbatim(proc_macro2::TokenStream::from_str(&into).unwrap());
 
                     let mut new_impl = method.clone();
                     new_impl.sig.ident = name;
@@ -172,11 +181,12 @@ pub fn generate(
 
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
 
-                let ty = match &method.sig.output {
+                let output = method.sig.output.clone();
+                let ty = match &output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
                         return Err(Error::new_spanned(
-                            &method.sig.output,
+                            &output,
                             "Resolver must have a return type",
                         )
                         .into());
@@ -284,9 +294,7 @@ pub fn generate(
                     },
                 ));
             } else if !method_args.skip {
-                if method.sig.asyncness.is_none() {
-                    return Err(Error::new_spanned(method, "Must be asynchronous").into());
-                }
+                let is_async = method.sig.asyncness.is_some();
                 let cfg_attrs = get_cfg_attrs(&method.attrs);
 
                 if method_args.flatten {
@@ -314,12 +322,24 @@ pub fn generate(
                         }
                     });
 
-                    flattened_resolvers.push(quote! {
-                        #(#cfg_attrs)*
-                        if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
-                            return ::std::result::Result::Ok(std::option::Option::Some(value));
+                    let flattened_resolver = if is_async {
+                        quote! {
+                            #(#cfg_attrs)*
+                            if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&self.#ident(ctx).await, ctx).await? {
+                                return ::std::result::Result::Ok(std::option::Option::Some(value));
+                            }
                         }
-                    });
+                    } else {
+                        quote! {
+                            #(#cfg_attrs)*
+                            let value = self.#ident(ctx);
+                            if let ::std::option::Option::Some(value) = #crate_name::ContainerType::resolve_field(&value, ctx).await? {
+                                return ::std::result::Result::Ok(std::option::Option::Some(value));
+                            }
+                        }
+                    };
+
+                    flattened_resolvers.push(flattened_resolver);
 
                     remove_graphql_attrs(&mut method.attrs);
                     continue;
@@ -330,7 +350,9 @@ pub fn generate(
                         .rename_fields
                         .rename(method.sig.ident.unraw().to_string(), RenameTarget::Field)
                 });
-                let field_desc = get_rustdoc(&method.attrs)?
+                let field_desc_value = get_rustdoc(&method.attrs)?;
+                let has_field_desc = field_desc_value.is_some();
+                let field_desc = field_desc_value
                     .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
                     .unwrap_or_else(|| quote! {::std::option::Option::None});
                 let field_deprecation = gen_deprecation(&method_args.deprecation, &crate_name);
@@ -390,6 +412,23 @@ pub fn generate(
                     }
                 };
 
+                let has_cache_control = method_args.cache_control.no_cache
+                    || method_args.cache_control.max_age != 0
+                    || !method_args.cache_control.is_public();
+                let has_deprecation =
+                    !matches!(method_args.deprecation, args::Deprecation::NoDeprecated);
+                let has_external = external;
+                let has_shareable = shareable;
+                let has_inaccessible = inaccessible;
+                let has_requires = method_args.requires.is_some();
+                let has_provides = method_args.provides.is_some();
+                let has_override_from = method_args.override_from.is_some();
+                let has_visible = !matches!(method_args.visible, None | Some(args::Visible::None));
+                let has_tags = !method_args.tags.is_empty();
+                let has_complexity = method_args.complexity.is_some();
+                let has_directives = !method_args.directives.is_empty();
+                let has_requires_scopes = !method_args.requires_scopes.is_empty();
+
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
                 let mut schema_args = Vec::new();
                 let mut params = Vec::new();
@@ -419,48 +458,73 @@ pub fn generate(
                             .rename_args
                             .rename(ident.ident.unraw().to_string(), RenameTarget::Argument)
                     });
-                    let desc = desc
-                        .as_ref()
-                        .map(|s| quote! {::std::option::Option::Some(::std::string::ToString::to_string(#s))})
-                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+                    let has_desc = desc.is_some();
                     let default = generate_default(default, default_with)?;
-                    let schema_default = default
-                        .as_ref()
-                        .map(|value| {
-                            quote! {
-                                ::std::option::Option::Some(::std::string::ToString::to_string(
-                                    &<#ty as #crate_name::InputType>::to_value(&#value)
-                                ))
-                            }
-                        })
-                        .unwrap_or_else(|| quote! {::std::option::Option::None});
+                    let schema_default = default.as_ref().map(|value| {
+                        quote! {
+                            ::std::option::Option::Some(::std::string::ToString::to_string(
+                                &<#ty as #crate_name::InputType>::to_value(&#value)
+                            ))
+                        }
+                    });
 
+                    let has_visible = visible.is_some();
                     let visible = visible_fn(visible);
+                    let has_tags = !tags.is_empty();
                     let tags = tags
                         .iter()
                         .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
                         .collect::<Vec<_>>();
-                    let deprecation = gen_deprecation(deprecation, &crate_name);
+                    let has_deprecation = !matches!(deprecation, args::Deprecation::NoDeprecated);
+                    let deprecation_expr = gen_deprecation(deprecation, &crate_name);
+                    let has_directives = !directives.is_empty();
                     let directives = gen_directive_calls(
                         &crate_name,
                         directives,
                         TypeDirectiveLocation::ArgumentDefinition,
                     );
 
-                    schema_args.push(quote! {
-                            args.insert(::std::borrow::ToOwned::to_owned(#name), #crate_name::registry::MetaInputValue {
-                                name: ::std::string::ToString::to_string(#name),
-                                description: #desc,
-                                ty: <#ty as #crate_name::InputType>::create_type_info(registry),
-                                deprecation: #deprecation,
-                                default_value: #schema_default,
-                                visible: #visible,
-                                inaccessible: #inaccessible,
-                                tags: ::std::vec![ #(#tags),* ],
-                                is_secret: #secret,
-                                directive_invocations: ::std::vec![ #(#directives),* ],
-                            });
+                    let mut arg_sets = Vec::new();
+                    if has_desc {
+                        let desc = desc.as_ref().expect("checked desc");
+                        arg_sets.push(quote! {
+                            arg.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
                         });
+                    }
+                    if let Some(schema_default) = schema_default {
+                        arg_sets.push(quote!(arg.default_value = #schema_default;));
+                    }
+                    if has_deprecation {
+                        arg_sets.push(quote!(arg.deprecation = #deprecation_expr;));
+                    }
+                    if has_visible {
+                        arg_sets.push(quote!(arg.visible = #visible;));
+                    }
+                    if *inaccessible {
+                        arg_sets.push(quote!(arg.inaccessible = true;));
+                    }
+                    if has_tags {
+                        arg_sets.push(quote!(arg.tags = ::std::vec![ #(#tags),* ];));
+                    }
+                    if *secret {
+                        arg_sets.push(quote!(arg.is_secret = true;));
+                    }
+                    if has_directives {
+                        arg_sets.push(
+                            quote!(arg.directive_invocations = ::std::vec![ #(#directives),* ];),
+                        );
+                    }
+
+                    schema_args.push(quote! {
+                        {
+                            let mut arg = #crate_name::registry::MetaInputValue::new(
+                                ::std::string::ToString::to_string(#name),
+                                <#ty as #crate_name::InputType>::create_type_info(registry),
+                            );
+                            #(#arg_sets)*
+                            field.args.insert(::std::string::ToString::to_string(#name), arg);
+                        }
+                    });
 
                     params.push(FieldResolverParameter {
                         ty,
@@ -472,11 +536,12 @@ pub fn generate(
                     });
                 }
 
-                let ty = match &method.sig.output {
+                let output = method.sig.output.clone();
+                let ty = match &output {
                     ReturnType::Type(_, ty) => OutputType::parse(ty)?,
                     ReturnType::Default => {
                         return Err(Error::new_spanned(
-                            &method.sig.output,
+                            &output,
                             "Resolver must have a return type",
                         )
                         .into());
@@ -528,35 +593,69 @@ pub fn generate(
                     quote! { ::std::option::Option::None }
                 };
 
+                let mut field_sets = Vec::new();
+                if has_field_desc {
+                    field_sets.push(quote!(field.description = #field_desc;));
+                }
+                if has_deprecation {
+                    field_sets.push(quote!(field.deprecation = #field_deprecation;));
+                }
+                if has_cache_control {
+                    field_sets.push(quote!(field.cache_control = #cache_control;));
+                }
+                if has_external {
+                    field_sets.push(quote!(field.external = true;));
+                }
+                if has_provides {
+                    field_sets.push(quote!(field.provides = #provides;));
+                }
+                if has_requires {
+                    field_sets.push(quote!(field.requires = #requires;));
+                }
+                if has_shareable {
+                    field_sets.push(quote!(field.shareable = true;));
+                }
+                if has_inaccessible {
+                    field_sets.push(quote!(field.inaccessible = true;));
+                }
+                if has_tags {
+                    field_sets.push(quote!(field.tags = ::std::vec![ #(#tags),* ];));
+                }
+                if has_override_from {
+                    field_sets.push(quote!(field.override_from = #override_from;));
+                }
+                if has_visible {
+                    field_sets.push(quote!(field.visible = #visible;));
+                }
+                if has_complexity {
+                    field_sets.push(quote!(field.compute_complexity = #complexity;));
+                }
+                if has_directives {
+                    field_sets.push(
+                        quote!(field.directive_invocations = ::std::vec![ #(#directives),* ];),
+                    );
+                }
+                if has_requires_scopes {
+                    field_sets.push(
+                        quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];),
+                    );
+                }
+
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
-                    fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaField {
-                        name: ::std::borrow::ToOwned::to_owned(#field_name),
-                        description: #field_desc,
-                        args: {
-                            let mut args = #crate_name::indexmap::IndexMap::new();
-                            #(#schema_args)*
-                            args
-                        },
-                        ty: <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
-                        deprecation: #field_deprecation,
-                        cache_control: #cache_control,
-                        external: #external,
-                        provides: #provides,
-                        requires: #requires,
-                        shareable: #shareable,
-                        inaccessible: #inaccessible,
-                        tags: ::std::vec![ #(#tags),* ],
-                        override_from: #override_from,
-                        visible: #visible,
-                        compute_complexity: #complexity,
-                        directive_invocations: ::std::vec![ #(#directives),* ],
-                        requires_scopes: ::std::vec![ #(#requires_scopes),* ],
-                    });
+                    {
+                        let mut field = #crate_name::registry::MetaField::new(
+                            ::std::string::ToString::to_string(#field_name),
+                            <#schema_ty as #crate_name::OutputType>::create_type_info(registry),
+                        );
+                        #(#schema_args)*
+                        #(#field_sets)*
+                        fields.insert(::std::string::ToString::to_string(#field_name), field);
+                    }
                 });
 
                 let field_ident = &method.sig.ident;
-                if let OutputType::Value(inner_ty) = &ty {
+                if is_async && let OutputType::Value(inner_ty) = &ty {
                     let block = &method.block;
                     let new_block = quote!({
                         {
@@ -572,24 +671,61 @@ pub fn generate(
                             .expect("invalid result type");
                 }
 
-                resolver_idents.push((field_name.clone(), field_ident.clone(), cfg_attrs.clone()));
-                let (resolver_fn_name, resolver_fn) = generate_field_resolver_method(
-                    &crate_name,
-                    object_args,
-                    &method_args,
-                    &FieldResolver {
-                        resolver_fn_ident: field_ident,
-                        cfg_attrs: &cfg_attrs,
-                        params: &params,
-                    },
-                )?;
+                let extract_params = params
+                    .iter()
+                    .map(|param| generate_parameter_extraction(&crate_name, param))
+                    .collect::<Result<Vec<_>, _>>()?;
+                let use_params = params.iter().map(
+                    |FieldResolverParameter {
+                         ident: PatIdent { ident, .. },
+                         ..
+                     }| ident,
+                );
 
-                resolver_fns.push(resolver_fn);
+                let guard_map_err = quote! {
+                    .map_err(|err| ctx.set_error_path(err.into_server_error(ctx.item.pos)))
+                };
+                let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
+                    Some(code) => generate_guards(&crate_name, code, guard_map_err)?,
+                    None => Default::default(),
+                };
+
+                let resolve_body = if is_async {
+                    quote! {
+                        return #crate_name::resolver_utils::resolve_field_async(
+                            ctx,
+                            self.#field_ident(ctx, #(#use_params),*)
+                        )
+                        .await;
+                    }
+                } else {
+                    match &ty {
+                        OutputType::Value(_) => {
+                            quote! {
+                                let obj: #schema_ty = self.#field_ident(ctx, #(#use_params),*);
+                                return #crate_name::resolver_utils::resolve_simple_field_value(ctx, &obj).await;
+                            }
+                        }
+                        OutputType::Result(_) => {
+                            quote! {
+                                let obj: #schema_ty = self.#field_ident(ctx, #(#use_params),*)
+                                    .map_err(|err| {
+                                        let err = ::std::convert::Into::<#crate_name::Error>::into(err)
+                                            .into_server_error(ctx.item.pos);
+                                        ctx.set_error_path(err)
+                                    })?;
+                                return #crate_name::resolver_utils::resolve_simple_field_value(ctx, &obj).await;
+                            }
+                        }
+                    }
+                };
 
                 resolvers.push(quote! {
                     #(#cfg_attrs)*
-                    ::std::option::Option::Some(__FieldIdent::#field_ident) => {
-                        return self.#resolver_fn_name(&ctx).await;
+                    #field_name => {
+                        #(#extract_params)*
+                        #guard
+                        #resolve_body
                     }
                 });
             }
@@ -645,8 +781,59 @@ pub fn generate(
         quote! { #crate_name::resolver_utils::resolve_container(ctx, self).await }
     };
 
+    let has_cache_control = object_args.cache_control.no_cache
+        || object_args.cache_control.max_age != 0
+        || !object_args.cache_control.is_public();
+    let has_keys = !matches!(object_args.resolvability, Resolvability::Resolvable);
+    let has_visible = !matches!(object_args.visible, None | Some(args::Visible::None));
+    let has_tags = !object_args.tags.is_empty();
+    let has_directives = !directives.is_empty();
+    let has_requires_scopes = !object_args.requires_scopes.is_empty();
+    let field_count = schema_fields.len();
+
+    let mut object_builder_base = Vec::new();
+    object_builder_base.push(quote!(.rust_typename(::std::any::type_name::<Self>())));
+    if has_desc {
+        object_builder_base.push(quote!(.description(#desc)));
+    }
+    if has_cache_control {
+        object_builder_base.push(quote!(.cache_control(#cache_control)));
+    }
+    if extends {
+        object_builder_base.push(quote!(.extends(true)));
+    }
+    if shareable {
+        object_builder_base.push(quote!(.shareable(true)));
+    }
+    if !resolvable {
+        object_builder_base.push(quote!(.resolvable(false)));
+    }
+    if has_keys {
+        object_builder_base.push(quote!(.keys(#keys)));
+    }
+    if has_visible {
+        object_builder_base.push(quote!(.visible(#visible)));
+    }
+    if inaccessible {
+        object_builder_base.push(quote!(.inaccessible(true)));
+    }
+    if interface_object {
+        object_builder_base.push(quote!(.interface_object(true)));
+    }
+    if has_tags {
+        object_builder_base.push(quote!(.tags(::std::vec![ #(#tags),* ])));
+    }
+    if has_directives {
+        object_builder_base.push(quote!(.directive_invocations(::std::vec![ #(#directives),* ])));
+    }
+
+    let mut object_builder = object_builder_base.clone();
+    if has_requires_scopes {
+        object_builder.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
+    let object_builder_concretes = object_builder_base;
+
     let resolve_field_resolver_match = generate_field_match(resolvers)?;
-    let field_ident = generate_fields_enum(&crate_name, resolver_idents)?;
 
     let expanded = if object_args.concretes.is_empty() {
         quote! {
@@ -655,12 +842,6 @@ pub fn generate(
             #[doc(hidden)]
             #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
             const _: () = {
-                #field_ident
-
-                impl #impl_generics #self_ty #where_clause {
-                    #(#resolver_fns)*
-                }
-
                 #[allow(clippy::all, clippy::pedantic, clippy::suspicious_else_formatting)]
                 #[allow(unused_braces, unused_variables, unused_parens, unused_mut)]
                 #boxed_trait
@@ -672,18 +853,11 @@ pub fn generate(
                     }
 
                     async fn find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                        let params = match params {
-                            #crate_name::Value::Object(params) => params,
-                            _ => return ::std::result::Result::Ok(::std::option::Option::None),
-                        };
-                        let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
-                            typename
-                        } else {
-                            return ::std::result::Result::Err(
-                                #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
-                            );
-                        };
-                        #(#find_entities_iter)*
+                        if let ::std::option::Option::Some((params, typename)) =
+                            #crate_name::resolver_utils::find_entity_params(ctx, params)?
+                        {
+                            #(#find_entities_iter)*
+                        }
                         ::std::result::Result::Ok(::std::option::Option::None)
                     }
                 }
@@ -696,27 +870,17 @@ pub fn generate(
                     }
 
                     fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                            name: ::std::borrow::Cow::into_owned(#gql_typename),
-                            description: #desc,
-                            fields: {
-                                let mut fields = #crate_name::indexmap::IndexMap::new();
-                                #(#schema_fields)*
-                                fields
-                            },
-                            cache_control: #cache_control,
-                            extends: #extends,
-                            shareable: #shareable,
-                            resolvable: #resolvable,
-                            inaccessible: #inaccessible,
-                            interface_object: #interface_object,
-                            tags: ::std::vec![ #(#tags),* ],
-                            keys: #keys,
-                            visible: #visible,
-                            is_subscription: false,
-                            rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                            directive_invocations: ::std::vec![ #(#directives),* ],
-                            requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| {
+                            #crate_name::registry::ObjectBuilder::new(
+                                #gql_typename_string,
+                                {
+                                    let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
+                                    #(#schema_fields)*
+                                    fields
+                                },
+                            )
+                            #(#object_builder)*
+                            .build()
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*
@@ -744,33 +908,19 @@ pub fn generate(
             #[doc(hidden)]
             #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
             const _: () = {
-                #field_ident
-
                 impl #impl_generics #self_ty #where_clause {
-                    #(#resolver_fns)*
-
                     fn __internal_create_type_info(registry: &mut #crate_name::registry::Registry, name: &str) -> ::std::string::String  where Self: #crate_name::OutputType {
-                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| #crate_name::registry::MetaType::Object {
-                            name: ::std::borrow::ToOwned::to_owned(name),
-                            description: #desc,
-                            fields: {
-                                let mut fields = #crate_name::indexmap::IndexMap::new();
-                                #(#schema_fields)*
-                                fields
-                            },
-                            cache_control: #cache_control,
-                            extends: #extends,
-                            shareable: #shareable,
-                            resolvable: #resolvable,
-                            inaccessible: #inaccessible,
-                            interface_object: #interface_object,
-                            tags: ::std::vec![ #(#tags),* ],
-                            keys: #keys,
-                            visible: #visible,
-                            is_subscription: false,
-                            rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
-                            directive_invocations: ::std::vec![ #(#directives),* ],
-                            requires_scopes: ::std::vec![],
+                        let ty = registry.create_output_type::<Self, _>(#crate_name::registry::MetaTypeId::Object, |registry| {
+                            #crate_name::registry::ObjectBuilder::new(
+                                ::std::string::ToString::to_string(name),
+                                {
+                                    let mut fields = #crate_name::indexmap::IndexMap::with_capacity(#field_count);
+                                    #(#schema_fields)*
+                                    fields
+                                },
+                            )
+                            #(#object_builder_concretes)*
+                            .build()
                         });
                         #(#create_entity_types)*
                         #(#add_keys)*
@@ -784,18 +934,11 @@ pub fn generate(
                     }
 
                     async fn __internal_find_entity(&self, ctx: &#crate_name::Context<'_>, params: &#crate_name::Value) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-                        let params = match params {
-                            #crate_name::Value::Object(params) => params,
-                            _ => return ::std::result::Result::Ok(::std::option::Option::None),
-                        };
-                        let typename = if let ::std::option::Option::Some(#crate_name::Value::String(typename)) = params.get("__typename") {
-                            typename
-                        } else {
-                            return ::std::result::Result::Err(
-                                #crate_name::ServerError::new(r#""__typename" must be an existing string."#, ::std::option::Option::Some(ctx.item.pos))
-                            );
-                        };
-                        #(#find_entities_iter)*
+                        if let ::std::option::Option::Some((params, typename)) =
+                            #crate_name::resolver_utils::find_entity_params(ctx, params)?
+                        {
+                            #(#find_entities_iter)*
+                        }
                         ::std::result::Result::Ok(::std::option::Option::None)
                     }
                 }
@@ -870,108 +1013,11 @@ fn generate_field_match(
     }
 
     Ok(quote! {
-        let __field = __FieldIdent::from_name(&ctx.item.node.name.node);
-        match __field {
+        match ctx.item.node.name.node.as_str() {
             #(#resolvers)*
-            None => {}
+            _ => {}
         }
     })
-}
-
-fn generate_fields_enum(
-    crate_name: &syn::Path,
-    fields: Vec<(String, Ident, Vec<Attribute>)>,
-) -> GeneratorResult<proc_macro2::TokenStream> {
-    // If there are no non-entity/flattened resolvers we can avoid the whole enum
-    if fields.is_empty() {
-        return Ok(quote!());
-    }
-
-    let enum_variants = fields.iter().map(|(_, field_ident, cfg_attrs)| {
-        quote! {
-            #(#cfg_attrs)*
-            #field_ident
-        }
-    });
-
-    let matches = fields.iter().map(|(field_name, field_ident, cfg_attrs)| {
-        quote! {
-            #(#cfg_attrs)*
-            #field_name => ::std::option::Option::Some(__FieldIdent::#field_ident),
-        }
-    });
-
-    Ok(quote! {
-        #[allow(non_camel_case_types)]
-        #[doc(hidden)]
-        enum __FieldIdent {
-            #(#enum_variants,)*
-        }
-
-        impl __FieldIdent {
-            fn from_name(__name: &#crate_name::Name) -> ::std::option::Option<__FieldIdent> {
-                match __name.as_str() {
-                    #(#matches)*
-                    _ => ::std::option::Option::None
-                }
-            }
-        }
-    })
-}
-
-fn generate_field_resolver_method(
-    crate_name: &syn::Path,
-    object_args: &args::Object,
-    method_args: &args::ObjectField,
-    field: &FieldResolver,
-) -> GeneratorResult<(Ident, proc_macro2::TokenStream)> {
-    let FieldResolver {
-        resolver_fn_ident: resolver_ident,
-        params,
-        cfg_attrs,
-    } = field;
-
-    let extract_params = params
-        .iter()
-        .map(|param| generate_parameter_extraction(crate_name, param))
-        .collect::<Result<Vec<_>, _>>()?;
-    let use_params = params.iter().map(
-        |FieldResolverParameter {
-             ident: PatIdent { ident, .. },
-             ..
-         }| ident,
-    );
-
-    let guard_map_err = quote! {
-        .map_err(|err| err.into_server_error(ctx.item.pos))
-    };
-    let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-        Some(code) => Some(generate_guards(crate_name, code, guard_map_err)?),
-        None => None,
-    };
-
-    let mut resolve_fn_name =
-        syn::parse_str::<Ident>(&format!("__{}_resolver", field.resolver_fn_ident.unraw()))?;
-    resolve_fn_name.set_span(Span::call_site());
-
-    let function = quote! {
-        #[doc(hidden)]
-        #(#cfg_attrs)*
-        #[allow(non_snake_case)]
-        async fn #resolve_fn_name(&self, ctx: &#crate_name::Context<'_>) -> #crate_name::ServerResult<::std::option::Option<#crate_name::Value>> {
-            let f = async {
-                #(#extract_params)*
-                #guard
-                let res = self.#resolver_ident(ctx, #(#use_params),*).await;
-                res.map_err(|err| ::std::convert::Into::<#crate_name::Error>::into(err).into_server_error(ctx.item.pos))
-            };
-            let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-            let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-            return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item).await.map(::std::option::Option::Some);
-        }
-    };
-
-    Ok((resolve_fn_name, function))
 }
 
 fn generate_parameter_extraction(
@@ -1002,7 +1048,7 @@ fn generate_parameter_extraction(
     let validators = (*validator).clone().unwrap_or_default().create_validators(
         crate_name,
         quote!(&#ident),
-        Some(quote!(.map_err(|err| err.into_server_error(__pos)))),
+        Some(quote!(.map_err(|err| ctx.set_error_path(err.into_server_error(__pos))))),
     )?;
 
     let mut non_mut_ident = ident.clone();
@@ -1011,20 +1057,13 @@ fn generate_parameter_extraction(
     Ok(quote! {
         #[allow(non_snake_case, unused_variables, unused_mut)]
         // Todo: if there are no processors we can drop the mut.
-        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)?;
+        let (__pos, mut #non_mut_ident) = ctx.param_value::<#ty>(#name, #default)
+            .map_err(|err| ctx.set_error_path(err))?;
         #process_with
         #validators
         #[allow(non_snake_case, unused_variables)]
         let #ident = #non_mut_ident;
     })
-}
-
-/// IR representation of a field resolver.
-struct FieldResolver<'a> {
-    resolver_fn_ident: &'a Ident,
-    cfg_attrs: &'a [Attribute],
-    /// Parsed Parameters for this resolver
-    params: &'a [FieldResolverParameter<'a>],
 }
 
 struct FieldResolverParameter<'a> {

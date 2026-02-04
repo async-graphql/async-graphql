@@ -11,34 +11,31 @@ license = "MIT OR Apache-2.0"
 name = "async-graphql"
 readme = "README.md"
 repository = "https://github.com/async-graphql/async-graphql"
-version = "8.0.0-rc.1"
+version = "8.0.0-rc.2"
 
 [features]
 apollo_persisted_queries = ["dep:scc", "dep:sha2"]
 apollo_tracing = ["dep:chrono"]
-email-validator = ["dep:fast_chemail"]
 chrono = ["dep:chrono"]
 chrono-duration = ["dep:chrono", "dep:iso8601"]
 dataloader = ["dep:futures-channel", "dep:lru", "dep:scc"]
 decimal = ["dep:rust_decimal"]
-default = ["dynamic-schema", "email-validator", "tempfile", "graphiql"]
+default = ["dynamic-schema", "tempfile", "graphiql"]
 log = ["dep:log"]
 
 jiff = ["dep:jiff"]
 string_number = []
-tempfile = ["dep:tempfile"]
+tempfile = ["dep:blocking", "dep:tempfile"]
 secrecy = ["dep:secrecy"]
 time = ["dep:time"]
 tokio = ["dep:tokio"]
 url = ["dep:url"]
 uuid = ["dep:uuid"]
 tracing = ["dep:tracing", "dep:tracing-futures"]
-unblock = ["dep:blocking"]
 dynamic-schema = []
 graphiql = ["dep:askama"]
 raw_value = ["async-graphql-value/raw_value"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
-custom-error-conversion = []
 
 [[bench]]
 harness = false
@@ -80,7 +77,6 @@ chrono = { version = "0.4.37", optional = true, default-features = false, featur
   "std",
 ] }
 chrono-tz = { version = "0.10.0", optional = true }
-fast_chemail = { version = "0.9.6", optional = true }
 iso8601 = { version = "0.6.1", optional = true }
 jiff = { version = "0.2.18", optional = true }
 log = { version = "0.4.21", optional = true }
@@ -145,10 +141,10 @@ members = [
 ]
 
 [workspace.dependencies]
-async-graphql = { path = ".", version = "8.0.0-rc.1", default-features = false }
-async-graphql-derive = { path = "derive", version = "8.0.0-rc.1" }
-async-graphql-parser = { path = "parser", version = "8.0.0-rc.1" }
-async-graphql-value = { path = "value", version = "8.0.0-rc.1" }
+async-graphql = { path = ".", version = "8.0.0-rc.2", default-features = false }
+async-graphql-derive = { path = "derive", version = "8.0.0-rc.2" }
+async-graphql-parser = { path = "parser", version = "8.0.0-rc.2" }
+async-graphql-value = { path = "value", version = "8.0.0-rc.2" }
 
 
 serde = { version = "1.0.197", features = ["derive"] }

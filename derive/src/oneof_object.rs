@@ -39,6 +39,16 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .input_name
+            .clone()
+            .or_else(|| object_args.name.clone())
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
     let s = match &object_args.data {
         Data::Enum(s) => s,
         _ => {
@@ -66,9 +76,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             .iter()
             .map(|tag| quote!(::std::string::ToString::to_string(#tag)))
             .collect::<Vec<_>>();
-        let desc = get_rustdoc(&variant.attrs)?
-            .map(|s| quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#s)) })
-            .unwrap_or_else(|| quote! {::std::option::Option::None});
+        let desc = get_rustdoc(&variant.attrs)?;
         let ty = match variant.fields.style {
             Style::Tuple if variant.fields.fields.len() == 1 => &variant.fields.fields[0],
             Style::Tuple => {
@@ -112,19 +120,49 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
             let visible = visible_fn(&variant.visible);
             let deprecation = gen_deprecation(&variant.deprecation, &crate_name);
 
-            schema_fields.push(quote! {
-                fields.insert(::std::borrow::ToOwned::to_owned(#field_name), #crate_name::registry::MetaInputValue {
-                    name: ::std::string::ToString::to_string(#field_name),
-                    description: #desc,
-                    ty: <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry),
-                    deprecation: #deprecation,
-                    default_value: ::std::option::Option::None,
-                    visible: #visible,
-                    inaccessible: #inaccessible,
-                    tags: ::std::vec![ #(#tags),* ],
-                    is_secret: #secret,
-                    directive_invocations: ::std::vec![ #(#directives),* ],
+            let has_desc = desc.is_some();
+            let has_visible = variant.visible.is_some();
+            let has_deprecation = !matches!(variant.deprecation, args::Deprecation::NoDeprecated);
+            let has_tags = !tags.is_empty();
+            let has_directives = !directives.is_empty();
+
+            let mut input_sets = Vec::new();
+            if has_desc {
+                let desc = desc.as_ref().expect("checked desc");
+                input_sets.push(quote! {
+                    input_value.description = ::std::option::Option::Some(::std::string::ToString::to_string(#desc));
                 });
+            }
+            if has_deprecation {
+                input_sets.push(quote!(input_value.deprecation = #deprecation;));
+            }
+            if has_visible {
+                input_sets.push(quote!(input_value.visible = #visible;));
+            }
+            if inaccessible {
+                input_sets.push(quote!(input_value.inaccessible = true;));
+            }
+            if has_tags {
+                input_sets.push(quote!(input_value.tags = ::std::vec![ #(#tags),* ];));
+            }
+            if secret {
+                input_sets.push(quote!(input_value.is_secret = true;));
+            }
+            if has_directives {
+                input_sets.push(
+                    quote!(input_value.directive_invocations = ::std::vec![ #(#directives),* ];),
+                );
+            }
+
+            schema_fields.push(quote! {
+                {
+                    let mut input_value = #crate_name::registry::MetaInputValue::new(
+                        ::std::string::ToString::to_string(#field_name),
+                        <::std::option::Option<#ty> as #crate_name::InputType>::create_type_info(registry),
+                    );
+                    #(#input_sets)*
+                    fields.insert(::std::borrow::ToOwned::to_owned(#field_name), input_value);
+                }
             });
 
             let validators = variant
@@ -167,7 +205,7 @@ pub fn generate(object_args: &args::OneofObject) -> GeneratorResult<TokenStream>
 
                 fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
                     registry.create_input_type::<Self, _>(#crate_name::registry::MetaTypeId::InputObject, |registry| #crate_name::registry::MetaType::InputObject {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
+                        name: #gql_typename_string,
                         description: #desc,
                         input_fields: {
                             let mut fields = #crate_name::indexmap::IndexMap::new();

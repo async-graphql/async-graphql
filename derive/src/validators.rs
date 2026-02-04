@@ -28,28 +28,10 @@ impl ToTokens for Number {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum UuidVersionValidation {
-    None,
-    Value(Lit),
-}
-
-impl FromMeta for UuidVersionValidation {
-    fn from_word() -> darling::Result<Self> {
-        Ok(UuidVersionValidation::None)
-    }
-
-    fn from_value(value: &Lit) -> darling::Result<Self> {
-        Ok(UuidVersionValidation::Value(value.clone()))
-    }
-}
-
 #[derive(FromMeta, Default, Clone)]
 pub struct Validators {
     #[darling(default)]
     multiple_of: Option<Number>,
-    #[darling(default)]
-    min_password_strength: Option<u8>,
     #[darling(default)]
     maximum: Option<Number>,
     #[darling(default)]
@@ -67,15 +49,7 @@ pub struct Validators {
     #[darling(default)]
     chars_min_length: Option<usize>,
     #[darling(default)]
-    email: bool,
-    #[darling(default)]
-    url: bool,
-    #[darling(default)]
-    ip: bool,
-    #[darling(default)]
     regex: Option<String>,
-    #[darling(default)]
-    uuid: Option<UuidVersionValidation>,
     #[darling(default, multiple)]
     custom: Vec<Expr>,
     #[darling(default)]
@@ -108,12 +82,6 @@ impl Validators {
         if let Some(n) = &self.multiple_of {
             elem_validators.push(quote! {
                 #crate_name::validators::multiple_of(__raw_value, #n)
-            });
-        }
-
-        if let Some(n) = &self.min_password_strength {
-            elem_validators.push(quote! {
-                #crate_name::validators::min_password_strength(__raw_value, #n)
             });
         }
 
@@ -153,43 +121,10 @@ impl Validators {
             });
         }
 
-        if self.email {
-            elem_validators.push(quote! {
-                #crate_name::validators::email(__raw_value)
-            });
-        }
-
-        if self.url {
-            elem_validators.push(quote! {
-                #crate_name::validators::url(__raw_value)
-            });
-        }
-
-        if self.ip {
-            elem_validators.push(quote! {
-                #crate_name::validators::ip(__raw_value)
-            });
-        }
-
         if let Some(re) = &self.regex {
             elem_validators.push(quote! {
                 #crate_name::validators::regex(__raw_value, #re)
             });
-        }
-
-        if let Some(version_validation) = &self.uuid {
-            match version_validation {
-                UuidVersionValidation::None => {
-                    elem_validators.push(quote! {
-                        #crate_name::validators::uuid(__raw_value, None)
-                    });
-                }
-                UuidVersionValidation::Value(version) => {
-                    elem_validators.push(quote! {
-                        #crate_name::validators::uuid(__raw_value, Some(#version))
-                    });
-                }
-            }
         }
 
         if !list_validators.is_empty() {

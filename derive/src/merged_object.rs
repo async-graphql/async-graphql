@@ -35,6 +35,15 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
     } else {
         quote!(<Self as #crate_name::TypeName>::type_name())
     };
+    let gql_typename_string = if !object_args.name_type {
+        let name = object_args
+            .name
+            .clone()
+            .unwrap_or_else(|| RenameTarget::Type.rename(ident.to_string()));
+        quote!(::std::string::ToString::to_string(#name))
+    } else {
+        quote!(::std::string::ToString::to_string(&#gql_typename))
+    };
 
     let directives = gen_directive_calls(
         &crate_name,
@@ -123,7 +132,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                     }
 
                     #crate_name::registry::MetaType::Object {
-                        name: ::std::borrow::Cow::into_owned(#gql_typename),
+                        name: #gql_typename_string,
                         description: #desc,
                         fields,
                         cache_control,

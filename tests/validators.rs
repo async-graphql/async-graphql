@@ -56,23 +56,14 @@ pub async fn test_all_validator() {
             todo!()
         }
 
-        async fn email(&self, #[graphql(validator(email))] n: String) -> i32 {
-            todo!()
-        }
-
-        async fn url(&self, #[graphql(validator(url))] n: String) -> i32 {
-            todo!()
-        }
-
-        async fn ip(&self, #[graphql(validator(ip))] n: String) -> i32 {
-            todo!()
-        }
-
         async fn regex(&self, #[graphql(validator(regex = "^[0-9]+$"))] n: String) -> i32 {
             todo!()
         }
 
-        async fn list_email(&self, #[graphql(validator(list, email))] n: Vec<String>) -> i32 {
+        async fn list_numbers(
+            &self,
+            #[graphql(validator(list, regex = "^[0-9]+$"))] n: Vec<String>,
+        ) -> i32 {
             todo!()
         }
     }

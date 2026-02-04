@@ -1,14 +1,15 @@
 # async-graphql-extras
 
-Extra extensions for `async-graphql` that require additional dependencies or are maintained separately from the core library.
+Extras for `async-graphql` that are maintained separately from the core library.
 
 ## Features
 
 This crate offers the following optional features:
 
-| Feature               | Enables                                                                                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **`opentelemetry`**   | Enable the [OpenTelemetry extension](https://docs.rs/async-graphql-extras/latest/async_graphql_extras/extensions/struct.OpenTelemetry.html) for distributed tracing and metrics support.   |
+| Feature               | Enables                                                                           |
+| --------------------- | --------------------------------------------------------------------------------- |
+| **`opentelemetry`**   | Enable the OpenTelemetry extension for distributed tracing and metrics support.   |
+| **`email-address`**   | Enable the `EmailAddress` scalar wrapper                                          |
 
 ## Documentation
 

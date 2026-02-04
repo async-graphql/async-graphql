@@ -452,6 +452,27 @@ impl<T, C: CacheFactory> DataLoader<T, C> {
         self.feed_many(std::iter::once((key, value))).await;
     }
 
+    /// Clear a specific entry from the cache.
+    ///
+    /// **NOTE: if the cache type is [NoCache], this function will not take
+    /// effect. **
+    #[cfg_attr(feature = "tracing", instrument(skip_all))]
+    pub fn clear_one<K>(&self, key: &K)
+    where
+        K: Send + Sync + Hash + Eq + Clone + 'static,
+        T: Loader<K>,
+    {
+        let tid = TypeId::of::<K>();
+        let mut entry = self
+            .inner
+            .requests
+            .entry_sync(tid)
+            .or_insert_with(|| Box::new(Requests::<K, T>::new(&self.cache_factory)));
+
+        let typed_requests = entry.downcast_mut::<Requests<K, T>>().unwrap();
+        typed_requests.cache_storage.remove(key);
+    }
+
     /// Clears the cache.
     ///
     /// **NOTE: If the cache type is [NoCache], this function will not take
@@ -682,6 +703,31 @@ mod tests {
         assert_eq!(
             loader.load_many(vec![1, 2, 3]).await.unwrap(),
             vec![(1, 10), (2, 20), (3, 30)].into_iter().collect()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_dataloader_evict_one_from_cache() {
+        let loader = DataLoader::with_cache(
+            MyLoader,
+            TokioSpawner::current(),
+            TokioTimer::default(),
+            HashMapCache::default(),
+        );
+        loader.feed_many(vec![(1, 10), (2, 20), (3, 30)]).await;
+
+        // All from the cache
+        loader.enable_all_cache(true);
+        assert_eq!(
+            loader.load_many(vec![1, 2, 3]).await.unwrap(),
+            vec![(1, 10), (2, 20), (3, 30)].into_iter().collect()
+        );
+
+        // Remove one from cache
+        loader.clear_one(&1);
+        assert_eq!(
+            loader.load_many(vec![1, 2, 3]).await.unwrap(),
+            vec![(1, 1), (2, 20), (3, 30)].into_iter().collect()
         );
     }
 
