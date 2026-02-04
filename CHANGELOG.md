@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `custom-error-conversion` feature. Use the `ErrorExtensions` trait
 - Make `unblock` feature unconditional when using `tempfile` [#1797](https://github.com/async-graphql/async-graphql/pull/1797)
 - Rework codegen for massive code size + check/compile time improvements [#1796](https://github.com/async-graphql/async-graphql/pull/1796)
+- Remove email validator (use newtype from `async-graphql-extras`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
+- Remove URL validator (use `Url` type from `url`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
+- Remove IP validator (use the `IpAddr` type from `std`) [#1798](https://github.com/async-graphql/async-graphql/pull/1798)
 
 # [8.0.0-rc.1] 2026-01-22
 
