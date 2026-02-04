@@ -1,7 +1,6 @@
-use std::{borrow::Cow, io::Read, ops::Deref, sync::Arc};
+use std::{borrow::Cow, ops::Deref, sync::Arc};
 
-#[cfg(feature = "unblock")]
-use futures_util::io::AsyncRead;
+use futures_util::AsyncRead;
 
 use crate::{
     Context, InputType, InputValueError, InputValueResult, Value, registry, registry::MetaTypeId,
@@ -48,24 +47,7 @@ impl UploadValue {
         }
     }
 
-    /// Convert to a `Read`.
-    ///
-    /// **Note**: this is a *synchronous/blocking* reader.
-    pub fn into_read(self) -> impl Read + Sync + Send + 'static {
-        #[cfg(feature = "tempfile")]
-        {
-            self.content
-        }
-
-        #[cfg(not(feature = "tempfile"))]
-        {
-            std::io::Cursor::new(self.content)
-        }
-    }
-
     /// Convert to a `AsyncRead`.
-    #[cfg(feature = "unblock")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "unblock")))]
     pub fn into_async_read(self) -> impl AsyncRead + Sync + Send + 'static {
         #[cfg(feature = "tempfile")]
         {
