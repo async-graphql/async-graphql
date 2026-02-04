@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# Unreleased
+# [8.0.0-rc.2] 2026-02-04
 
 - Change response `errors` to be serialized before `data` [#1793](https://github.com/async-graphql/async-graphql/pull/1793)
 - Remove `custom-error-conversion` feature. Use the `ErrorExtensions` trait
