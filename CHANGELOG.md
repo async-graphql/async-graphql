@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change response `errors` to be serialized before `data` [#1793](https://github.com/async-graphql/async-graphql/pull/1793)
 - Remove `custom-error-conversion` feature. Use the `ErrorExtensions` trait
 - Make `unblock` feature unconditional when using `tempfile` [#1797](https://github.com/async-graphql/async-graphql/pull/1797)
+- Rework codegen for massive code size + check/compile time improvements [#1796](https://github.com/async-graphql/async-graphql/pull/1796)
 
 # [8.0.0-rc.1] 2026-01-22
 
