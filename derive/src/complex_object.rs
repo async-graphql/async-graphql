@@ -40,13 +40,12 @@ pub fn generate(
                 parse_graphql_attrs(&method.attrs)?.unwrap_or_default();
 
             for derived in method_args.derived {
-                if derived.name.is_some() && derived.into.is_some() {
+                if let Some(name) = derived.name
+                    && let Some(into) = derived.into
+                {
                     let base_function_name = &method.sig.ident;
-                    let name = derived.name.unwrap();
                     let with = derived.with;
-                    let into = Type::Verbatim(
-                        proc_macro2::TokenStream::from_str(&derived.into.unwrap()).unwrap(),
-                    );
+                    let into = Type::Verbatim(proc_macro2::TokenStream::from_str(&into).unwrap());
 
                     let mut new_impl = method.clone();
                     new_impl.sig.ident = name;

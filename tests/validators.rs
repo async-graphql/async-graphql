@@ -60,7 +60,10 @@ pub async fn test_all_validator() {
             todo!()
         }
 
-        async fn list_numbers(&self, #[graphql(validator(list, regex = "^[0-9]+$"))] n: Vec<String>) -> i32 {
+        async fn list_numbers(
+            &self,
+            #[graphql(validator(list, regex = "^[0-9]+$"))] n: Vec<String>,
+        ) -> i32 {
             todo!()
         }
     }
