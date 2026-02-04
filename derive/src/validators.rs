@@ -49,12 +49,6 @@ pub struct Validators {
     #[darling(default)]
     chars_min_length: Option<usize>,
     #[darling(default)]
-    email: bool,
-    #[darling(default)]
-    url: bool,
-    #[darling(default)]
-    ip: bool,
-    #[darling(default)]
     regex: Option<String>,
     #[darling(default, multiple)]
     custom: Vec<Expr>,
@@ -124,24 +118,6 @@ impl Validators {
         if let Some(n) = &self.chars_min_length {
             elem_validators.push(quote! {
                 #crate_name::validators::chars_min_length(__raw_value, #n)
-            });
-        }
-
-        if self.email {
-            elem_validators.push(quote! {
-                #crate_name::validators::email(__raw_value)
-            });
-        }
-
-        if self.url {
-            elem_validators.push(quote! {
-                #crate_name::validators::url(__raw_value)
-            });
-        }
-
-        if self.ip {
-            elem_validators.push(quote! {
-                #crate_name::validators::ip(__raw_value)
             });
         }
 
