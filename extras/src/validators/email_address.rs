@@ -28,3 +28,24 @@ impl ScalarType for EmailAddress {
         Value::String(self.0.to_string())
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn email(email: &str) -> Result<EmailAddress, InputValueError<EmailAddress>> {
+        EmailAddress::parse(Value::String(email.into()))
+    }
+
+    #[test]
+    fn test_email() {
+        assert!(email("joe@example.com").is_ok());
+        assert!(email("joe.test@example.com").is_ok());
+        assert!(email("email@example-one.com").is_ok());
+        assert!(email("1234567890@example.com").is_ok());
+
+        assert!(email("plainaddress").is_err());
+        assert!(email("@example.com").is_err());
+        assert!(email("email.example.com").is_err());
+    }
+}
