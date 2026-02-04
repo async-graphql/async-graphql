@@ -1,8 +1,5 @@
 mod chars_max_length;
 mod chars_min_length;
-#[cfg(feature = "email-validator")]
-mod email;
-mod ip;
 mod max_items;
 mod max_length;
 mod maximum;
@@ -11,13 +8,9 @@ mod min_length;
 mod minimum;
 mod multiple_of;
 mod regex;
-mod url;
 
 pub use chars_max_length::chars_max_length;
 pub use chars_min_length::chars_min_length;
-#[cfg(feature = "email-validator")]
-pub use email::email;
-pub use ip::ip;
 pub use max_items::max_items;
 pub use max_length::max_length;
 pub use maximum::maximum;
@@ -26,7 +19,7 @@ pub use min_length::min_length;
 pub use minimum::minimum;
 pub use multiple_of::multiple_of;
 
-pub use self::{regex::regex, url::url};
+pub use self::regex::regex;
 use crate::{InputType, InputValueError};
 
 /// Represents a custom input value validator.
