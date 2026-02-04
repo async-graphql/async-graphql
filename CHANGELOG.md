@@ -1,4 +1,5 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
@@ -7,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # Unreleased
 
 - Change response `errors` to be serialized before `data` [#1793](https://github.com/async-graphql/async-graphql/pull/1793)
+- Remove `custom-error-conversion` feature. Use the `ErrorExtensions` trait
 
 # [8.0.0-rc.1] 2026-01-22
 
@@ -182,7 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add `NextExecute::run_with_data` method to attach context data before execution
 - feat: add registry method in dynamic::Registry [#1492](https://github.com/async-graphql/async-graphql/pull/1492)
 - Allow non-scalars to be used as directive arguments [#1493](https://github.com/async-graphql/async-graphql/pull/1493)
-- fix: add description to __schema introspection result [#1489](https://github.com/async-graphql/async-graphql/pull/1489)
+- fix: add description to \_\_schema introspection result [#1489](https://github.com/async-graphql/async-graphql/pull/1489)
 
 # [7.0.2] 2024-02-18
 
@@ -191,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use `impl Future` instead of `async-trait` in most traits. [#1468](https://github.com/async-graphql/async-graphql/pull/1468)
 - Upgrade `base64` to `0.21` [#1466](https://github.com/async-graphql/async-graphql/pull/1466)
 - Standardize space between Args, Lists and Binary items [#1392](https://github.com/async-graphql/async-graphql/pull/1392)
-- feat: support bigdecimal 0.4.x  [#1358](https://github.com/async-graphql/async-graphql/pull/1358)
+- feat: support bigdecimal 0.4.x [#1358](https://github.com/async-graphql/async-graphql/pull/1358)
 
 # [7.0.1] 2024-01-21
 
@@ -276,8 +278,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Since `syn 2.0` no longer supports keywords as meta path, rename the parameter used to specify interface field types from `type` to `ty`.
 
-    https://github.com/dtolnay/syn/issues/1458
-    https://github.com/TedDriggs/darling/issues/238
+  https://github.com/dtolnay/syn/issues/1458
+  https://github.com/TedDriggs/darling/issues/238
 
 ```rust
 #[derive(Interface)]
@@ -287,7 +289,7 @@ enum Node {
 }
 ```
 
-- Change the parameter `location` of the macro `Directive` to *PascalCase*
+- Change the parameter `location` of the macro `Directive` to _PascalCase_
 
 ```rust
 // #[Directive(location = "field")]
@@ -331,7 +333,7 @@ pub fn lowercase() -> impl CustomDirective {
 - chore: enable GraphiQL/Playground via feature flag [#1202](https://github.com/async-graphql/async-graphql/pull/1202)
 - fix: Export directives to federation SDL so they can be composed. [#1209](https://github.com/async-graphql/async-graphql/pull/1209)
 - Fix doc contents details and add AutoCorrect lint to CI. [#1210](https://github.com/async-graphql/async-graphql/pull/1210)
-- fix: provide correct type for _service with dynamic schema [#1212](https://github.com/async-graphql/async-graphql/pull/1212)
+- fix: provide correct type for \_service with dynamic schema [#1212](https://github.com/async-graphql/async-graphql/pull/1212)
 - feat(subscription): support generics in MergedSubscription types [#1222](https://github.com/async-graphql/async-graphql/pull/1222)
 - feat: modify Connection to allow optionally disable nodes field in gql output. [#1218](https://github.com/async-graphql/async-graphql/pull/1218)
 - fixes interface type condition query [#1228](https://github.com/async-graphql/async-graphql/pull/1228)
@@ -342,7 +344,7 @@ pub fn lowercase() -> impl CustomDirective {
 
 - dynamic schema: add boxed_any function [#1179](https://github.com/async-graphql/async-graphql/pull/1179)
 - Improve GraphiQL v2 [#1182](https://github.com/async-graphql/async-graphql/pull/1182)
-- Fix: __Type.oneOf to __Type.isOneOf [#1188](https://github.com/async-graphql/async-graphql/pull/1188)
+- Fix: **Type.oneOf to **Type.isOneOf [#1188](https://github.com/async-graphql/async-graphql/pull/1188)
 - Implement From<ID> for ConstValue [#1169](https://github.com/async-graphql/async-graphql/pull/1169)
 - Fixes [#1192](https://github.com/async-graphql/async-graphql/issues/1192)
 
@@ -474,7 +476,6 @@ pub fn lowercase() -> impl CustomDirective {
 - Implement `Default` for `StringNumber` [#980](https://github.com/async-graphql/async-graphql/issues/980)
 - Implement `Guard` for `Fn`
 - Fix impossible to specify both `name` and `input_name` [#987](https://github.com/async-graphql/async-graphql/issues/987)
-
 
 # [4.0.4] 2022-6-25
 
@@ -655,7 +656,7 @@ pub fn lowercase() -> impl CustomDirective {
   - BatchRequest::variables
   - BatchRequest::data
   - BatchRequest::disable_introspection
-- Fix implicit interfaces not being exposed via the __schema introspection. [#741](https://github.com/async-graphql/async-graphql/pull/741)
+- Fix implicit interfaces not being exposed via the \_\_schema introspection. [#741](https://github.com/async-graphql/async-graphql/pull/741)
 
 ## [3.0.11] 2021-12-02
 
@@ -750,7 +751,7 @@ pub fn lowercase() -> impl CustomDirective {
 
 ## [2.10.8] 2021-10-26
 
-- [async-graphql-poem] Bump poem to `1.0.13`. 
+- [async-graphql-poem] Bump poem to `1.0.13`.
 
 ## [2.10.6] 2021-10-26
 
@@ -759,7 +760,7 @@ pub fn lowercase() -> impl CustomDirective {
 
 ## [2.10.5] 2021-10-22
 
-- Bump poem from `0.6.6` to `1.0.7`. 
+- Bump poem from `0.6.6` to `1.0.7`.
 
 ## [2.10.4] 2021-10-22
 
@@ -841,7 +842,6 @@ pub fn lowercase() -> impl CustomDirective {
 ## [2.9.6] 2021-07-02
 
 - Implement `From<SelectionField>` for `Lookahead`. [#557](https://github.com/async-graphql/async-graphql/issues/557)
-  
 - Add Decimal scalar (from `rust_decimal` crate) [#559](https://github.com/async-graphql/async-graphql/pull/559)
 
 ## [2.9.5] 2021-06-29
@@ -865,7 +865,6 @@ pub fn lowercase() -> impl CustomDirective {
 ## [2.9.2] 2021-06-10
 
 - Allow field guards to support paths. [#536](https://github.com/async-graphql/async-graphql/issues/536)
-  
 - Add the `operation_name` to `Extension::execute` method. [#538](https://github.com/async-graphql/async-graphql/issues/538)
 
 ## [2.9.1] 2021-06-08
@@ -932,24 +931,24 @@ impl Query {
 ### Changed
 
 - Rework `Extension`, now fully supports asynchronous, better to use than before, and can achieve more features, it contains a lot of changes. _(if you don't have a custom extension, it will not cause the existing code to fail to compile)_
-  
+
 ### Added
 
-- Add `async_graphql_warp::graphql_protocol`, `async_graphql_warp::graphql_subscription_upgrade` and `async_graphql_warp::graphql_subscription_upgrade_with_data` to control WebSocket subscription more finely. 
+- Add `async_graphql_warp::graphql_protocol`, `async_graphql_warp::graphql_subscription_upgrade` and `async_graphql_warp::graphql_subscription_upgrade_with_data` to control WebSocket subscription more finely.
 
 ## [2.7.4] 2021-04-02
 
 - Add the `BuildHasher` generic parameter to `dataloader::HashMapCache` to allow custom hashing algorithms. [#455](https://github.com/async-graphql/async-graphql/issues/455)
 
 ## [2.7.3] 2021-04-02
- 
-## Added 
+
+## Added
 
 - Add cache support for DataLoader. [#455](https://github.com/async-graphql/async-graphql/issues/455)
 - Implements `ScalarType` for `serde_json::Value`.
 - Add `SelectionField::alias` and `SelectionField::arguments` methods.
 
-## Fixed  
+## Fixed
 
 - Prevent Warp WS Close, Ping, and Pong messages from being parsed as GraphQL [#459](https://github.com/async-graphql/async-graphql/pull/459)
 - Fix Schema::sdl() does not include subscription definitions. [#464](https://github.com/async-graphql/async-graphql/issues/464)
@@ -959,7 +958,7 @@ impl Query {
 ## Removed
 
 - Remove `SchemaBuilder::override_name` method. [#437](https://github.com/async-graphql/async-graphql/issues/437)
-  
+
 ## Added
 
 - Add `name` and `visible` attributes for `Newtype` macro for define a new scalar. [#437](https://github.com/async-graphql/async-graphql/issues/437)
@@ -1004,7 +1003,7 @@ impl Query {
 
 ## [2.6.2] - 2021-03-20
 
-- Add `SchemaBuilder::enable_subscription_in_federation` method.  [#449](https://github.com/async-graphql/async-graphql/issues/449)
+- Add `SchemaBuilder::enable_subscription_in_federation` method. [#449](https://github.com/async-graphql/async-graphql/issues/449)
 
 ## [2.6.1] - 2021-03-19
 
@@ -1050,22 +1049,22 @@ impl Query {
 
 - Allow the `deprecation` attribute to have no reason.
 
-    ```rust
-    #[derive(SimpleObject)]
-    struct MyObject {
-        #[graphql(deprecation)]
-        a: i32,
-    
-        #[graphql(deprecation = true)]
-        b: i32,
-    
-        #[graphql(deprecation = false)]
-        c: i32,
-    
-        #[graphql(deprecation = "reason")]
-        d: i32,
-    }
-    ```
+  ```rust
+  #[derive(SimpleObject)]
+  struct MyObject {
+      #[graphql(deprecation)]
+      a: i32,
+
+      #[graphql(deprecation = true)]
+      b: i32,
+
+      #[graphql(deprecation = false)]
+      c: i32,
+
+      #[graphql(deprecation = "reason")]
+      d: i32,
+  }
+  ```
 
 ## [2.5.7] - 2021-02-23
 

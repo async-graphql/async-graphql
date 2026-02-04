@@ -38,7 +38,6 @@ dynamic-schema = []
 graphiql = ["dep:askama"]
 raw_value = ["async-graphql-value/raw_value"]
 boxed-trait = ["async-graphql-derive/boxed-trait"]
-custom-error-conversion = []
 
 [[bench]]
 harness = false
