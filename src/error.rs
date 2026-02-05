@@ -31,6 +31,20 @@ impl ErrorExtensionValues {
     pub fn get(&self, name: impl AsRef<str>) -> Option<&Value> {
         self.0.get(name.as_ref())
     }
+
+    /// Iterate over the extension values.
+    pub fn iter(&self) -> impl Iterator<Item = (&String, &Value)> {
+        self.0.iter()
+    }
+}
+
+impl IntoIterator for ErrorExtensionValues {
+    type Item = (String, Value);
+    type IntoIter = std::collections::btree_map::IntoIter<String, Value>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
 }
 
 /// An error in a GraphQL server.
