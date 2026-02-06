@@ -7,6 +7,9 @@ use crate::{Context, Error, Name, OutputType, ServerError, ServerResult, Value};
 /// Helper used by proc-macro-generated object resolvers to reduce emitted code.
 #[doc(hidden)]
 #[allow(clippy::manual_async_fn)]
+// NOTE: this is important to prevent resolve_field methods from growing too large,
+// which can lead to stack overflows.
+#[inline(never)]
 pub fn resolve_field_async<'a, T, E, F>(
     ctx: &'a Context<'a>,
     fut: F,
@@ -55,6 +58,9 @@ pub fn find_entity_params<'a>(
 /// This is a small helper used by derive codegen to keep emitted resolver code
 /// small.
 #[doc(hidden)]
+// NOTE: this is important to prevent resolve_field methods from growing too large,
+// which can lead to stack overflows.
+#[inline(never)]
 pub async fn resolve_simple_field_value<T: OutputType + ?Sized>(
     ctx: &Context<'_>,
     value: &T,
