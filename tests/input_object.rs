@@ -289,6 +289,116 @@ pub async fn test_inputobject_flatten_multiple() {
 }
 
 #[tokio::test]
+pub async fn test_inputobject_flatten_generic() {
+    #[derive(InputObject, Debug, Eq, PartialEq)]
+    struct A {
+        a: i32,
+    }
+
+    #[derive(InputObject, Debug, Eq, PartialEq)]
+    #[graphql(concrete(name = "AB", params(A)))]
+    struct B<T: InputObjectType> {
+        #[graphql(default = 70)]
+        b: i32,
+        #[graphql(flatten)]
+        a_obj: T,
+    }
+
+    assert_eq!(
+        B::parse(Some(value!({
+           "a": 10,
+           "b": 20,
+        })))
+        .unwrap(),
+        B {
+            b: 20,
+            a_obj: A { a: 10 }
+        }
+    );
+
+    assert_eq!(
+        B {
+            b: 20,
+            a_obj: A { a: 10 }
+        }
+        .to_value(),
+        value!({
+           "a": 10,
+           "b": 20,
+        })
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(&self, input: B<A>) -> i32 {
+            input.b + input.a_obj.a
+        }
+
+        async fn test_with_default(
+            &self,
+            #[graphql(default_with = r#"B {
+                b: 2,
+                a_obj: A { a: 1 }
+            }"#)]
+            input: B<A>,
+        ) -> i32 {
+            input.b + input.a_obj.a
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10, b: 20})
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "test": 30,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10})
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "test": 80,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            testWithDefault
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "testWithDefault": 3,
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_input_object_skip_field() {
     #[derive(InputObject)]
     struct MyInput2 {
