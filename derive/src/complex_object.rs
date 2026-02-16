@@ -136,8 +136,13 @@ pub fn generate(
                 let ty = ty.value_type();
                 let ident = &method.sig.ident;
 
+                let assert_generics = (!generics.params.is_empty()).then(|| {
+                    let generics_list = &generics.params;
+                    quote! { for(#generics_list) }
+                });
+
                 schema_fields.push(quote! {
-                    #crate_name::static_assertions_next::assert_impl_one!(#ty: #crate_name::ObjectType);
+                    #crate_name::static_assertions_next::assert_impl!(#assert_generics #ty: #crate_name::ObjectType);
                     <#ty>::create_type_info(registry);
                     if let #crate_name::registry::MetaType::Object { fields: obj_fields, .. } =
                         registry.create_fake_output_type::<#ty>() {
