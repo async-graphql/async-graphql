@@ -1,6 +1,6 @@
 [package]
 name = "async-graphql-extras"
-version = "0.1.0-rc.2"
+version = "0.1.0-rc.3"
 edition = "2024"
 rust-version = "1.89.0"
 authors = ["Aumetra Weisman <aumetra@cryptolab.net>"]

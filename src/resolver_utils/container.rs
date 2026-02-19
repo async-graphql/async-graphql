@@ -1,6 +1,6 @@
 use std::{future::Future, pin::Pin, sync::Arc};
 
-use futures_util::{FutureExt, StreamExt as _, stream::FuturesUnordered};
+use futures_util::FutureExt;
 use indexmap::IndexMap;
 
 use crate::{
@@ -140,6 +140,14 @@ pub async fn resolve_container_serial<'a, T: ContainerType + ?Sized>(
     resolve_container_inner(ctx, root, false).await
 }
 
+pub(crate) fn create_value_object(values: Vec<(Name, Value)>) -> Value {
+    let mut map = IndexMap::new();
+    for (name, value) in values {
+        insert_value(&mut map, name, value);
+    }
+    Value::Object(map)
+}
+
 fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
     if let Some(prev_value) = target.get_mut(&name) {
         if let Value::Object(target_map) = prev_value {
@@ -174,37 +182,17 @@ async fn resolve_container_inner<'a, T: ContainerType + ?Sized>(
     let mut fields = Fields(Vec::new());
     fields.add_set(ctx, root)?;
 
-    Ok(do_resolve_container(ctx, parallel, fields.0).await)
-}
-
-pub(crate) async fn do_resolve_container<'a>(
-    ctx: &ContextSelectionSet<'a>,
-    parallel: bool,
-    futures: Vec<BoxFieldFuture<'a>>,
-) -> Value {
-    let mut results = IndexMap::new();
-    let mut handle = |res| match res {
-        Ok((name, value)) => insert_value(&mut results, name, value),
-        Err(e) => ctx.add_error(e),
+    let res = if parallel {
+        futures_util::future::try_join_all(fields.0).await?
+    } else {
+        let mut results = Vec::with_capacity(fields.0.len());
+        for field in fields.0 {
+            results.push(field.await?);
+        }
+        results
     };
 
-    if parallel {
-        let mut set = FuturesUnordered::new();
-        set.extend(futures);
-        while let Some(field) = set.next().await {
-            handle(field);
-        }
-    } else {
-        for fut in futures {
-            handle(fut.await);
-        }
-    }
-
-    if results.is_empty() {
-        Value::Null
-    } else {
-        Value::Object(results)
-    }
+    Ok(create_value_object(res))
 }
 
 type BoxFieldFuture<'a> = Pin<Box<dyn Future<Output = ServerResult<(Name, Value)>> + 'a + Send>>;
