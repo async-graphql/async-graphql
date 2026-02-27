@@ -153,7 +153,10 @@ where
         actix_web::rt::spawn(async move {
             let mut last_heartbeat = Instant::now();
             let mut continuation: Vec<u8> = Vec::new();
-            let mut heartbeat = tokio::time::interval(HEARTBEAT_INTERVAL);
+            let mut heartbeat = tokio::time::interval_at(
+                tokio::time::Instant::now() + HEARTBEAT_INTERVAL,
+                HEARTBEAT_INTERVAL,
+            );
 
             let mut msg_stream = Box::pin(msg_stream);
             let mut gql_stream = Box::pin(gql_stream);
