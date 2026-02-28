@@ -122,8 +122,7 @@ where
     }
 
     /// Start the WebSocket subscription handler.
-    pub fn start(self, request: &HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error>
-    {
+    pub fn start(self, request: &HttpRequest, stream: web::Payload) -> Result<HttpResponse, Error>{
         let protocol = request
             .headers()
             .get("sec-websocket-protocol")
