@@ -926,7 +926,6 @@ pub async fn test_custom_validator_with_extensions_input() {
     );
 }
 
-
 #[tokio::test]
 pub async fn test_inputobject_generic_with_name_type() {
     use std::borrow::Cow;
