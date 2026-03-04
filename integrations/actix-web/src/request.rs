@@ -94,7 +94,7 @@ impl FromRequest for GraphQLBatchRequest {
 
             // Payload is !Send so we create indirection with a channel
             let mut payload = payload.take();
-            actix::spawn(async move {
+            actix_web::rt::spawn(async move {
                 while let Some(item) = payload.next().await {
                     if tx.send(item).await.is_err() {
                         return;
