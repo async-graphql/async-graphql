@@ -925,3 +925,46 @@ pub async fn test_custom_validator_with_extensions_input() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_inputobject_generic_with_name_type() {
+    use std::borrow::Cow;
+
+    #[derive(InputObject)]
+    #[graphql(name_type)]
+    struct GenericInput<T: InputType> {
+        content: Vec<T>,
+        count: usize,
+    }
+
+    impl<T: InputType> TypeName for GenericInput<T> {
+        fn type_name() -> Cow<'static, str> {
+            format!("{}GenericInput", <T as InputType>::type_name()).into()
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test_generic_input(&self, input: GenericInput<i32>) -> i32 {
+            input.count as i32
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{ testGenericInput(input: { content: [1, 2, 3], count: 3 }) }"#;
+    let result = schema.execute(query).await;
+
+    assert_eq!(
+        result.data,
+        value!({
+            "testGenericInput": 3
+        })
+    );
+
+    assert_eq!(
+        <GenericInput<i32> as InputType>::type_name(),
+        "IntGenericInput"
+    );
+}

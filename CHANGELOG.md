@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [Unreleased]
+
+- Fix InputObject with generics failing to compile when using `name_type` attribute [#1812](https://github.com/async-graphql/async-graphql/pull/1812)
+
 # [8.0.0-rc.3] 2026-02-19
 
 - Fix GraphQL spec violation for `data` entry when the execution
