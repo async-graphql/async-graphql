@@ -24,6 +24,42 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
     let ident = &interface_args.ident;
     let type_params = interface_args.generics.type_params().collect::<Vec<_>>();
     let (impl_generics, ty_generics, where_clause) = interface_args.generics.split_for_impl();
+
+    let type_params_with_bounds: Vec<proc_macro2::TokenStream> = type_params
+        .iter()
+        .map(|tp| {
+            let ident = &tp.ident;
+            let existing_bounds = &tp.bounds;
+
+            let where_bounds: Vec<_> = interface_args
+                .generics
+                .where_clause
+                .iter()
+                .flat_map(|wc| &wc.predicates)
+                .filter_map(|pred| {
+                    if let syn::WherePredicate::Type(pt) = pred
+                        && let syn::Type::Path(type_path) = &pt.bounded_ty
+                        && type_path.path.is_ident(ident)
+                    {
+                        return Some(&pt.bounds);
+                    }
+                    None
+                })
+                .flatten()
+                .collect();
+
+            if existing_bounds.is_empty() && where_bounds.is_empty() {
+                quote!(#ident)
+            } else if where_bounds.is_empty() {
+                quote!(#tp)
+            } else if existing_bounds.is_empty() {
+                quote!(#ident: #(#where_bounds)+*)
+            } else {
+                quote!(#ident: #existing_bounds #(+ #where_bounds)*)
+            }
+        })
+        .collect();
+
     let s = match &interface_args.data {
         Data::Enum(s) => s,
         _ => {
@@ -118,7 +154,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             RemoveLifetime.visit_type_path_mut(&mut assert_ty);
 
             type_into_impls.push(quote! {
-                #crate_name::static_assertions_next::assert_impl!(for(#(#type_params),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
+                #crate_name::static_assertions_next::assert_impl!(for(#(#type_params_with_bounds),*) #assert_ty: (#crate_name::ObjectType) | (#crate_name::InterfaceType));
 
                 #[allow(clippy::all, clippy::pedantic)]
                 impl #impl_generics ::std::convert::From<#p> for #ident #ty_generics #where_clause {

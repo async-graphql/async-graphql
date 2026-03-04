@@ -304,7 +304,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
     let expanded = if object_args.concretes.is_empty() {
         quote! {
             #[allow(clippy::all, clippy::pedantic)]
-            impl #crate_name::InputType for #ident {
+            impl #impl_generics #crate_name::InputType for #ident #ty_generics #where_clause {
                 type RawValueType = Self;
 
                 fn type_name() -> ::std::borrow::Cow<'static, ::std::primitive::str> {
@@ -352,7 +352,7 @@ pub fn generate(object_args: &args::InputObject) -> GeneratorResult<TokenStream>
                 }
             }
 
-            impl #crate_name::InputObjectType for #ident {}
+            impl #impl_generics #crate_name::InputObjectType for #ident #ty_generics #where_clause {}
         }
     } else {
         let mut code = Vec::new();
