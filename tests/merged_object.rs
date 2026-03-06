@@ -516,9 +516,10 @@ pub async fn test_issue_694() {
 }
 
 /// Regression test for https://github.com/async-graphql/async-graphql/issues/1647
-/// Merging 130+ objects with the old linear-chain macro would exceed the compiler's
-/// default recursion limit of 128. The balanced binary tree approach reduces depth
-/// from O(N) to O(log N), making this compile without increasing the recursion limit.
+/// Merging 130+ objects with the old linear-chain macro would exceed the
+/// compiler's default recursion limit of 128. The balanced binary tree approach
+/// reduces depth from O(N) to O(log N), making this compile without increasing
+/// the recursion limit.
 mod issue_1647 {
     use super::*;
 
@@ -662,6 +663,7 @@ mod issue_1647 {
     make_simple_object!(Obj129, f129);
     make_simple_object!(Obj130, f130);
 
+    #[rustfmt::skip] // otherwise many lines
     #[derive(MergedObject, Default)]
     struct ManyMerged(
         Obj001, Obj002, Obj003, Obj004, Obj005, Obj006, Obj007, Obj008, Obj009, Obj010,
@@ -707,5 +709,4 @@ mod issue_1647 {
             })
         );
     }
-
 }
