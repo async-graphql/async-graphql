@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 # [Unreleased]
 
+- Fix MergedObject/MergedSubscription exceeding compiler recursion limit with 130+ merged types by using balanced binary tree instead of linear chain [#1813](https://github.com/async-graphql/async-graphql/pull/1813)
 - Replace deprecated `actix-web-actors` with `actix-ws` in the Actix integration [#1811](https://github.com/async-graphql/async-graphql/pull/1811)
 - Fix InputObject with generics failing to compile when using `name_type` attribute [#1812](https://github.com/async-graphql/async-graphql/pull/1812)
 
