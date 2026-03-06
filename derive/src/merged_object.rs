@@ -12,6 +12,52 @@ use crate::{
     },
 };
 
+/// Build a balanced binary tree of `MergedObject` value expressions.
+/// Reduces nesting depth from O(N) to O(log N).
+pub(crate) fn build_merge_tree_value(
+    crate_name: &proc_macro2::TokenStream,
+    items: &[proc_macro2::TokenStream],
+) -> proc_macro2::TokenStream {
+    match items.len() {
+        0 => quote! { #crate_name::MergedObjectTail },
+        1 => {
+            let item = &items[0];
+            let tail = quote! { #crate_name::MergedObjectTail };
+            quote! { #crate_name::MergedObject(#item, #tail) }
+        }
+        n => {
+            let mid = n / 2;
+            let left = build_merge_tree_value(crate_name, &items[..mid]);
+            let right = build_merge_tree_value(crate_name, &items[mid..]);
+            // right goes in B position (processed first), left in A (extends on top)
+            // so earlier-declared fields end up later in the IndexMap, matching
+            // the original linear chain's ordering
+            quote! { #crate_name::MergedObject(#right, #left) }
+        }
+    }
+}
+
+/// Build a balanced binary tree of `MergedObject` type expressions.
+pub(crate) fn build_merge_tree_type(
+    crate_name: &proc_macro2::TokenStream,
+    items: &[proc_macro2::TokenStream],
+) -> proc_macro2::TokenStream {
+    match items.len() {
+        0 => quote! { #crate_name::MergedObjectTail },
+        1 => {
+            let item = &items[0];
+            let tail = quote! { #crate_name::MergedObjectTail };
+            quote! { #crate_name::MergedObject::<#item, #tail> }
+        }
+        n => {
+            let mid = n / 2;
+            let left = build_merge_tree_type(crate_name, &items[..mid]);
+            let right = build_merge_tree_type(crate_name, &items[mid..]);
+            quote! { #crate_name::MergedObject::<#right, #left> }
+        }
+    }
+}
+
 pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream> {
     let crate_name = get_crate_path(&object_args.crate_path, object_args.internal);
     let boxed_trait = gen_boxed_trait(&crate_name);
@@ -71,23 +117,21 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         types.push(&field.ty);
     }
 
+    let crate_name_tokens = quote! { #crate_name };
+
     let create_merged_obj = {
-        let mut obj = quote! { #crate_name::MergedObjectTail };
-        for i in 0..types.len() {
-            let n = LitInt::new(&format!("{}", i), Span::call_site());
-            obj = quote! { #crate_name::MergedObject(&self.#n, #obj) };
-        }
-        quote! {
-            #obj
-        }
+        let indices: Vec<_> = (0..types.len())
+            .map(|i| {
+                let n = LitInt::new(&format!("{}", i), Span::call_site());
+                quote! { &self.#n }
+            })
+            .collect();
+        build_merge_tree_value(&crate_name_tokens, &indices)
     };
 
     let merged_type = {
-        let mut obj = quote! { #crate_name::MergedObjectTail };
-        for ty in &types {
-            obj = quote! { #crate_name::MergedObject::<#ty, #obj> };
-        }
-        obj
+        let type_tokens: Vec<_> = types.iter().map(|ty| quote! { #ty }).collect();
+        build_merge_tree_type(&crate_name_tokens, &type_tokens)
     };
 
     let visible = visible_fn(&object_args.visible);
