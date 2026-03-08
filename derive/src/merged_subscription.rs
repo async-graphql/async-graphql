@@ -57,10 +57,11 @@ pub fn generate(object_args: &args::MergedSubscription) -> GeneratorResult<Token
         })
         .collect();
 
-    let merged_type = types.iter().fold(
-        quote!(#crate_name::MergedObjectTail),
-        |obj, ty| quote!(#crate_name::MergedObject::<#ty, #obj>),
-    );
+    let merged_type = {
+        let type_tokens: Vec<_> = types.iter().map(|ty| quote!(#ty)).collect();
+        let crate_name_tokens = quote!(#crate_name);
+        crate::merged_object::build_merge_tree_type(&crate_name_tokens, &type_tokens)
+    };
 
     let visible = visible_fn(&object_args.visible);
     let expanded = quote! {

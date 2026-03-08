@@ -549,6 +549,65 @@ pub async fn test_interface_with_oneof_object() {
     );
 }
 
+#[tokio::test]
+pub async fn test_interface_generic_with_where_clause() {
+    trait SomeTrait: Send + Sync {
+        fn get_value(&self) -> i32;
+    }
+
+    struct SomeNode(i32);
+    impl SomeTrait for SomeNode {
+        fn get_value(&self) -> i32 {
+            self.0
+        }
+    }
+
+    struct GenericNode<M>(M);
+
+    #[Object(name = "GenericNode")]
+    impl<M> GenericNode<M>
+    where
+        M: SomeTrait,
+    {
+        async fn value(&self) -> i32 {
+            self.0.get_value()
+        }
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(name = "value", ty = "i32"))]
+    enum NodeInterface<M>
+    where
+        M: SomeTrait,
+    {
+        GenericNode(GenericNode<M>),
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn node(&self) -> NodeInterface<SomeNode> {
+            GenericNode(SomeNode(42)).into()
+        }
+    }
+
+    let query = r#"{
+        node {
+            value
+        }
+    }"#;
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema.execute(query).await.into_result().unwrap().data,
+        value!({
+            "node": {
+                "value": 42,
+            }
+        })
+    );
+}
+
 /// Module docs
 #[deny(missing_docs)]
 pub mod test_interface_docs {

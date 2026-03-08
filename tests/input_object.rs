@@ -289,6 +289,122 @@ pub async fn test_inputobject_flatten_multiple() {
 }
 
 #[tokio::test]
+pub async fn test_inputobject_flatten_generic() {
+    #[derive(InputObject, Debug, Eq, PartialEq)]
+    struct A {
+        a: i32,
+    }
+
+    #[derive(InputObject, Debug, Eq, PartialEq)]
+    #[graphql(concrete(name = "AB", params(A, i32)))]
+    struct B<T: InputObjectType, C: InputType> {
+        #[graphql(default = 70)]
+        b: i32,
+        #[graphql(flatten)]
+        a_obj: T,
+        c: C,
+    }
+
+    assert_eq!(
+        B::parse(Some(value!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })))
+        .unwrap(),
+        B {
+            b: 20,
+            a_obj: A { a: 10 },
+            c: 30,
+        }
+    );
+
+    assert_eq!(
+        B {
+            b: 20,
+            a_obj: A { a: 10 },
+            c: 30,
+        }
+        .to_value(),
+        value!({
+           "a": 10,
+           "b": 20,
+           "c": 30,
+        })
+    );
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test(&self, input: B<A, i32>) -> i32 {
+            input.c + input.b + input.a_obj.a
+        }
+
+        async fn test_with_default(
+            &self,
+            #[graphql(default_with = r#"B {
+                b: 2,
+                a_obj: A { a: 1 },
+                c: 3
+            }"#)]
+            input: B<A, i32>,
+        ) -> i32 {
+            input.c + input.b + input.a_obj.a
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10, b: 20, c: 30})
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "test": 60,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            test(input:{a:10, c: 30})
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "test": 110,
+        })
+    );
+
+    assert_eq!(
+        schema
+            .execute(
+                r#"{
+            testWithDefault
+        }"#
+            )
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        value!({
+            "testWithDefault": 6,
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_input_object_skip_field() {
     #[derive(InputObject)]
     struct MyInput2 {
@@ -923,5 +1039,48 @@ pub async fn test_custom_validator_with_extensions_input() {
             path: vec![PathSegment::Field("value".to_string())],
             extensions: Some(error_extensions)
         }]
+    );
+}
+
+#[tokio::test]
+pub async fn test_inputobject_generic_with_name_type() {
+    use std::borrow::Cow;
+
+    #[derive(InputObject)]
+    #[graphql(name_type)]
+    struct GenericInput<T: InputType> {
+        content: Vec<T>,
+        count: usize,
+    }
+
+    impl<T: InputType> TypeName for GenericInput<T> {
+        fn type_name() -> Cow<'static, str> {
+            format!("{}GenericInput", <T as InputType>::type_name()).into()
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn test_generic_input(&self, input: GenericInput<i32>) -> i32 {
+            input.count as i32
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"{ testGenericInput(input: { content: [1, 2, 3], count: 3 }) }"#;
+    let result = schema.execute(query).await;
+
+    assert_eq!(
+        result.data,
+        value!({
+            "testGenericInput": 3
+        })
+    );
+
+    assert_eq!(
+        <GenericInput<i32> as InputType>::type_name(),
+        "IntGenericInput"
     );
 }
