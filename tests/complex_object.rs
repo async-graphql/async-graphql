@@ -463,6 +463,70 @@ async fn test_flatten() {
 }
 
 #[tokio::test]
+async fn test_flatten_with_generics() {
+    #[derive(SimpleObject)]
+    struct A {
+        a: i32,
+        b: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct B<T: ObjectType, C: OutputType> {
+        #[graphql(skip)]
+        a: T,
+        c: C,
+    }
+
+    #[ComplexObject]
+    impl<T: ObjectType, C: OutputType> B<T, C> {
+        #[graphql(flatten)]
+        async fn a(&self) -> &T {
+            &self.a
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> B<A, i32> {
+            B {
+                a: A { a: 100, b: 200 },
+                c: 300,
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = "{ __type(name: \"B\") { fields { name } } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "__type": {
+                "fields": [
+                    {"name": "c"},
+                    {"name": "a"},
+                    {"name": "b"}
+                ]
+            }
+        })
+    );
+
+    let query = "{ obj { a b c } }";
+    assert_eq!(
+        schema.execute(query).await.data,
+        value!({
+            "obj": {
+                "a": 100,
+                "b": 200,
+                "c": 300,
+            }
+        })
+    );
+}
+
+#[tokio::test]
 async fn test_flatten_with_context() {
     #[derive(SimpleObject)]
     struct A {
