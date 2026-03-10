@@ -138,6 +138,7 @@ members = [
   "integrations/warp",
   "integrations/axum",
   "extras",
+  "docs/book-tests",
 ]
 
 [workspace.dependencies]
