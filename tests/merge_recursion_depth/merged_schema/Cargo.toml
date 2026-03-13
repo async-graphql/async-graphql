@@ -1,0 +1,12 @@
+[package]
+name = "merge-recursion-merged-schema"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+async-graphql = { path = "../../.." }
+merge-recursion-member-types = { path = "../member_types" }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
