@@ -139,6 +139,8 @@ members = [
   "integrations/axum",
   "extras",
   "docs/book-tests",
+  "tests/merge_recursion_depth/member_types",
+  "tests/merge_recursion_depth/merged_schema",
 ]
 
 [workspace.dependencies]
