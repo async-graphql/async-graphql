@@ -6,10 +6,10 @@ use jiff::{
 use crate::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 
 /// The `printf`-style format string for serializing/deserializing [`Date`].
-const DATE_FORMAT: &'static str = "%Y-%m-%d";
+const DATE_FORMAT: &str = "%Y-%m-%d";
 
 /// The `printf`-style format string for serializing/deserializing [`Time`].
-const TIME_FORMAT: &'static str = "%H:%M:%S%.f";
+const TIME_FORMAT: &str = "%H:%M:%S%.f";
 
 #[Scalar(internal, name = "Date")]
 impl ScalarType for Date {
