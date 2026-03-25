@@ -181,11 +181,16 @@ fn collect_entities_field<'a>(
                     .arguments
                     .iter()
                     .map(|(name, value)| {
+                        // Drop omitted variable-backed arguments instead of materializing them as
+                        // `null`.
                         ctx_field
                             .resolve_input_value(value.clone())
-                            .map(|value| (name.node.clone(), value))
+                            .map(|value| value.map(|value| (name.node.clone(), value)))
                     })
-                    .collect::<ServerResult<IndexMap<Name, Value>>>()?,
+                    .collect::<ServerResult<Vec<_>>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect::<IndexMap<_, _>>(),
             ));
 
             let field_future = (entity_resolver)(ResolverContext {
@@ -228,11 +233,16 @@ fn collect_field<'a>(
                     .arguments
                     .iter()
                     .map(|(name, value)| {
+                        // Drop omitted variable-backed arguments instead of materializing them as
+                        // `null`.
                         ctx_field
                             .resolve_input_value(value.clone())
-                            .map(|value| (name.node.clone(), value))
+                            .map(|value| value.map(|value| (name.node.clone(), value)))
                     })
-                    .collect::<ServerResult<IndexMap<Name, Value>>>()?;
+                    .collect::<ServerResult<Vec<_>>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect::<IndexMap<_, _>>();
                 field_def.arguments.iter().for_each(|(name, arg)| {
                     if let Some(def) = &arg.default_value
                         && !args.contains_key(name.as_str())
