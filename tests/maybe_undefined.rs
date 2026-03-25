@@ -54,4 +54,69 @@ pub async fn test_maybe_undefined_type() {
             "v6": 2,
         })
     );
+
+    let query_operation = r#"
+        query TestQuery($input: Int) {
+            v1:value1(input: null)
+            v2:value1(input: $input)
+            v3:value1(input: 99)
+        }
+    "#;
+    assert_eq!(
+        schema.execute(query_operation).await.data,
+        value!({
+            "v1": 1,
+            "v2": 2,
+            "v3": 99,
+        })
+    );
+
+    let query_with_value = Request::new(
+        r#"
+            query TestQuery($input: Int) {
+                v1:value1(input: $input)
+            }
+        "#,
+    )
+    .variables(Variables::from_value(value!({
+        "input": 10,
+    })));
+    assert_eq!(
+        schema.execute(query_with_value).await.data,
+        value!({
+            "v1": 10,
+        })
+    );
+
+    let query_with_null = Request::new(
+        r#"
+            query TestQuery($input: Int) {
+                v1:value1(input: $input)
+            }
+        "#,
+    )
+    .variables(Variables::from_value(value!({
+        "input": null,
+    })));
+    assert_eq!(
+        schema.execute(query_with_null).await.data,
+        value!({
+            "v1": 1,
+        })
+    );
+
+    let query_with_undefined = Request::new(
+        r#"
+            query TestQuery($input: Int) {
+                v1:value1(input: $input)
+            }
+        "#,
+    )
+    .variables(Variables::from_value(value!({})));
+    assert_eq!(
+        schema.execute(query_with_undefined).await.data,
+        value!({
+            "v1": 2,
+        })
+    );
 }
