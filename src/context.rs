@@ -562,16 +562,26 @@ impl<'a, T> ContextBase<'a, T> {
                 ServerError::new(format!("Variable {} is not defined.", name), Some(pos))
             })?;
 
-        // Preserve omitted variables as `None`; only explicit variable defaults become values.
+        // Preserve omitted variables as `None`; only explicit variable defaults become
+        // values.
         Ok(self
             .query_env
             .variables
             .get(&def.node.name.node)
             .cloned()
-            .or_else(|| def.node.default_value.as_ref().map(|value| value.node.clone())))
+            .or_else(|| {
+                def.node
+                    .default_value
+                    .as_ref()
+                    .map(|value| value.node.clone())
+            }))
     }
 
-    fn resolve_input_value_inner(&self, value: InputValue, pos: Pos) -> ServerResult<Option<Value>> {
+    fn resolve_input_value_inner(
+        &self,
+        value: InputValue,
+        pos: Pos,
+    ) -> ServerResult<Option<Value>> {
         Ok(match value {
             InputValue::Variable(name) => self.var_value(&name, pos)?,
             InputValue::Null => Some(Value::Null),
@@ -674,7 +684,8 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         let mut map = IndexMap::new();
 
         for (name, value) in &self.item.node.arguments {
-            // Skip omitted variable-backed arguments so input objects can observe `Undefined`.
+            // Skip omitted variable-backed arguments so input objects can observe
+            // `Undefined`.
             if let Some(value) = self.resolve_input_value(value.clone())? {
                 map.insert(name.node.clone(), value);
             }
