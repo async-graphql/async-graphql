@@ -626,3 +626,177 @@ pub async fn test_guard_with_fn() {
         }]
     );
 }
+
+#[tokio::test]
+pub async fn test_guard_on_nullable_field_simple_object() {
+    #[derive(SimpleObject)]
+    struct Author {
+        id: String,
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        age: Option<i32>,
+    }
+
+    #[derive(SimpleObject)]
+    struct Query {
+        post_id: String,
+        author: Author,
+    }
+
+    let schema = Schema::new(
+        Query {
+            post_id: "1".to_string(),
+            author: Author {
+                id: "2".to_string(),
+                age: Some(42),
+            },
+        },
+        EmptyMutation,
+        EmptySubscription,
+    );
+
+    // Admin can see age
+    let res = schema
+        .execute(Request::new("{ postId author { id age } }").data(Role::Admin))
+        .await;
+    assert_eq!(
+        res.data,
+        value!({"postId": "1", "author": {"id": "2", "age": 42}})
+    );
+
+    // Guest: age should be null, but the rest of the data should be intact
+    let res = schema
+        .execute(Request::new("{ postId author { id age } }").data(Role::Guest))
+        .await;
+    assert_eq!(
+        res.data,
+        value!({"postId": "1", "author": {"id": "2", "age": null}})
+    );
+    assert_eq!(res.errors.len(), 1);
+    assert_eq!(res.errors[0].message, "Forbidden");
+    assert_eq!(
+        res.errors[0].path,
+        vec![
+            PathSegment::Field("author".to_owned()),
+            PathSegment::Field("age".to_owned()),
+        ]
+    );
+}
+
+#[tokio::test]
+pub async fn test_guard_on_nullable_field_object() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn author(&self) -> Author {
+            Author {
+                id: "2".to_string(),
+                age: Some(42),
+            }
+        }
+    }
+
+    struct Author {
+        id: String,
+        age: Option<i32>,
+    }
+
+    #[Object]
+    impl Author {
+        async fn id(&self) -> &str {
+            &self.id
+        }
+
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        async fn age(&self) -> Option<i32> {
+            self.age
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    // Admin can see age
+    let res = schema
+        .execute(Request::new("{ author { id age } }").data(Role::Admin))
+        .await;
+    assert_eq!(res.data, value!({"author": {"id": "2", "age": 42}}));
+
+    // Guest: age should be null, rest of data intact
+    let res = schema
+        .execute(Request::new("{ author { id age } }").data(Role::Guest))
+        .await;
+    assert_eq!(res.data, value!({"author": {"id": "2", "age": null}}));
+    assert_eq!(res.errors.len(), 1);
+    assert_eq!(res.errors[0].message, "Forbidden");
+}
+
+#[tokio::test]
+pub async fn test_guard_on_nullable_field_complex_object() {
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct Author {
+        id: String,
+    }
+
+    #[ComplexObject]
+    impl Author {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        async fn age(&self) -> Option<i32> {
+            Some(42)
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn author(&self) -> Author {
+            Author {
+                id: "2".to_string(),
+            }
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+
+    // Admin can see age
+    let res = schema
+        .execute(Request::new("{ author { id age } }").data(Role::Admin))
+        .await;
+    assert_eq!(res.data, value!({"author": {"id": "2", "age": 42}}));
+
+    // Guest: age should be null, rest of data intact
+    let res = schema
+        .execute(Request::new("{ author { id age } }").data(Role::Guest))
+        .await;
+    assert_eq!(res.data, value!({"author": {"id": "2", "age": null}}));
+    assert_eq!(res.errors.len(), 1);
+    assert_eq!(res.errors[0].message, "Forbidden");
+}
+
+#[tokio::test]
+pub async fn test_guard_on_non_nullable_field_still_propagates() {
+    #[derive(SimpleObject)]
+    struct Query {
+        #[graphql(guard = "RoleGuard::new(Role::Admin)")]
+        value: i32,
+        other: String,
+    }
+
+    let schema = Schema::new(
+        Query {
+            value: 10,
+            other: "hello".to_string(),
+        },
+        EmptyMutation,
+        EmptySubscription,
+    );
+
+    // Non-nullable field guard failure should still propagate
+    let res = schema
+        .execute(Request::new("{ value other }").data(Role::Guest))
+        .await;
+    assert_eq!(res.data, value!(null));
+    assert_eq!(res.errors.len(), 1);
+    assert_eq!(res.errors[0].message, "Forbidden");
+}

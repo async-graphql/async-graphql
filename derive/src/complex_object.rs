@@ -14,8 +14,8 @@ use crate::{
     utils::{
         GeneratorResult, extract_input_args, gen_boxed_trait, gen_deprecation, gen_directive_calls,
         generate_default, generate_guards, get_cfg_attrs, get_crate_path, get_rustdoc,
-        get_type_path_and_name, parse_complexity_expr, parse_graphql_attrs, remove_graphql_attrs,
-        visible_fn,
+        get_type_path_and_name, is_option_type, parse_complexity_expr, parse_graphql_attrs,
+        remove_graphql_attrs, visible_fn,
     },
 };
 
@@ -539,31 +539,78 @@ pub fn generate(
                 }
             };
 
-            let guard_map_err = quote! {
+            let field_nullable = is_option_type(&schema_ty);
+
+            // For the async case, the guard lives inside `async move { ... }`, so
+            // it must always use the non-nullable `?` form.  Nullable error
+            // catching is done *after* the async block for the async path.
+            let async_guard_map_err = quote! {
                 .map_err(|err| err.into_server_error(ctx.item.pos))
             };
-            let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-                Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
+            let async_guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
+                Some(code) => Some(generate_guards(
+                    &crate_name,
+                    code,
+                    async_guard_map_err,
+                    false,
+                )?),
+                None => None,
+            };
+
+            // For the non-async case, the guard is at the resolve_field level,
+            // so the nullable form (if let Err …) works directly.
+            let sync_guard_map_err = quote! {
+                .map_err(|err| ctx.set_error_path(err.into_server_error(ctx.item.pos)))
+            };
+            let sync_guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
+                Some(code) => Some(generate_guards(
+                    &crate_name,
+                    code,
+                    sync_guard_map_err,
+                    field_nullable,
+                )?),
                 None => None,
             };
 
             let resolve_block = if is_async {
-                quote! {
-                    let f = async move {
-                        #(#get_params)*
-                        #guard
-                        #resolve_obj
-                    };
-                    let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                    let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
-                        .await
-                        .map(::std::option::Option::Some);
+                if field_nullable && async_guard.is_some() {
+                    quote! {
+                        let f = async move {
+                            #(#get_params)*
+                            #async_guard
+                            #resolve_obj
+                        };
+                        match f.await.map_err(|err| ctx.set_error_path(err)) {
+                            ::std::result::Result::Ok(obj) => {
+                                let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                                return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
+                                    .await
+                                    .map(::std::option::Option::Some);
+                            }
+                            ::std::result::Result::Err(err) => {
+                                ctx.add_error(err);
+                                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::Value::Null));
+                            }
+                        }
+                    }
+                } else {
+                    quote! {
+                        let f = async move {
+                            #(#get_params)*
+                            #async_guard
+                            #resolve_obj
+                        };
+                        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+                        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                        return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
+                            .await
+                            .map(::std::option::Option::Some);
+                    }
                 }
             } else {
                 quote! {
                     #(#get_params)*
-                    #guard
+                    #sync_guard
                     let obj = #resolve_obj.map_err(|err| ctx.set_error_path(err))?;
                     return #crate_name::resolver_utils::resolve_simple_field_value(ctx, &obj).await;
                 }

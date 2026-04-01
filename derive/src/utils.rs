@@ -53,14 +53,33 @@ pub fn generate_guards(
     crate_name: &syn::Path,
     expr: &Expr,
     map_err: TokenStream,
+    nullable: bool,
 ) -> GeneratorResult<TokenStream> {
     let code = quote! {{
         use #crate_name::GuardExt;
         #expr
     }};
-    Ok(quote! {
-        #crate_name::Guard::check(&#code, &ctx).await #map_err ?;
-    })
+    if nullable {
+        Ok(quote! {
+            if let ::std::result::Result::Err(err) = #crate_name::Guard::check(&#code, &ctx).await #map_err {
+                ctx.add_error(err);
+                return ::std::result::Result::Ok(::std::option::Option::Some(#crate_name::Value::Null));
+            }
+        })
+    } else {
+        Ok(quote! {
+            #crate_name::Guard::check(&#code, &ctx).await #map_err ?;
+        })
+    }
+}
+
+pub fn is_option_type(ty: &Type) -> bool {
+    if let Type::Path(path) = ty {
+        if let Some(segment) = path.path.segments.last() {
+            return segment.ident == "Option";
+        }
+    }
+    false
 }
 
 pub fn get_rustdoc(attrs: &[Attribute]) -> GeneratorResult<Option<TokenStream>> {

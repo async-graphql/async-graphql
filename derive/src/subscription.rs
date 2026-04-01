@@ -335,7 +335,7 @@ pub fn generate(
                 })
             };
             let guard = match field.guard.as_ref().or(subscription_args.guard.as_ref()) {
-                Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
+                Some(code) => Some(generate_guards(&crate_name, code, guard_map_err, false)?),
                 None => None,
             };
             let stream_fn = quote! {
