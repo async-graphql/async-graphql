@@ -687,7 +687,9 @@ pub fn generate(
                 };
                 let field_nullable = is_option_type(&schema_ty);
                 let guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-                    Some(code) => generate_guards(&crate_name, code, guard_map_err, field_nullable)?,
+                    Some(code) => {
+                        generate_guards(&crate_name, code, guard_map_err, field_nullable)?
+                    }
                     None => Default::default(),
                 };
 

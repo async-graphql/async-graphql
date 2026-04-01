@@ -558,7 +558,12 @@ pub fn generate(
                 .map_err(|err| ctx.set_error_path(err.into_server_error(ctx.item.pos)))
             };
             let sync_guard = match method_args.guard.as_ref().or(object_args.guard.as_ref()) {
-                Some(code) => Some(generate_guards(&crate_name, code, sync_guard_map_err, field_nullable)?),
+                Some(code) => Some(generate_guards(
+                    &crate_name,
+                    code,
+                    sync_guard_map_err,
+                    field_nullable,
+                )?),
                 None => None,
             };
 

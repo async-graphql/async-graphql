@@ -326,7 +326,12 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         };
         let field_nullable = is_option_type(ty);
         let guard = match field.guard.as_ref().or(object_args.guard.as_ref()) {
-            Some(code) => Some(generate_guards(&crate_name, code, guard_map_err, field_nullable)?),
+            Some(code) => Some(generate_guards(
+                &crate_name,
+                code,
+                guard_map_err,
+                field_nullable,
+            )?),
             None => None,
         };
 
