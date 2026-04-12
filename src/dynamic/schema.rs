@@ -28,6 +28,7 @@ pub struct SchemaBuilder {
     validation_mode: ValidationMode,
     recursive_depth: usize,
     max_directives: Option<usize>,
+    max_aliases: Option<usize>,
     complexity: Option<usize>,
     depth: Option<usize>,
     enable_suggestions: bool,
@@ -95,6 +96,13 @@ impl SchemaBuilder {
     /// limit)
     pub fn limit_directives(mut self, max_directives: usize) -> Self {
         self.max_directives = Some(max_directives);
+        self
+    }
+
+    /// Set the maximum number of aliases on a single query. (default: no
+    /// limit)
+    pub fn limit_aliases(mut self, max_aliases: usize) -> Self {
+        self.max_aliases = Some(max_aliases);
         self
     }
 
@@ -213,6 +221,7 @@ impl SchemaBuilder {
             types: self.types,
             recursive_depth: self.recursive_depth,
             max_directives: self.max_directives,
+            max_aliases: self.max_aliases,
             complexity: self.complexity,
             depth: self.depth,
             validation_mode: self.validation_mode,
@@ -241,6 +250,7 @@ pub struct SchemaInner {
     extensions: Vec<Box<dyn ExtensionFactory>>,
     recursive_depth: usize,
     max_directives: Option<usize>,
+    max_aliases: Option<usize>,
     complexity: Option<usize>,
     depth: Option<usize>,
     validation_mode: ValidationMode,
@@ -260,6 +270,7 @@ impl Schema {
             validation_mode: ValidationMode::Strict,
             recursive_depth: 32,
             max_directives: None,
+            max_aliases: None,
             complexity: None,
             depth: None,
             enable_suggestions: true,
@@ -377,6 +388,7 @@ impl Schema {
                     self.0.validation_mode,
                     self.0.recursive_depth,
                     self.0.max_directives,
+                    self.0.max_aliases,
                     self.0.complexity,
                     self.0.depth,
                 )
@@ -435,6 +447,7 @@ impl Schema {
                     schema.0.validation_mode,
                     schema.0.recursive_depth,
                     schema.0.max_directives,
+                    schema.0.max_aliases,
                     schema.0.complexity,
                     schema.0.depth,
                 )

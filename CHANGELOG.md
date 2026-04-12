@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix MergedObject exceeding compiler recursion limit by using flat dispatch instead of nested async delegation in `resolve_field`/`find_entity`, which overflows when cross-crate types amplify monomorphization depth
 - Replace `mdbook test` with `cargo test --doc` via a `book-tests` crate to fix E0464 duplicate rlib errors in CI [#1794](https://github.com/async-graphql/async-graphql/issues/1794)
+- Add option to restrict potential DoS vector [#1822](https://github.com/async-graphql/async-graphql/pull/1822)
 
 # [8.0.0-rc.4] 2026-03-08
 
