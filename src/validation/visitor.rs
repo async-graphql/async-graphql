@@ -124,7 +124,11 @@ impl<'a> VisitorContext<'a> {
                                 if let Some(variables) = self.variables {
                                     variables
                                         .get(&def.node.name.node)
-                                        .or_else(|| def.node.default_value())
+                                        // Only fallback to default for variables that explicit have
+                                        // one set, otherwise keep track of undefined state.
+                                        .or_else(|| {
+                                            def.node.default_value.as_ref().map(|value| &value.node)
+                                        })
                                 } else {
                                     None
                                 }

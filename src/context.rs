@@ -10,6 +10,7 @@ use std::{
 
 use async_graphql_parser::types::ConstDirective;
 use async_graphql_value::{Value as InputValue, Variables};
+use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use serde::{
     Serialize,
@@ -549,30 +550,75 @@ impl<'a, T> ContextBase<'a, T> {
         }
     }
 
-    fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Value> {
-        self.query_env
+    fn var_value(&self, name: &str, pos: Pos) -> ServerResult<Option<Value>> {
+        let def = self
+            .query_env
             .operation
             .node
             .variable_definitions
             .iter()
             .find(|def| def.node.name.node == name)
-            .and_then(|def| {
-                self.query_env
-                    .variables
-                    .get(&def.node.name.node)
-                    .or_else(|| def.node.default_value())
-            })
-            .cloned()
             .ok_or_else(|| {
                 ServerError::new(format!("Variable {} is not defined.", name), Some(pos))
-            })
+            })?;
+
+        // Preserve omitted variables as `None`; only explicit variable defaults become
+        // values.
+        Ok(self
+            .query_env
+            .variables
+            .get(&def.node.name.node)
+            .cloned()
+            .or_else(|| {
+                def.node
+                    .default_value
+                    .as_ref()
+                    .map(|value| value.node.clone())
+            }))
     }
 
-    pub(crate) fn resolve_input_value(&self, value: Positioned<InputValue>) -> ServerResult<Value> {
-        let pos = value.pos;
-        value
-            .node
-            .into_const_with(|name| self.var_value(&name, pos))
+    fn resolve_input_value_inner(
+        &self,
+        value: InputValue,
+        pos: Pos,
+    ) -> ServerResult<Option<Value>> {
+        Ok(match value {
+            InputValue::Variable(name) => self.var_value(&name, pos)?,
+            InputValue::Null => Some(Value::Null),
+            InputValue::Number(num) => Some(Value::Number(num)),
+            InputValue::String(value) => Some(Value::String(value)),
+            InputValue::Boolean(value) => Some(Value::Boolean(value)),
+            InputValue::Binary(value) => Some(Value::Binary(value)),
+            InputValue::Enum(value) => Some(Value::Enum(value)),
+            InputValue::List(items) => {
+                let mut resolved_items = Vec::with_capacity(items.len());
+                for item in items {
+                    // Lists still need a concrete slot value, so omitted entries become `null`.
+                    resolved_items.push(
+                        self.resolve_input_value_inner(item, pos)?
+                            .unwrap_or(Value::Null),
+                    );
+                }
+                Some(Value::List(resolved_items))
+            }
+            InputValue::Object(object) => {
+                let mut resolved_object = IndexMap::with_capacity(object.len());
+                for (name, value) in object {
+                    // Omit object fields whose variables were not provided.
+                    if let Some(value) = self.resolve_input_value_inner(value, pos)? {
+                        resolved_object.insert(name, value);
+                    }
+                }
+                Some(Value::Object(resolved_object))
+            }
+        })
+    }
+
+    pub(crate) fn resolve_input_value(
+        &self,
+        value: Positioned<InputValue>,
+    ) -> ServerResult<Option<Value>> {
+        self.resolve_input_value_inner(value.node, value.pos)
     }
 
     #[doc(hidden)]
@@ -593,7 +639,7 @@ impl<'a, T> ContextBase<'a, T> {
             return Ok((Pos::default(), default()));
         }
         let (pos, value) = match value {
-            Some(value) => (value.pos, Some(self.resolve_input_value(value)?)),
+            Some(value) => (value.pos, self.resolve_input_value(value)?),
             None => (Pos::default(), None),
         };
         InputType::parse(value)
@@ -638,8 +684,11 @@ impl<'a> ContextBase<'a, &'a Positioned<Field>> {
         let mut map = IndexMap::new();
 
         for (name, value) in &self.item.node.arguments {
-            let value = self.resolve_input_value(value.clone())?;
-            map.insert(name.node.clone(), value);
+            // Skip omitted variable-backed arguments so input objects can observe
+            // `Undefined`.
+            if let Some(value) = self.resolve_input_value(value.clone())? {
+                map.insert(name.node.clone(), value);
+            }
         }
 
         InputType::parse(Some(Value::Object(map)))
@@ -778,16 +827,10 @@ impl<'a> SelectionField<'a> {
 
             let mut arguments = Vec::with_capacity(directive.arguments.len());
             for (name, value) in &directive.arguments {
-                let pos = name.pos;
-                arguments.push((
-                    name.clone(),
-                    value.position_node(
-                        value
-                            .node
-                            .clone()
-                            .into_const_with(|name| self.context.var_value(&name, pos))?,
-                    ),
-                ));
+                // Preserve omission when exposing directive arguments through the context API.
+                if let Some(resolved_value) = self.context.resolve_input_value(value.clone())? {
+                    arguments.push((name.clone(), value.position_node(resolved_value)));
+                }
             }
 
             directives.push(ConstDirective {
@@ -803,14 +846,10 @@ impl<'a> SelectionField<'a> {
     pub fn arguments(&self) -> ServerResult<Vec<(Name, Value)>> {
         let mut arguments = Vec::with_capacity(self.field.arguments.len());
         for (name, value) in &self.field.arguments {
-            let pos = name.pos;
-            arguments.push((
-                name.node.clone(),
-                value
-                    .clone()
-                    .node
-                    .into_const_with(|name| self.context.var_value(&name, pos))?,
-            ));
+            // Preserve omission when exposing field arguments through the context API.
+            if let Some(value) = self.context.resolve_input_value(value.clone())? {
+                arguments.push((name.node.clone(), value));
+            }
         }
         Ok(arguments)
     }

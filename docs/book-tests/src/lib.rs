@@ -1,0 +1,153 @@
+// This crate exists solely to test code examples in the book's markdown files.
+// It uses #[doc = include_str!(...)] so that `cargo test --doc` compiles and
+// runs the embedded code blocks. This avoids the E0464 "multiple rlib
+// candidates" issue that occurs when using `mdbook test -L target/debug/deps`
+// in a workspace with multiple integration crates.
+//
+// See docs/book-tests/README.md for background.
+
+#[cfg(doctest)]
+mod en {
+    #[doc = include_str!("../../en/src/quickstart.md")]
+    mod quickstart {}
+    #[doc = include_str!("../../en/src/define_schema.md")]
+    mod define_schema {}
+    #[doc = include_str!("../../en/src/define_simple_object.md")]
+    mod define_simple_object {}
+    #[doc = include_str!("../../en/src/define_complex_object.md")]
+    mod define_complex_object {}
+    #[doc = include_str!("../../en/src/define_enum.md")]
+    mod define_enum {}
+    #[doc = include_str!("../../en/src/define_input_object.md")]
+    mod define_input_object {}
+    #[doc = include_str!("../../en/src/define_interface.md")]
+    mod define_interface {}
+    #[doc = include_str!("../../en/src/define_union.md")]
+    mod define_union {}
+    #[doc = include_str!("../../en/src/define_one_of_object.md")]
+    mod define_one_of_object {}
+    #[doc = include_str!("../../en/src/default_value.md")]
+    mod default_value {}
+    #[doc = include_str!("../../en/src/custom_scalars.md")]
+    mod custom_scalars {}
+    #[doc = include_str!("../../en/src/cursor_connections.md")]
+    mod cursor_connections {}
+    #[doc = include_str!("../../en/src/error_handling.md")]
+    mod error_handling {}
+    #[doc = include_str!("../../en/src/error_extensions.md")]
+    mod error_extensions {}
+    #[doc = include_str!("../../en/src/merging_objects.md")]
+    mod merging_objects {}
+    #[doc = include_str!("../../en/src/derived_fields.md")]
+    mod derived_fields {}
+    #[doc = include_str!("../../en/src/context.md")]
+    mod context {}
+    #[doc = include_str!("../../en/src/query_and_mutation.md")]
+    mod query_and_mutation {}
+    #[doc = include_str!("../../en/src/subscription.md")]
+    mod subscription {}
+    #[doc = include_str!("../../en/src/field_guard.md")]
+    mod field_guard {}
+    #[doc = include_str!("../../en/src/input_value_validators.md")]
+    mod input_value_validators {}
+    #[doc = include_str!("../../en/src/cache_control.md")]
+    mod cache_control {}
+    #[doc = include_str!("../../en/src/visibility.md")]
+    mod visibility {}
+    #[doc = include_str!("../../en/src/depth_and_complexity.md")]
+    mod depth_and_complexity {}
+    #[doc = include_str!("../../en/src/dataloader.md")]
+    mod dataloader {}
+    #[doc = include_str!("../../en/src/custom_directive.md")]
+    mod custom_directive {}
+    #[doc = include_str!("../../en/src/apollo_federation.md")]
+    mod apollo_federation {}
+    #[doc = include_str!("../../en/src/apollo_tracing.md")]
+    mod apollo_tracing {}
+    #[doc = include_str!("../../en/src/extensions.md")]
+    mod extensions {}
+    #[doc = include_str!("../../en/src/extensions_available.md")]
+    mod extensions_available {}
+    #[doc = include_str!("../../en/src/extensions_inner_working.md")]
+    mod extensions_inner_working {}
+    #[doc = include_str!("../../en/src/integrations_to_warp.md")]
+    mod integrations_to_warp {}
+    #[doc = include_str!("../../en/src/integrations_to_actix_web.md")]
+    mod integrations_to_actix_web {}
+    #[doc = include_str!("../../en/src/integrations_to_poem.md")]
+    mod integrations_to_poem {}
+    #[doc = include_str!("../../en/src/sdl_export.md")]
+    mod sdl_export {}
+    #[doc = include_str!("../../en/src/generic.md")]
+    mod generic {}
+}
+
+#[cfg(doctest)]
+mod zh_cn {
+    #[doc = include_str!("../../zh-CN/src/quickstart.md")]
+    mod quickstart {}
+    #[doc = include_str!("../../zh-CN/src/define_schema.md")]
+    mod define_schema {}
+    #[doc = include_str!("../../zh-CN/src/define_simple_object.md")]
+    mod define_simple_object {}
+    #[doc = include_str!("../../zh-CN/src/define_complex_object.md")]
+    mod define_complex_object {}
+    #[doc = include_str!("../../zh-CN/src/define_enum.md")]
+    mod define_enum {}
+    #[doc = include_str!("../../zh-CN/src/define_input_object.md")]
+    mod define_input_object {}
+    #[doc = include_str!("../../zh-CN/src/define_interface.md")]
+    mod define_interface {}
+    #[doc = include_str!("../../zh-CN/src/define_union.md")]
+    mod define_union {}
+    #[doc = include_str!("../../zh-CN/src/default_value.md")]
+    mod default_value {}
+    #[doc = include_str!("../../zh-CN/src/custom_scalars.md")]
+    mod custom_scalars {}
+    #[doc = include_str!("../../zh-CN/src/cursor_connections.md")]
+    mod cursor_connections {}
+    #[doc = include_str!("../../zh-CN/src/error_handling.md")]
+    mod error_handling {}
+    #[doc = include_str!("../../zh-CN/src/error_extensions.md")]
+    mod error_extensions {}
+    #[doc = include_str!("../../zh-CN/src/merging_objects.md")]
+    mod merging_objects {}
+    #[doc = include_str!("../../zh-CN/src/derived_fields.md")]
+    mod derived_fields {}
+    #[doc = include_str!("../../zh-CN/src/context.md")]
+    mod context {}
+    #[doc = include_str!("../../zh-CN/src/query_and_mutation.md")]
+    mod query_and_mutation {}
+    #[doc = include_str!("../../zh-CN/src/subscription.md")]
+    mod subscription {}
+    #[doc = include_str!("../../zh-CN/src/field_guard.md")]
+    mod field_guard {}
+    #[doc = include_str!("../../zh-CN/src/input_value_validators.md")]
+    mod input_value_validators {}
+    #[doc = include_str!("../../zh-CN/src/cache_control.md")]
+    mod cache_control {}
+    #[doc = include_str!("../../zh-CN/src/visibility.md")]
+    mod visibility {}
+    #[doc = include_str!("../../zh-CN/src/depth_and_complexity.md")]
+    mod depth_and_complexity {}
+    #[doc = include_str!("../../zh-CN/src/dataloader.md")]
+    mod dataloader {}
+    #[doc = include_str!("../../zh-CN/src/custom_directive.md")]
+    mod custom_directive {}
+    #[doc = include_str!("../../zh-CN/src/apollo_federation.md")]
+    mod apollo_federation {}
+    #[doc = include_str!("../../zh-CN/src/apollo_tracing.md")]
+    mod apollo_tracing {}
+    #[doc = include_str!("../../zh-CN/src/extensions.md")]
+    mod extensions {}
+    #[doc = include_str!("../../zh-CN/src/extensions_available.md")]
+    mod extensions_available {}
+    #[doc = include_str!("../../zh-CN/src/extensions_inner_working.md")]
+    mod extensions_inner_working {}
+    #[doc = include_str!("../../zh-CN/src/integrations_to_warp.md")]
+    mod integrations_to_warp {}
+    #[doc = include_str!("../../zh-CN/src/integrations_to_actix_web.md")]
+    mod integrations_to_actix_web {}
+    #[doc = include_str!("../../zh-CN/src/integrations_to_poem.md")]
+    mod integrations_to_poem {}
+}

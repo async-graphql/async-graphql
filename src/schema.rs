@@ -50,6 +50,7 @@ pub struct SchemaBuilder<Query, Mutation, Subscription> {
     depth: Option<usize>,
     recursive_depth: usize,
     max_directives: Option<usize>,
+    max_aliases: Option<usize>,
     extensions: Vec<Box<dyn ExtensionFactory>>,
     custom_directives: HashMap<String, Box<dyn CustomDirectiveFactory>>,
 }
@@ -95,6 +96,14 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     #[must_use]
     pub fn limit_complexity(mut self, complexity: usize) -> Self {
         self.complexity = Some(complexity);
+        self
+    }
+
+    /// Set the maximum amount of aliases a query can have. By default, there is
+    /// no limit.
+    #[must_use]
+    pub fn limit_aliases(mut self, max_aliases: usize) -> Self {
+        self.max_aliases = Some(max_aliases);
         self
     }
 
@@ -273,6 +282,7 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
             depth: self.depth,
             recursive_depth: self.recursive_depth,
             max_directives: self.max_directives,
+            max_aliases: self.max_aliases,
             extensions: self.extensions,
             env: SchemaEnv(Arc::new(SchemaEnvInner {
                 registry: self.registry,
@@ -312,6 +322,7 @@ pub struct SchemaInner<Query, Mutation, Subscription> {
     pub(crate) depth: Option<usize>,
     pub(crate) recursive_depth: usize,
     pub(crate) max_directives: Option<usize>,
+    pub(crate) max_aliases: Option<usize>,
     pub(crate) extensions: Vec<Box<dyn ExtensionFactory>>,
     pub(crate) env: SchemaEnv,
 }
@@ -391,6 +402,7 @@ where
             depth: None,
             recursive_depth: 32,
             max_directives: None,
+            max_aliases: None,
             extensions: Default::default(),
             custom_directives: Default::default(),
         }
@@ -529,6 +541,7 @@ where
                     self.0.validation_mode,
                     self.0.recursive_depth,
                     self.0.max_directives,
+                    self.0.max_aliases,
                     self.0.complexity,
                     self.0.depth,
                 )
@@ -591,6 +604,7 @@ where
                     schema.0.validation_mode,
                     schema.0.recursive_depth,
                     schema.0.max_directives,
+                    schema.0.max_aliases,
                     schema.0.complexity,
                     schema.0.depth,
                 )
@@ -736,6 +750,77 @@ fn check_max_directives(doc: &ExecutableDocument, max_directives: usize) -> Serv
     Ok(())
 }
 
+fn check_alias_count(doc: &ExecutableDocument, max_aliases: usize) -> ServerResult<()> {
+    fn check_selection_set(
+        doc: &ExecutableDocument,
+        selection_set: &Positioned<SelectionSet>,
+        current_aliases: &mut usize,
+        max_aliases: usize,
+    ) -> ServerResult<()> {
+        for selection in &selection_set.node.items {
+            match &selection.node {
+                Selection::Field(field) => {
+                    if field.node.alias.is_some() {
+                        *current_aliases += 1;
+                    }
+                    if !field.node.selection_set.node.items.is_empty() {
+                        check_selection_set(
+                            doc,
+                            &field.node.selection_set,
+                            current_aliases,
+                            max_aliases,
+                        )?;
+                    }
+                }
+                Selection::FragmentSpread(fragment_spread) => {
+                    if let Some(fragment) =
+                        doc.fragments.get(&fragment_spread.node.fragment_name.node)
+                    {
+                        check_selection_set(
+                            doc,
+                            &fragment.node.selection_set,
+                            current_aliases,
+                            max_aliases,
+                        )?;
+                    }
+                }
+                Selection::InlineFragment(inline_fragment) => {
+                    check_selection_set(
+                        doc,
+                        &inline_fragment.node.selection_set,
+                        current_aliases,
+                        max_aliases,
+                    )?;
+                }
+            }
+
+            if *current_aliases > max_aliases {
+                return Err(ServerError::new(
+                    format!(
+                        "The amount of aliases of the query cannot be greater than `{}`",
+                        max_aliases
+                    ),
+                    Some(selection_set.pos),
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    let mut current_aliases = 0;
+    for (_, operation) in doc.operations.iter() {
+        check_selection_set(
+            doc,
+            &operation.node.selection_set,
+            &mut current_aliases,
+            max_aliases,
+        )?;
+    }
+
+    Ok(())
+}
+
 fn check_recursive_depth(doc: &ExecutableDocument, max_depth: usize) -> ServerResult<()> {
     fn check_selection_set(
         doc: &ExecutableDocument,
@@ -855,6 +940,7 @@ pub(crate) async fn prepare_request(
     validation_mode: ValidationMode,
     recursive_depth: usize,
     max_directives: Option<usize>,
+    max_aliases: Option<usize>,
     complexity: Option<usize>,
     depth: Option<usize>,
 ) -> Result<(QueryEnv, CacheControl), Vec<ServerError>> {
@@ -874,6 +960,11 @@ pub(crate) async fn prepare_request(
             if let Some(max_directives) = max_directives {
                 check_max_directives(&doc, max_directives)?;
             }
+
+            if let Some(max_aliases) = max_aliases {
+                check_alias_count(&doc, max_aliases)?;
+            }
+
             Ok(doc)
         };
         futures_util::pin_mut!(fut_parse);

@@ -6,8 +6,8 @@ use futures_util::{
 use indexmap::IndexMap;
 
 use crate::{
-    ContextSelectionSet, Data, Name, QueryPathNode, QueryPathSegment, Response, Result,
-    ServerResult, Value,
+    ContextSelectionSet, Data, QueryPathNode, QueryPathSegment, Response, Result, ServerResult,
+    Value,
     dynamic::{
         FieldValue, InputValue, ObjectAccessor, ResolverContext, Schema, SchemaError, TypeRef,
         resolve::resolve,
@@ -219,11 +219,16 @@ impl Subscription {
                                 .arguments
                                 .iter()
                                 .map(|(name, value)| {
+                                    // Drop omitted variable-backed arguments instead of
+                                    // materializing them as `null`.
                                     ctx_field
                                         .resolve_input_value(value.clone())
-                                        .map(|value| (name.node.clone(), value))
+                                        .map(|value| value.map(|value| (name.node.clone(), value)))
                                 })
-                                .collect::<ServerResult<IndexMap<Name, Value>>>()?,
+                                .collect::<ServerResult<Vec<_>>>()?
+                                .into_iter()
+                                .flatten()
+                                .collect::<IndexMap<_, _>>(),
                         ));
 
                         let mut stream = resolver_fn(ResolverContext {

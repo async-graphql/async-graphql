@@ -199,7 +199,7 @@ impl Extension for TracingExtension {
                 .registry
                 .types
                 .get(concrete_type)
-                .map(|ty| ty.is_leaf())
+                .map(crate::registry::MetaType::is_leaf)
                 .unwrap_or(false)
         } else {
             true

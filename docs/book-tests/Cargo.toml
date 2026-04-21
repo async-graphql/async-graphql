@@ -1,0 +1,46 @@
+[package]
+name = "book-tests"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+async-graphql = { path = "../..", features = [
+    "apollo_persisted_queries",
+    "apollo_tracing",
+    "chrono",
+    "chrono-duration",
+    "dataloader",
+    "decimal",
+    "default",
+    "dynamic-schema",
+    "graphiql",
+    "jiff",
+    "log",
+    "raw_value",
+    "secrecy",
+    "string_number",
+    "tempfile",
+    "time",
+    "tokio",
+    "tracing",
+    "url",
+    "uuid",
+] }
+
+# Integration crates
+async-graphql-warp = { path = "../../integrations/warp" }
+async-graphql-poem = { path = "../../integrations/poem" }
+async-graphql-actix-web = { path = "../../integrations/actix-web" }
+
+# Crates referenced directly in book examples
+warp = { version = "0.4", features = ["server", "websocket"] }
+poem = { version = "3.1.10" }
+actix-web = { version = "4.5.1" }
+tokio = { version = "1.37.0", features = ["rt", "time", "macros", "rt-multi-thread"] }
+tokio-stream = "0.1.15"
+futures-util = "0.3.30"
+serde = { version = "1.0.197", features = ["derive"] }
+chrono = { version = "0.4.37", features = ["clock", "std"] }
+thiserror = "2.0.17"
+http = "1.1.0"
