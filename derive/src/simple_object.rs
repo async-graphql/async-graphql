@@ -11,7 +11,7 @@ use crate::{
     },
     utils::{
         GeneratorResult, gen_boxed_trait, gen_deprecation, gen_directive_calls, generate_guards,
-        get_crate_path, get_rustdoc, parse_complexity_expr, visible_fn,
+        get_crate_path, get_rustdoc, is_option_type, parse_complexity_expr, visible_fn,
     },
 };
 
@@ -324,8 +324,14 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let guard_map_err = quote! {
             .map_err(|err| ctx.set_error_path(err.into_server_error(ctx.item.pos)))
         };
+        let field_nullable = is_option_type(ty);
         let guard = match field.guard.as_ref().or(object_args.guard.as_ref()) {
-            Some(code) => Some(generate_guards(&crate_name, code, guard_map_err)?),
+            Some(code) => Some(generate_guards(
+                &crate_name,
+                code,
+                guard_map_err,
+                field_nullable,
+            )?),
             None => None,
         };
 
