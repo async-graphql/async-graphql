@@ -203,8 +203,8 @@ impl SchemaBuilder {
         registry.add_system_types();
 
         // Register custom directives
-        for directive in &self.custom_directives {
-            registry.add_directive(directive.clone());
+        for directive in self.custom_directives {
+            registry.add_directive(directive);
         }
 
         for ty in self.types.values() {
@@ -590,7 +590,10 @@ mod tests {
 
     use crate::{
         PathSegment, Request, Response, ServerError, ServerResult, ValidationResult, Value,
-        dynamic::*, extensions::*, value,
+        dynamic::*,
+        extensions::*,
+        registry::{Deprecation, MetaInputValue},
+        value,
     };
 
     #[tokio::test]
@@ -1203,7 +1206,7 @@ mod tests {
                 FieldFuture::new(async { Ok(Some(Value::from(100))) })
             }));
 
-        let directive = MetaDirective {
+        let make_directive = || MetaDirective {
             name: "mydir".to_string(),
             description: Some("A test directive".to_string()),
             locations: vec![__DirectiveLocation::FIELD],
@@ -1215,8 +1218,8 @@ mod tests {
 
         let _ = Schema::build("Query", None, None)
             .register(query)
-            .directive(directive.clone())
-            .directive(directive)
+            .directive(make_directive())
+            .directive(make_directive())
             .finish();
     }
 
@@ -1342,13 +1345,21 @@ mod tests {
 
     #[tokio::test]
     async fn directive_on_wrong_location_still_errors() {
-        let query =
-            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+        let myobj =
+            Object::new("MyObj").field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(123))) })
             }));
 
+        let query = Object::new("Query").field(Field::new(
+            "valueObj",
+            TypeRef::named_nn(myobj.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
+        ));
+
+        // @mydir only allows FIELD, not FIELD_DEFINITION
         let schema = Schema::build("Query", None, None)
             .register(query)
+            .register(myobj)
             .directive(MetaDirective {
                 name: "mydir".to_string(),
                 description: Some("A test directive".to_string()),
@@ -1361,8 +1372,50 @@ mod tests {
             .finish()
             .unwrap();
 
-        // Using @mydir on a query root (OPERATION) which is not in its locations
-        let result = schema.execute("@mydir { value }").await.into_result();
+        // Using @mydir on a field definition (inside an object type)
+        let result = schema
+            .execute("{ valueObj { a @mydir } }")
+            .await
+            .into_result();
+
+        // Should succeed — @mydir on FIELD is valid
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn directive_on_invalid_field_location_errors() {
+        let myobj =
+            Object::new("MyObj").field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(123))) })
+            }));
+
+        let query = Object::new("Query").field(Field::new(
+            "valueObj",
+            TypeRef::named_nn(myobj.type_name()),
+            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
+        ));
+
+        // @mydir only allows FIELD_DEFINITION, not FIELD
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .register(myobj)
+            .directive(MetaDirective {
+                name: "mydir".to_string(),
+                description: Some("A test directive".to_string()),
+                locations: vec![__DirectiveLocation::FIELD_DEFINITION],
+                args: Default::default(),
+                is_repeatable: false,
+                visible: None,
+                composable: None,
+            })
+            .finish()
+            .unwrap();
+
+        // Using @mydir on a field (not a field definition)
+        let result = schema
+            .execute("{ valueObj { a @mydir } }")
+            .await
+            .into_result();
 
         // Should produce a validation error (wrong location)
         assert!(result.is_err());
@@ -1405,5 +1458,103 @@ mod tests {
         let directives = &schema.registry().directives;
         assert!(directives.contains_key("dir1"));
         assert!(directives.contains_key("dir2"));
+    }
+
+    #[tokio::test]
+    async fn repeatable_directive_in_sdl() {
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .directive(MetaDirective {
+                name: "repeatable".to_string(),
+                description: Some("A repeatable directive".to_string()),
+                locations: vec![__DirectiveLocation::FIELD],
+                args: Default::default(),
+                is_repeatable: true,
+                visible: None,
+                composable: None,
+            })
+            .finish()
+            .unwrap();
+
+        let sdl = schema.sdl();
+        assert!(sdl.contains("directive @repeatable repeatable on FIELD"));
+    }
+
+    #[tokio::test]
+    async fn directive_with_args_in_sdl_and_introspection() {
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .directive(MetaDirective {
+                name: "withargs".to_string(),
+                description: Some("A directive with arguments".to_string()),
+                locations: vec![__DirectiveLocation::FIELD],
+                args: {
+                    let mut args = indexmap::IndexMap::new();
+                    args.insert(
+                        "reason".to_string(),
+                        MetaInputValue {
+                            name: "reason".to_string(),
+                            description: Some("The reason".to_string()),
+                            ty: "String".to_string(),
+                            deprecation: Deprecation::NoDeprecated,
+                            default_value: None,
+                            visible: None,
+                            inaccessible: false,
+                            tags: vec![],
+                            is_secret: false,
+                            directive_invocations: vec![],
+                        },
+                    );
+                    args
+                },
+                is_repeatable: false,
+                visible: None,
+                composable: None,
+            })
+            .finish()
+            .unwrap();
+
+        let sdl = schema.sdl();
+        assert!(sdl.contains("directive @withargs"));
+        assert!(sdl.contains("reason: String"));
+
+        let directives = &schema.registry().directives;
+        let dir = directives.get("withargs").unwrap();
+        assert!(dir.args.contains_key("reason"));
+    }
+
+    #[tokio::test]
+    async fn visible_directive_appears_in_introspection() {
+        let query =
+            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let schema = Schema::build("Query", None, None)
+            .register(query)
+            .directive(MetaDirective {
+                name: "visible_dir".to_string(),
+                description: Some("A visible directive".to_string()),
+                locations: vec![__DirectiveLocation::FIELD],
+                args: Default::default(),
+                is_repeatable: false,
+                visible: None,
+                composable: None,
+            })
+            .finish()
+            .unwrap();
+
+        let directives = &schema.registry().directives;
+        assert!(directives.contains_key("visible_dir"));
     }
 }
