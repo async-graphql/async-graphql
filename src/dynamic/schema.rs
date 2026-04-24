@@ -175,7 +175,7 @@ impl SchemaBuilder {
             "Directive `{}` already registered",
             directive.name
         );
-        let system_names = ["skip", "include", "deprecated", "specifiedBy"];
+        let system_names = ["skip", "include", "deprecated", "specifiedBy", "oneOf"];
         assert!(
             !system_names.contains(&directive.name.as_str()),
             "Cannot override system directive `{}`",
@@ -1224,25 +1224,43 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Cannot override system directive `skip`")]
-    fn directive_system_directive_conflict_panics() {
-        let query =
-            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+    fn directive_system_directives_are_rejected() {
+        let system_directives = ["skip", "include", "deprecated", "specifiedBy", "oneOf"];
+
+        for name in &system_directives {
+            let locations = if *name == "oneOf" {
+                vec![__DirectiveLocation::INPUT_OBJECT]
+            } else {
+                vec![__DirectiveLocation::FIELD]
+            };
+
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let query = Object::new("Query").field(Field::new(
+                    "value",
+                    TypeRef::named(TypeRef::INT),
+                    |_| FieldFuture::new(async { Ok(Some(Value::from(100))) }),
+                ));
+
+                Schema::build("Query", None, None)
+                    .register(query)
+                    .directive(MetaDirective {
+                        name: name.to_string(),
+                        description: Some(format!("Override {}", name)),
+                        locations,
+                        args: Default::default(),
+                        is_repeatable: false,
+                        visible: None,
+                        composable: None,
+                    })
+                    .finish()
             }));
 
-        let _ = Schema::build("Query", None, None)
-            .register(query)
-            .directive(MetaDirective {
-                name: "skip".to_string(),
-                description: Some("Override skip".to_string()),
-                locations: vec![__DirectiveLocation::FIELD],
-                args: Default::default(),
-                is_repeatable: false,
-                visible: None,
-                composable: None,
-            })
-            .finish();
+            assert!(
+                result.is_err(),
+                "Expected panic for system directive '{}'",
+                name
+            );
+        }
     }
 
     #[tokio::test]
@@ -1274,6 +1292,7 @@ mod tests {
         assert!(directives.contains_key("skip"));
         assert!(directives.contains_key("include"));
         assert!(directives.contains_key("deprecated"));
+        assert!(directives.contains_key("oneOf"));
     }
 
     #[tokio::test]
