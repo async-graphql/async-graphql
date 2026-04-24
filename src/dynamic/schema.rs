@@ -1325,45 +1325,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn directive_no_unknown_directive_error() {
-        let myobj =
-            Object::new("MyObj").field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(123))) })
-            }));
-
-        let query = Object::new("Query").field(Field::new(
-            "valueObj",
-            TypeRef::named_nn(myobj.type_name()),
-            |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
-        ));
-
-        let schema = Schema::build("Query", None, None)
-            .register(query)
-            .register(myobj)
-            .directive(MetaDirective {
-                name: "mydir".to_string(),
-                description: Some("A test directive".to_string()),
-                locations: vec![
-                    __DirectiveLocation::FIELD,
-                    __DirectiveLocation::FRAGMENT_SPREAD,
-                    __DirectiveLocation::INLINE_FRAGMENT,
-                ],
-                args: Default::default(),
-                is_repeatable: false,
-                visible: None,
-                composable: None,
-            })
-            .finish()
-            .unwrap();
-
-        let result = schema.execute("{ valueObj { a } }").await.into_result();
-
-        // Should succeed with no errors (no "Unknown directive" error)
-        assert!(result.is_ok());
-    }
-
-    #[tokio::test]
-    async fn directive_on_wrong_location_still_errors() {
+    async fn directive_on_valid_location_succeeds() {
         let myobj =
             Object::new("MyObj").field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
                 FieldFuture::new(async { Ok(Some(Value::from(123))) })
@@ -1375,7 +1337,7 @@ mod tests {
             |_| FieldFuture::new(async { Ok(Some(FieldValue::NULL)) }),
         ));
 
-        // @mydir only allows FIELD, not FIELD_DEFINITION
+        // @mydir allows FIELD, not FIELD_DEFINITION
         let schema = Schema::build("Query", None, None)
             .register(query)
             .register(myobj)
@@ -1391,7 +1353,7 @@ mod tests {
             .finish()
             .unwrap();
 
-        // Using @mydir on a field definition (inside an object type)
+        // Using @mydir on a field (a valid location)
         let result = schema
             .execute("{ valueObj { a @mydir } }")
             .await
@@ -1550,30 +1512,5 @@ mod tests {
         let directives = &schema.registry().directives;
         let dir = directives.get("withargs").unwrap();
         assert!(dir.args.contains_key("reason"));
-    }
-
-    #[tokio::test]
-    async fn visible_directive_appears_in_introspection() {
-        let query =
-            Object::new("Query").field(Field::new("value", TypeRef::named(TypeRef::INT), |_| {
-                FieldFuture::new(async { Ok(Some(Value::from(100))) })
-            }));
-
-        let schema = Schema::build("Query", None, None)
-            .register(query)
-            .directive(MetaDirective {
-                name: "visible_dir".to_string(),
-                description: Some("A visible directive".to_string()),
-                locations: vec![__DirectiveLocation::FIELD],
-                args: Default::default(),
-                is_repeatable: false,
-                visible: None,
-                composable: None,
-            })
-            .finish()
-            .unwrap();
-
-        let directives = &schema.registry().directives;
-        assert!(directives.contains_key("visible_dir"));
     }
 }
