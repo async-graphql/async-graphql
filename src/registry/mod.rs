@@ -1122,6 +1122,7 @@ impl MetaType {
     }
 }
 
+#[derive(Clone)]
 pub struct MetaDirective {
     pub name: String,
     pub description: Option<String>,
