@@ -1,6 +1,6 @@
 use std::{
     any::{Any, TypeId},
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{HashMap, HashSet},
     ops::Deref,
     sync::Arc,
 };
@@ -886,12 +886,12 @@ fn check_recursive_depth(doc: &ExecutableDocument, max_depth: usize) -> ServerRe
 fn remove_skipped_selection(
     selection_set: &mut SelectionSet,
     variables: &Variables,
-    variable_defaults: &BTreeMap<Name, bool>,
+    variable_defaults: &HashMap<Name, bool>,
 ) {
     fn variable_condition(
         name: &Name,
         variables: &Variables,
-        variable_defaults: &BTreeMap<Name, bool>,
+        variable_defaults: &HashMap<Name, bool>,
     ) -> bool {
         match variables.get(name) {
             Some(async_graphql_value::ConstValue::Boolean(value)) => *value,
@@ -902,7 +902,7 @@ fn remove_skipped_selection(
     fn directive_condition(
         value: &async_graphql_value::Value,
         variables: &Variables,
-        variable_defaults: &BTreeMap<Name, bool>,
+        variable_defaults: &HashMap<Name, bool>,
     ) -> bool {
         match value {
             async_graphql_value::Value::Boolean(value) => *value,
@@ -916,7 +916,7 @@ fn remove_skipped_selection(
     fn is_skipped(
         directives: &[Positioned<Directive>],
         variables: &Variables,
-        variable_defaults: &BTreeMap<Name, bool>,
+        variable_defaults: &HashMap<Name, bool>,
     ) -> bool {
         for directive in directives {
             let include = match &*directive.node.name.node {
@@ -1071,7 +1071,7 @@ pub(crate) async fn prepare_request(
                     _ => None,
                 })
         })
-        .collect::<BTreeMap<_, _>>();
+        .collect::<HashMap<_, _>>();
 
     // remove skipped fields
     for fragment in document.fragments.values_mut() {
