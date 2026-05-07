@@ -888,31 +888,6 @@ fn remove_skipped_selection(
     variables: &Variables,
     variable_defaults: &HashMap<Name, bool>,
 ) {
-    fn variable_condition(
-        name: &Name,
-        variables: &Variables,
-        variable_defaults: &HashMap<Name, bool>,
-    ) -> bool {
-        match variables.get(name) {
-            Some(async_graphql_value::ConstValue::Boolean(value)) => *value,
-            _ => variable_defaults.get(name).copied().unwrap_or_default(),
-        }
-    }
-
-    fn directive_condition(
-        value: &async_graphql_value::Value,
-        variables: &Variables,
-        variable_defaults: &HashMap<Name, bool>,
-    ) -> bool {
-        match value {
-            async_graphql_value::Value::Boolean(value) => *value,
-            async_graphql_value::Value::Variable(name) => {
-                variable_condition(name, variables, variable_defaults)
-            }
-            _ => false,
-        }
-    }
-
     fn is_skipped(
         directives: &[Positioned<Directive>],
         variables: &Variables,
@@ -926,8 +901,23 @@ fn remove_skipped_selection(
             };
 
             if let Some(condition_input) = directive.node.get_argument("if") {
-                let value =
-                    directive_condition(&condition_input.node, variables, variable_defaults);
+                let value = condition_input
+                    .node
+                    .clone()
+                    .into_const_with(|name| {
+                        variables
+                            .get(&name)
+                            .cloned()
+                            .or_else(|| {
+                                variable_defaults
+                                    .get(&name)
+                                    .copied()
+                                    .map(async_graphql_value::ConstValue::Boolean)
+                            })
+                            .ok_or(())
+                    })
+                    .ok();
+                let value: bool = InputType::parse(value).unwrap_or_default();
                 if include != value {
                     return true;
                 }
