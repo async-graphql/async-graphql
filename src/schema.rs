@@ -10,7 +10,7 @@ use futures_util::stream::{self, BoxStream, FuturesOrdered, StreamExt};
 
 use crate::{
     BatchRequest, BatchResponse, CacheControl, ContextBase, EmptyMutation, EmptySubscription,
-    Executor, InputType, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
+    Executor, InputType, Name, ObjectType, OutputType, QueryEnv, Request, Response, ServerError,
     ServerResult, SubscriptionType, Variables,
     context::{Data, QueryEnvInner},
     custom_directive::CustomDirectiveFactory,
@@ -883,8 +883,16 @@ fn check_recursive_depth(doc: &ExecutableDocument, max_depth: usize) -> ServerRe
     Ok(())
 }
 
-fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variables) {
-    fn is_skipped(directives: &[Positioned<Directive>], variables: &Variables) -> bool {
+fn remove_skipped_selection(
+    selection_set: &mut SelectionSet,
+    variables: &Variables,
+    variable_defaults: &HashMap<Name, bool>,
+) {
+    fn is_skipped(
+        directives: &[Positioned<Directive>],
+        variables: &Variables,
+        variable_defaults: &HashMap<Name, bool>,
+    ) -> bool {
         for directive in directives {
             let include = match &*directive.node.name.node {
                 "skip" => false,
@@ -896,9 +904,20 @@ fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variab
                 let value = condition_input
                     .node
                     .clone()
-                    .into_const_with(|name| variables.get(&name).cloned().ok_or(()))
-                    .unwrap_or_default();
-                let value: bool = InputType::parse(Some(value)).unwrap_or_default();
+                    .into_const_with(|name| {
+                        variables
+                            .get(&name)
+                            .cloned()
+                            .or_else(|| {
+                                variable_defaults
+                                    .get(&name)
+                                    .copied()
+                                    .map(async_graphql_value::ConstValue::Boolean)
+                            })
+                            .ok_or(())
+                    })
+                    .ok();
+                let value: bool = InputType::parse(value).unwrap_or_default();
                 if include != value {
                     return true;
                 }
@@ -910,7 +929,7 @@ fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variab
 
     selection_set
         .items
-        .retain(|selection| !is_skipped(selection.node.directives(), variables));
+        .retain(|selection| !is_skipped(selection.node.directives(), variables, variable_defaults));
 
     for selection in &mut selection_set.items {
         selection.node.directives_mut().retain(|directive| {
@@ -921,11 +940,19 @@ fn remove_skipped_selection(selection_set: &mut SelectionSet, variables: &Variab
     for selection in &mut selection_set.items {
         match &mut selection.node {
             Selection::Field(field) => {
-                remove_skipped_selection(&mut field.node.selection_set.node, variables);
+                remove_skipped_selection(
+                    &mut field.node.selection_set.node,
+                    variables,
+                    variable_defaults,
+                );
             }
             Selection::FragmentSpread(_) => {}
             Selection::InlineFragment(inline_fragment) => {
-                remove_skipped_selection(&mut inline_fragment.node.selection_set.node, variables);
+                remove_skipped_selection(
+                    &mut inline_fragment.node.selection_set.node,
+                    variables,
+                    variable_defaults,
+                );
             }
         }
     }
@@ -1019,11 +1046,36 @@ pub(crate) async fn prepare_request(
 
     let (operation_name, mut operation) = operation.map_err(|err| vec![err])?;
 
+    let variable_defaults = operation
+        .node
+        .variable_definitions
+        .iter()
+        .filter_map(|def| {
+            def.node
+                .default_value
+                .as_ref()
+                .and_then(|value| match &value.node {
+                    async_graphql_value::ConstValue::Boolean(value) => {
+                        Some((def.node.name.node.clone(), *value))
+                    }
+                    _ => None,
+                })
+        })
+        .collect::<HashMap<_, _>>();
+
     // remove skipped fields
     for fragment in document.fragments.values_mut() {
-        remove_skipped_selection(&mut fragment.node.selection_set.node, &request.variables);
+        remove_skipped_selection(
+            &mut fragment.node.selection_set.node,
+            &request.variables,
+            &variable_defaults,
+        );
     }
-    remove_skipped_selection(&mut operation.node.selection_set.node, &request.variables);
+    remove_skipped_selection(
+        &mut operation.node.selection_set.node,
+        &request.variables,
+        &variable_defaults,
+    );
 
     let env = QueryEnvInner {
         extensions,

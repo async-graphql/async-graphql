@@ -79,6 +79,107 @@ pub async fn test_directive_include() {
 }
 
 #[tokio::test]
+pub async fn test_directive_skip_and_include() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let data = schema
+        .execute(
+            r#"
+            fragment A on Query {
+                value5: value @skip(if: false) @include(if: true)
+                value6: value @skip(if: true) @include(if: true)
+                value7: value @skip(if: false) @include(if: false)
+                value8: value @skip(if: true) @include(if: false)
+            }
+
+            query {
+                value1: value @skip(if: false) @include(if: true)
+                value2: value @skip(if: true) @include(if: true)
+                value3: value @skip(if: false) @include(if: false)
+                value4: value @skip(if: true) @include(if: false)
+                ... @skip(if: false) @include(if: true) {
+                    value9: value
+                }
+                ... @skip(if: true) @include(if: true) {
+                    value10: value
+                }
+                ... @skip(if: false) @include(if: false) {
+                    value11: value
+                }
+                ... @skip(if: true) @include(if: false) {
+                    value12: value
+                }
+                ... A
+            }
+        "#,
+        )
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        data,
+        value!({
+            "value1": 10,
+            "value5": 10,
+            "value9": 10,
+        })
+    );
+}
+
+#[tokio::test]
+pub async fn test_directive_skip_and_include_with_variable_defaults() {
+    struct Query;
+
+    #[Object]
+    impl Query {
+        pub async fn value(&self) -> i32 {
+            10
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let data = schema
+        .execute(Request::new(
+            r#"
+            query($skip: Boolean = false, $include: Boolean = true) {
+                value1: value @skip(if: $skip) @include(if: $include)
+                value2: value @skip(if: true) @include(if: $include)
+                value3: value @skip(if: $skip) @include(if: false)
+                ... @skip(if: $skip) @include(if: $include) {
+                    value4: value
+                }
+                ... @skip(if: true) @include(if: $include) {
+                    value5: value
+                }
+                ... @skip(if: $skip) @include(if: false) {
+                    value6: value
+                }
+            }
+        "#,
+        ))
+        .await
+        .into_result()
+        .unwrap()
+        .data;
+    assert_eq!(
+        data,
+        value!({
+            "value1": 10,
+            "value4": 10,
+        })
+    );
+}
+
+#[tokio::test]
 pub async fn test_custom_directive() {
     struct Concat {
         prefix: String,
