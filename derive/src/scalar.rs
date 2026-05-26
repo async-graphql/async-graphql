@@ -3,10 +3,10 @@ use quote::quote;
 use syn::ItemImpl;
 
 use crate::{
-    args::{self, RenameTarget},
+    args::{self, RenameTarget, TypeDirectiveLocation},
     utils::{
-        GeneratorResult, gen_boxed_trait, get_crate_path, get_rustdoc, get_type_path_and_name,
-        visible_fn,
+        GeneratorResult, gen_boxed_trait, gen_directive_calls, get_crate_path, get_rustdoc,
+        get_type_path_and_name, visible_fn,
     },
 };
 
@@ -65,6 +65,11 @@ pub fn generate(
         }
         None => quote! { ::std::option::Option::None },
     };
+    let directives = gen_directive_calls(
+        &crate_name,
+        &scalar_args.directives,
+        TypeDirectiveLocation::Scalar,
+    );
 
     let expanded = quote! {
         #item_impl
@@ -78,7 +83,7 @@ pub fn generate(
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
+                registry.create_input_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |registry| #crate_name::registry::MetaType::Scalar {
                     name: #gql_typename_string,
                     description: #desc,
                     is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
@@ -86,7 +91,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
-                    directive_invocations: ::std::vec::Vec::new(),
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                     requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 })
             }
@@ -112,7 +117,7 @@ pub fn generate(
             }
 
             fn create_type_info(registry: &mut #crate_name::registry::Registry) -> ::std::string::String {
-                registry.create_output_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |_| #crate_name::registry::MetaType::Scalar {
+                registry.create_output_type::<#self_ty, _>(#crate_name::registry::MetaTypeId::Scalar, |registry| #crate_name::registry::MetaType::Scalar {
                     name: #gql_typename_string,
                     description: #desc,
                     is_valid: ::std::option::Option::Some(::std::sync::Arc::new(|value| <#self_ty as #crate_name::ScalarType>::is_valid(value))),
@@ -120,7 +125,7 @@ pub fn generate(
                     inaccessible: #inaccessible,
                     tags: ::std::vec![ #(#tags),* ],
                     specified_by_url: #specified_by_url,
-                    directive_invocations: ::std::vec::Vec::new(),
+                    directive_invocations: ::std::vec![ #(#directives),* ],
                     requires_scopes: ::std::vec![ #(#requires_scopes),* ],
                 })
             }

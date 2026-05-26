@@ -253,6 +253,54 @@ fn test_type_directive_2() {
     assert_eq!(expected, sdl);
 }
 
+#[test]
+fn test_type_directive_on_scalar() {
+    use async_graphql::{InputValueResult, Scalar, ScalarType, Value};
+
+    #[TypeDirective(location = "Scalar")]
+    fn type_directive_scalar(description: String) {}
+
+    struct MyScalar(String);
+
+    #[Scalar(
+        directive = type_directive_scalar::apply("This is SCALAR in Scalar".to_string())
+    )]
+    impl ScalarType for MyScalar {
+        fn parse(value: Value) -> InputValueResult<Self> {
+            match value {
+                Value::String(s) => Ok(MyScalar(s)),
+                _ => Err(async_graphql::InputValueError::expected_type(value)),
+            }
+        }
+
+        fn to_value(&self) -> Value {
+            Value::String(self.0.clone())
+        }
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn value(&self) -> MyScalar {
+            MyScalar("hello".to_string())
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
+    let sdl = schema.sdl();
+    assert!(
+        sdl.contains(
+            r#"scalar MyScalar @type_directive_scalar(description: "This is SCALAR in Scalar")"#
+        ),
+        "expected scalar directive in SDL, got:\n{sdl}"
+    );
+    assert!(
+        sdl.contains("directive @type_directive_scalar(description: String!) on SCALAR"),
+        "expected directive declaration in SDL, got:\n{sdl}"
+    );
+}
+
 /// Some module docs
 #[deny(missing_docs)]
 pub mod test_type_directive_docs {
