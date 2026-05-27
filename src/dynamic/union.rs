@@ -210,6 +210,52 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn abstract_spread_in_object_scope() {
+        let query = Object::new("Query")
+            .implement("Interface")
+            .field(Field::new("field", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(1))) })
+            }))
+            .field(Field::new(
+                "interfaceField",
+                TypeRef::named(TypeRef::INT),
+                |_| FieldFuture::new(async { Ok(Some(Value::from(2))) }),
+            ));
+        let interface = Interface::new("Interface").field(InterfaceField::new(
+            "interfaceField",
+            TypeRef::named(TypeRef::INT),
+        ));
+        let union = Union::new("Union").possible_type(query.type_name());
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(query)
+            .register(interface)
+            .register(union)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                ... on Union {
+                    ... on Query {
+                        field
+                    }
+                    ... on Interface {
+                        interfaceField
+                    }
+                }
+            }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "field": 1,
+                "interfaceField": 2,
+            })
+        );
+    }
+
+    #[tokio::test]
     async fn does_not_contain() {
         let obj_a = Object::new("MyObjA")
             .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
