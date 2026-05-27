@@ -295,6 +295,22 @@ fn collect_field<'a>(
     );
 }
 
+fn does_fragment_type_apply(
+    schema: &Schema,
+    object: &Object,
+    type_condition: Option<&str>,
+) -> bool {
+    type_condition.is_none_or(|type_condition| {
+        schema
+            .0
+            .env
+            .registry
+            .types
+            .get(type_condition)
+            .is_some_and(|ty| ty.is_possible_type(&object.name))
+    })
+}
+
 fn collect_fields<'a>(
     fields: &mut Vec<BoxFieldFuture<'a>>,
     schema: &'a Schema,
@@ -385,15 +401,7 @@ fn collect_fields<'a>(
 
                 let type_condition =
                     type_condition.map(|condition| condition.node.on.node.as_str());
-                let introspection_type_name = &object.name;
-
-                let type_condition_matched = match type_condition {
-                    None => true,
-                    Some(type_condition) if type_condition == introspection_type_name => true,
-                    Some(type_condition) if object.implements.contains(type_condition) => true,
-                    _ => false,
-                };
-                if type_condition_matched {
+                if does_fragment_type_apply(schema, object, type_condition) {
                     collect_fields(
                         fields,
                         schema,
