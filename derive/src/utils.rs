@@ -292,7 +292,11 @@ pub fn extract_input_args<T: FromMeta + Default>(
                 .into());
             }
 
-            match (&*pat.pat, &*pat.ty) {
+            let ty = match &*pat.ty {
+                Type::Group(group) => &*group.elem,
+                ty => ty,
+            };
+            match (&*pat.pat, ty) {
                 (Pat::Ident(arg_ident), Type::Reference(TypeReference { elem, .. })) => {
                     if let Type::Path(path) = elem.as_ref() {
                         if idx != 1 || path.path.segments.last().unwrap().ident != "Context" {

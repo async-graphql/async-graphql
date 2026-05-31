@@ -22,6 +22,45 @@ pub async fn test_object() {
 }
 
 #[tokio::test]
+pub async fn test_object_with_context_arg() {
+    use async_graphql::{Context, EmptyMutation, EmptySubscription, Result, Schema};
+
+    macro_rules! test_data {
+        ($test_name:ident { $($arg:ident: $arg_ty:ty),* $(,)? } -> $ret_ty:ty) => {
+            #[derive(Debug, Clone)]
+            pub struct $test_name;
+
+            #[async_graphql::Object]
+            impl $test_name {
+                async fn echo(&self, $($arg: $arg_ty),*) -> $ret_ty {
+                    echo($($arg),*)
+                }
+            }
+        };
+    }
+
+    fn echo(_ctx: &Context<'_>, value: i32) -> Result<i32> {
+        Ok(value)
+    }
+
+    test_data!(Query { ctx: &Context<'_>, value: i32 } -> Result<i32>);
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let sdl = schema.sdl();
+
+    assert!(sdl.contains("echo(value: Int!): Int!"), "sdl was:\n{sdl}");
+    assert_eq!(
+        schema
+            .execute("{ echo(value: 42) }")
+            .await
+            .into_result()
+            .unwrap()
+            .data,
+        async_graphql::value!({ "echo": 42 }),
+    );
+}
+
+#[tokio::test]
 pub async fn test_subscription() {
     macro_rules! test_data {
         ($test_name:ident) => {
