@@ -237,6 +237,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let has_complexity = field.complexity.is_some();
         let has_directives = !field.directives.is_empty();
         let has_requires_scopes = !field.requires_scopes.is_empty();
+        let has_semantic_non_null = field
+            .semantic_non_null
+            .unwrap_or(object_args.semantic_non_null);
 
         let visible = visible_fn(&field.visible);
         let directives = gen_directive_calls(
@@ -301,6 +304,10 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             if has_requires_scopes {
                 field_sets
                     .push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+            }
+            if has_semantic_non_null {
+                field_sets
+                    .push(quote!(field.semantic_nullability = <#ty as #crate_name::OutputType>::semantic_nullability();));
             }
 
             schema_fields.push(quote! {
