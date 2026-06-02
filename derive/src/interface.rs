@@ -374,7 +374,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             OutputType::Value(ty) => ty,
             OutputType::Result(ty) => ty,
         };
-        let schema_ty = oty.value_type();
+        let schema_ty = oty.value_type(&interface_args.crate_path, interface_args.internal);
 
         methods.push(quote! {
             #[allow(missing_docs)]
