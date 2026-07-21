@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [Unreleased]
+
+- Add `SchemaBuilder::subscription_resolution_concurrency` to resolve subscription payloads concurrently while preserving output order (default 1, i.e. serial) [#1833](https://github.com/async-graphql/async-graphql/pull/1833)
+
 # [8.0.0-rc.5] 2026-04-22
 
 - Fix MergedObject exceeding compiler recursion limit by using flat dispatch instead of nested async delegation in `resolve_field`/`find_entity`, which overflows when cross-crate types amplify monomorphization depth

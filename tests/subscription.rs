@@ -422,3 +422,123 @@ pub async fn test_subscription_fieldresult() {
 
     assert!(stream.next().await.is_none());
 }
+
+#[tokio::test]
+pub async fn test_subscription_resolution_concurrency() {
+    use std::{sync::Arc, time::Duration};
+
+    use tokio::sync::Barrier;
+
+    const COUNT: usize = 8;
+
+    struct Item(usize);
+
+    #[Object]
+    impl Item {
+        async fn value(&self, ctx: &Context<'_>) -> usize {
+            // Every payload blocks here until all COUNT have arrived. The barrier can only
+            // release if the payloads resolve concurrently; under serial
+            // resolution the first payload would wait here forever.
+            ctx.data_unchecked::<Arc<Barrier>>().wait().await;
+            self.0
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn items(&self) -> impl Stream<Item = Item> {
+            futures_util::stream::iter((0..COUNT).map(Item))
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, Subscription)
+        .subscription_resolution_concurrency(COUNT)
+        .data(Arc::new(Barrier::new(COUNT)))
+        .finish();
+
+    // Serial resolution would never release the barrier and hang; the timeout turns
+    // that into a clean failure instead of a stuck test. (Default serial
+    // resolution is covered by the other subscription tests, which all run at
+    // the default concurrency of 1.)
+    let values: Vec<_> = tokio::time::timeout(Duration::from_secs(5), async {
+        schema
+            .execute_stream("subscription { items { value } }")
+            .map(|resp| resp.into_result().unwrap().data)
+            .collect()
+            .await
+    })
+    .await
+    .expect("payloads did not resolve concurrently (barrier never released)");
+
+    // The barrier released, so all COUNT resolved at once, and `buffered` kept the
+    // output in submission order.
+    assert_eq!(values.len(), COUNT);
+    for (i, v) in values.iter().enumerate() {
+        assert_eq!(*v, value!({ "items": { "value": i } }));
+    }
+}
+
+#[tokio::test]
+pub async fn test_subscription_resolution_error_isolation() {
+    use std::sync::Arc;
+
+    use tokio::sync::Barrier;
+
+    const COUNT: usize = 8;
+
+    struct Item(usize);
+
+    #[Object]
+    impl Item {
+        async fn value(&self, ctx: &Context<'_>) -> usize {
+            // Record this item's error, then wait until every payload has recorded its own.
+            // This holds all COUNT payloads in flight together with their
+            // errors in the sink, so if the sink were shared the first payload
+            // to drain would scoop up everyone's errors. With `fork_errors`
+            // each payload drains only its own sink. (The barrier also requires the
+            // payloads to actually resolve concurrently, or it would never release.)
+            ctx.add_error(ServerError::new(format!("boom {}", self.0), None));
+            ctx.data_unchecked::<Arc<Barrier>>().wait().await;
+            self.0
+        }
+    }
+
+    struct Subscription;
+
+    #[Subscription]
+    impl Subscription {
+        async fn items(&self) -> impl Stream<Item = Item> {
+            futures_util::stream::iter((0..COUNT).map(Item))
+        }
+    }
+
+    let schema = Schema::build(Query, EmptyMutation, Subscription)
+        .subscription_resolution_concurrency(COUNT)
+        .data(Arc::new(Barrier::new(COUNT)))
+        .finish();
+
+    let responses: Vec<_> = schema
+        .execute_stream("subscription { items { value } }")
+        .collect()
+        .await;
+
+    assert_eq!(responses.len(), COUNT);
+    // Payload `i` must carry item `i`'s data *and* exactly item `i`'s own error,
+    // never a sibling's.
+    for (i, resp) in responses.into_iter().enumerate() {
+        assert_eq!(resp.data, value!({ "items": { "value": i } }));
+        assert_eq!(
+            resp.errors.len(),
+            1,
+            "payload {i} should carry exactly one error, got {:?}",
+            resp.errors
+        );
+        assert_eq!(
+            resp.errors[0].message,
+            format!("boom {i}"),
+            "payload {i} carried a sibling's error",
+        );
+    }
+}
