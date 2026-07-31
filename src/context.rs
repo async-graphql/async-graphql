@@ -258,25 +258,45 @@ pub struct QueryEnvInner {
     pub query_data: Arc<Data>,
     pub http_headers: Mutex<http::HeaderMap>,
     pub introspection_mode: IntrospectionMode,
-    pub errors: Mutex<Vec<ServerError>>,
 }
 
 #[doc(hidden)]
 #[derive(Clone)]
-pub struct QueryEnv(Arc<QueryEnvInner>);
+pub struct QueryEnv {
+    inner: Arc<QueryEnvInner>,
+    // Error sink held outside the shared inner so a subscription can give each payload its own
+    // sink (via `fork_errors`) when items resolve concurrently, while still sharing
+    // data/loaders.
+    pub errors: Arc<Mutex<Vec<ServerError>>>,
+}
 
 impl Deref for QueryEnv {
     type Target = QueryEnvInner;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner
     }
 }
 
 impl QueryEnv {
     #[doc(hidden)]
     pub fn new(inner: QueryEnvInner) -> QueryEnv {
-        QueryEnv(Arc::new(inner))
+        QueryEnv {
+            inner: Arc::new(inner),
+            errors: Default::default(),
+        }
+    }
+
+    /// Return a clone that shares the same request data, schema, extensions,
+    /// and operation, but resolves errors into its own fresh sink. Used so
+    /// concurrently-resolved subscription payloads don't cross-contaminate
+    /// each other's errors.
+    #[doc(hidden)]
+    pub fn fork_errors(&self) -> QueryEnv {
+        QueryEnv {
+            inner: self.inner.clone(),
+            errors: Default::default(),
+        }
     }
 
     #[doc(hidden)]

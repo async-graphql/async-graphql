@@ -216,6 +216,7 @@ impl SchemaBuilder {
                 registry,
                 data: self.data,
                 custom_directives: Default::default(),
+                subscription_resolution_concurrency: 1,
             })),
             extensions: self.extensions,
             types: self.types,

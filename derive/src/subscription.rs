@@ -352,11 +352,13 @@ pub fn generate(
                 let pos = ctx.item.pos;
                 let schema_env = ::std::clone::Clone::clone(&ctx.schema_env);
                 let query_env = ::std::clone::Clone::clone(&ctx.query_env);
-                let stream = #crate_name::futures_util::stream::StreamExt::then(stream, {
+                let subscription_concurrency = ctx.schema_env.subscription_resolution_concurrency;
+                let stream = #crate_name::futures_util::stream::StreamExt::map(stream, {
                     let field_name = ::std::clone::Clone::clone(&field_name);
                     move |msg| {
                         let schema_env = ::std::clone::Clone::clone(&schema_env);
-                        let query_env = ::std::clone::Clone::clone(&query_env);
+                        // Each payload resolves concurrently (see `buffered` above), so give it its own error sink; otherwise concurrent payloads would drain one another's errors from a shared sink.
+                        let query_env = query_env.fork_errors();
                         let field = ::std::clone::Clone::clone(&field);
                         let field_name = ::std::clone::Clone::clone(&field_name);
                         async move {
@@ -407,6 +409,7 @@ pub fn generate(
                         }
                     }
                 });
+                let stream = #crate_name::futures_util::stream::StreamExt::buffered(stream, subscription_concurrency);
                 #crate_name::ServerResult::Ok(stream)
             };
 
