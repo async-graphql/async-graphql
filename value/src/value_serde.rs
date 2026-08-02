@@ -16,6 +16,16 @@ use crate::{ConstValue, Name, Number, Value};
 #[cfg(feature = "raw_value")]
 pub const RAW_VALUE_TOKEN: &str = "$serde_json::private::RawValue";
 
+/// The token used by `serde_json` to represent arbitrary-precision numbers
+/// when its `arbitrary_precision` feature is enabled. Because Cargo unifies
+/// features across the whole dependency graph, this can be active even if
+/// this crate's own `serde_json` dependency does not request it, so the
+/// token is handled unconditionally rather than behind a feature of our own.
+///
+/// It should be kept in sync with the following original until made public:
+/// https://github.com/serde-rs/json/blob/b48b9a3a0c09952579e98c8940fe0d1ee4aae588/src/number.rs#L18
+const NUMBER_TOKEN: &str = "$serde_json::private::Number";
+
 impl Serialize for ConstValue {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
@@ -159,6 +169,22 @@ impl<'de> Deserialize<'de> for ConstValue {
                 while let Some((name, value)) = visitor.next_entry()? {
                     map.insert(name, value);
                 }
+
+                // `serde_json`'s `arbitrary_precision` feature represents every
+                // fractional (and out-of-range integer) number as a single-entry
+                // map keyed by `NUMBER_TOKEN` instead of calling
+                // `visit_f64`/`visit_i64`/`visit_u64`, because serde's data model
+                // has no arbitrary-precision-number primitive. Unwrap that shape
+                // back into a `Number` here.
+                if map.len() == 1
+                    && let Some(ConstValue::String(number)) = map.get(NUMBER_TOKEN)
+                {
+                    return number
+                        .parse::<Number>()
+                        .map(ConstValue::Number)
+                        .map_err(DeError::custom);
+                }
+
                 Ok(ConstValue::Object(map))
             }
         }
@@ -320,6 +346,17 @@ impl<'de> Deserialize<'de> for Value {
                         }
                     }
                 }
+
+                // See the equivalent check in `ConstValue`'s `visit_map` above.
+                if map.len() == 1
+                    && let Some(Value::String(number)) = map.get(NUMBER_TOKEN)
+                {
+                    return number
+                        .parse::<Number>()
+                        .map(Value::Number)
+                        .map_err(DeError::custom);
+                }
+
                 Ok(Value::Object(map))
             }
         }
