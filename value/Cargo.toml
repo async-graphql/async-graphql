@@ -17,5 +17,16 @@ serde.workspace = true
 bytes.workspace = true
 indexmap.workspace = true
 
+[dev-dependencies]
+# Enabled only for this crate's tests, to reproduce
+# https://github.com/async-graphql/async-graphql/issues/1719, which only
+# manifests when `serde_json`'s `arbitrary_precision` feature is active.
+# Note: because Cargo unifies dev-dependency features across a workspace
+# `cargo test --workspace` run, this also turns `arbitrary_precision` on for
+# every other workspace member's use of `serde_json` for the duration of
+# that command — the same feature-unification behavior that causes the bug
+# itself. `cargo test -p async-graphql-value` is unaffected by this concern.
+serde_json = { workspace = true, features = ["arbitrary_precision"] }
+
 [features]
 raw_value = ["serde_json/raw_value"]
