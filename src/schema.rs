@@ -19,7 +19,7 @@ use crate::{
         Positioned, parse_query,
         types::{Directive, DocumentOperations, OperationType, Selection, SelectionSet},
     },
-    registry::{Registry, SDLExportOptions},
+    registry::{DISABLE_ERROR_PROPAGATION_DIRECTIVE, Registry, SDLExportOptions},
     resolver_utils::{resolve_container, resolve_container_serial},
     subscription::collect_subscription_streams,
     types::QueryRoot,
@@ -187,6 +187,22 @@ impl<Query, Mutation, Subscription> SchemaBuilder<Query, Mutation, Subscription>
     #[must_use]
     pub fn enable_subscription_in_federation(mut self) -> Self {
         self.registry.federation_subscription = true;
+        self
+    }
+
+    /// Enable support for the experimental
+    /// `@experimental_disableErrorPropagation` directive.
+    ///
+    /// When enabled, the directive is added to the schema and clients can
+    /// apply it to a `query`, `mutation` or `subscription` operation to opt
+    /// out of error propagation: an error raised by a non-null field is
+    /// reported in the `errors` list and the field itself is set to `null`,
+    /// instead of propagating the `null` up to the nearest nullable ancestor.
+    ///
+    /// See <https://www.graphql-js.org/docs/disabling-error-propagation/>.
+    #[must_use]
+    pub fn enable_experimental_disable_error_propagation(mut self) -> Self {
+        self.registry.add_disable_error_propagation_directive();
         self
     }
 
@@ -1025,6 +1041,15 @@ pub(crate) async fn prepare_request(
     }
     remove_skipped_selection(&mut operation.node.selection_set.node, &request.variables);
 
+    let disable_error_propagation = registry
+        .directives
+        .contains_key(DISABLE_ERROR_PROPAGATION_DIRECTIVE)
+        && operation
+            .node
+            .directives
+            .iter()
+            .any(|directive| directive.node.name.node == DISABLE_ERROR_PROPAGATION_DIRECTIVE);
+
     let env = QueryEnvInner {
         extensions,
         variables: request.variables,
@@ -1037,6 +1062,7 @@ pub(crate) async fn prepare_request(
         http_headers: Default::default(),
         introspection_mode: request.introspection_mode,
         errors: Default::default(),
+        disable_error_propagation,
     };
     Ok((QueryEnv::new(env), validation_result.cache_control))
 }

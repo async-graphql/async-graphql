@@ -36,10 +36,14 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
                             .map_err(|err| ctx_idx.set_error_path(err))
                     };
                     futures_util::pin_mut!(resolve_fut);
-                    extensions
-                        .resolve(resolve_info, &mut resolve_fut)
-                        .await
-                        .map(|value| value.expect("You definitely encountered a bug!"))
+                    match extensions.resolve(resolve_info, &mut resolve_fut).await {
+                        Ok(value) => Ok(value.expect("You definitely encountered a bug!")),
+                        Err(err) if ctx_idx.query_env.disable_error_propagation => {
+                            ctx_idx.add_error(err);
+                            Ok(Value::Null)
+                        }
+                        Err(err) => Err(err),
+                    }
                 }
             });
         }
@@ -51,9 +55,14 @@ pub async fn resolve_list<'a, T: OutputType + 'a>(
         for (idx, item) in iter.into_iter().enumerate() {
             let ctx_idx = ctx.with_index(idx);
             futures.push(async move {
-                OutputType::resolve(&item, &ctx_idx, field)
-                    .await
-                    .map_err(|err| ctx_idx.set_error_path(err))
+                match OutputType::resolve(&item, &ctx_idx, field).await {
+                    Ok(value) => Ok(value),
+                    Err(err) if ctx_idx.query_env.disable_error_propagation => {
+                        ctx_idx.add_error(ctx_idx.set_error_path(err));
+                        Ok(Value::Null)
+                    }
+                    Err(err) => Err(ctx_idx.set_error_path(err)),
+                }
             });
         }
         Ok(Value::List(

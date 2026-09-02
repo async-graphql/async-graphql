@@ -324,7 +324,20 @@ impl<'a> Fields<'a> {
                         }
                     });
 
-                    self.0.push(resolve_fut);
+                    if ctx.query_env.disable_error_propagation {
+                        let ctx = ctx.clone();
+                        self.0.push(Box::pin(async move {
+                            match resolve_fut.await {
+                                Ok(res) => Ok(res),
+                                Err(err) => {
+                                    ctx.add_error(err);
+                                    Ok((field.node.response_key().node.clone(), Value::Null))
+                                }
+                            }
+                        }));
+                    } else {
+                        self.0.push(resolve_fut);
+                    }
                 }
                 selection => {
                     let (type_condition, selection_set) = match selection {

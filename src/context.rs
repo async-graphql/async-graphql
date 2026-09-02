@@ -259,6 +259,7 @@ pub struct QueryEnvInner {
     pub http_headers: Mutex<http::HeaderMap>,
     pub introspection_mode: IntrospectionMode,
     pub errors: Mutex<Vec<ServerError>>,
+    pub disable_error_propagation: bool,
 }
 
 #[doc(hidden)]

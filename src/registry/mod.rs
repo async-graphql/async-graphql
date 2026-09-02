@@ -21,6 +21,13 @@ use crate::{
     schema::IntrospectionMode,
 };
 
+/// The name of the experimental `@experimental_disableErrorPropagation`
+/// directive, registered on demand by
+/// `Registry::add_disable_error_propagation_directive`.
+///
+/// See <https://www.graphql-js.org/docs/disabling-error-propagation/>.
+pub(crate) const DISABLE_ERROR_PROPAGATION_DIRECTIVE: &str = "experimental_disableErrorPropagation";
+
 fn strip_brackets(type_name: &str) -> Option<&str> {
     type_name
         .strip_prefix('[')
@@ -1338,6 +1345,24 @@ impl Registry {
         <f32 as InputType>::create_type_info(self);
         <String as InputType>::create_type_info(self);
         <ID as InputType>::create_type_info(self);
+    }
+
+    /// Registers the experimental `@experimental_disableErrorPropagation`
+    /// directive.
+    pub(crate) fn add_disable_error_propagation_directive(&mut self) {
+        self.add_directive(MetaDirective {
+            name: DISABLE_ERROR_PROPAGATION_DIRECTIVE.into(),
+            description: Some("Disables error propagation.".to_string()),
+            locations: vec![
+                __DirectiveLocation::QUERY,
+                __DirectiveLocation::MUTATION,
+                __DirectiveLocation::SUBSCRIPTION,
+            ],
+            args: Default::default(),
+            is_repeatable: false,
+            visible: None,
+            composable: None,
+        });
     }
 
     pub fn create_input_type<T, F>(&mut self, type_id: MetaTypeId, mut f: F) -> String
