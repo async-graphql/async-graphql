@@ -35,6 +35,7 @@ pub struct SchemaBuilder {
     introspection_mode: IntrospectionMode,
     enable_federation: bool,
     entity_resolver: Option<BoxResolverFn>,
+    experimental_disable_error_propagation: bool,
 }
 
 impl SchemaBuilder {
@@ -143,6 +144,22 @@ impl SchemaBuilder {
         self
     }
 
+    /// Enable support for the experimental
+    /// `@experimental_disableErrorPropagation` directive.
+    ///
+    /// When enabled, the directive is added to the schema and clients can
+    /// apply it to a `query`, `mutation` or `subscription` operation to opt
+    /// out of error propagation: an error raised by a non-null field is
+    /// reported in the `errors` list and the field itself is set to `null`,
+    /// instead of propagating the `null` up to the nearest nullable ancestor.
+    ///
+    /// See <https://www.graphql-js.org/docs/disabling-error-propagation/>.
+    #[must_use]
+    pub fn enable_experimental_disable_error_propagation(mut self) -> Self {
+        self.experimental_disable_error_propagation = true;
+        self
+    }
+
     /// Set the entity resolver for federation
     pub fn entity_resolver<F>(self, resolver_fn: F) -> Self
     where
@@ -170,6 +187,9 @@ impl SchemaBuilder {
             enable_suggestions: self.enable_suggestions,
         };
         registry.add_system_types();
+        if self.experimental_disable_error_propagation {
+            registry.add_disable_error_propagation_directive();
+        }
 
         for ty in self.types.values() {
             ty.register(&mut registry)?;
@@ -277,6 +297,7 @@ impl Schema {
             introspection_mode: IntrospectionMode::Enabled,
             entity_resolver: None,
             enable_federation: false,
+            experimental_disable_error_propagation: false,
         }
     }
 

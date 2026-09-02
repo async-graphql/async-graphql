@@ -391,15 +391,24 @@ pub fn generate(
                                             .map(::std::option::Option::Some)
                                     };
                                     #crate_name::futures_util::pin_mut!(resolve_fut);
-                                    let mut resp = query_env.extensions.resolve(ri, &mut resolve_fut).await.map(|value| {
-                                        let mut map = #crate_name::indexmap::IndexMap::new();
-                                        map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
-                                        #crate_name::Response::new(#crate_name::Value::Object(map))
-                                    })
-                                    .unwrap_or_else(|err| #crate_name::Response::from_errors(::std::vec![err]));
-
+                                    let res = query_env.extensions.resolve(ri, &mut resolve_fut).await;
+                                    let mut errors = ::std::mem::take(&mut *query_env.errors.lock().unwrap());
+                                    let mut resp = match res {
+                                        ::std::result::Result::Ok(value) => {
+                                            let mut map = #crate_name::indexmap::IndexMap::new();
+                                            map.insert(::std::clone::Clone::clone(&field_name), value.unwrap_or_default());
+                                            #crate_name::Response::new(#crate_name::Value::Object(map))
+                                        }
+                                        ::std::result::Result::Err(err) if query_env.disable_error_propagation => {
+                                            errors.push(err);
+                                            let mut map = #crate_name::indexmap::IndexMap::new();
+                                            map.insert(::std::clone::Clone::clone(&field_name), #crate_name::Value::Null);
+                                            #crate_name::Response::new(#crate_name::Value::Object(map))
+                                        }
+                                        ::std::result::Result::Err(err) => #crate_name::Response::from_errors(::std::vec![err]),
+                                    };
                                     use ::std::iter::Extend;
-                                    resp.errors.extend(::std::mem::take(&mut *query_env.errors.lock().unwrap()));
+                                    resp.errors.extend(errors);
                                     resp
                                 }
                             };

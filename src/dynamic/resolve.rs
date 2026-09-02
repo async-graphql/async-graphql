@@ -200,14 +200,20 @@ fn collect_entities_field<'a>(
             });
 
             let field_value = match field_future {
-                FieldFuture::Future(fut) => {
-                    fut.await.map_err(|err| err.into_server_error(field.pos))?
-                }
+                FieldFuture::Future(fut) => fut
+                    .await
+                    .map_err(|err| ctx_field.set_error_path(err.into_server_error(field.pos)))?,
                 FieldFuture::Value(value) => value,
             };
-            let value = resolve(schema, &ctx_field, &entity_type, field_value.as_ref())
-                .await?
-                .unwrap_or_default();
+            let value = match resolve(schema, &ctx_field, &entity_type, field_value.as_ref()).await
+            {
+                Ok(value) => value.unwrap_or_default(),
+                Err(err) if ctx_field.query_env.disable_error_propagation => {
+                    ctx_field.add_error(err);
+                    Value::Null
+                }
+                Err(err) => return Err(err),
+            };
             Ok((field.node.response_key().node.clone(), value))
         }
         .boxed(),
@@ -271,9 +277,9 @@ fn collect_field<'a>(
 
                 let field_value = match field_future {
                     FieldFuture::Value(field_value) => field_value,
-                    FieldFuture::Future(future) => future
-                        .await
-                        .map_err(|err| err.into_server_error(field.pos))?,
+                    FieldFuture::Future(future) => future.await.map_err(|err| {
+                        ctx_field.set_error_path(err.into_server_error(field.pos))
+                    })?,
                 };
 
                 let value =
@@ -283,12 +289,19 @@ fn collect_field<'a>(
             };
             futures_util::pin_mut!(resolve_fut);
 
-            let res_value = ctx_field
+            let res_value = match ctx_field
                 .query_env
                 .extensions
                 .resolve(resolve_info, &mut resolve_fut)
-                .await?
-                .unwrap_or_default();
+                .await
+            {
+                Ok(value) => value.unwrap_or_default(),
+                Err(err) if ctx_field.query_env.disable_error_propagation => {
+                    ctx_field.add_error(err);
+                    Value::Null
+                }
+                Err(err) => return Err(err),
+            };
             Ok((field.node.response_key().node.clone(), res_value))
         }
         .boxed(),
@@ -484,12 +497,19 @@ async fn resolve_list<'a>(
             let resolve_fut = async { resolve(schema, &ctx_item, type_ref, Some(value)).await };
             futures_util::pin_mut!(resolve_fut);
 
-            let res_value = ctx_item
+            match ctx_item
                 .query_env
                 .extensions
                 .resolve(resolve_info, &mut resolve_fut)
-                .await?;
-            Ok::<_, ServerError>(res_value.unwrap_or_default())
+                .await
+            {
+                Ok(value) => Ok(value.unwrap_or_default()),
+                Err(err) if ctx_item.query_env.disable_error_propagation => {
+                    ctx_item.add_error(err);
+                    Ok(Value::Null)
+                }
+                Err(err) => Err(err),
+            }
         });
     }
     let values = futures_util::future::try_join_all(futures).await?;

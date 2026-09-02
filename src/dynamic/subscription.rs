@@ -285,7 +285,10 @@ impl Subscription {
                                         .resolve(ri, &mut resolve_fut)
                                         .await;
 
-                                    match value {
+                                    let mut errors = std::mem::take(
+                                        &mut *ctx_field.query_env.errors.lock().unwrap(),
+                                    );
+                                    let mut resp = match value {
                                         Ok(value) => {
                                             let mut map = IndexMap::new();
                                             map.insert(
@@ -294,8 +297,18 @@ impl Subscription {
                                             );
                                             Response::new(Value::Object(map))
                                         }
+                                        Err(err)
+                                            if ctx_field.query_env.disable_error_propagation =>
+                                        {
+                                            errors.push(err);
+                                            let mut map = IndexMap::new();
+                                            map.insert(field_name.clone(), Value::Null);
+                                            Response::new(Value::Object(map))
+                                        }
                                         Err(err) => Response::from_errors(vec![err]),
-                                    }
+                                    };
+                                    resp.errors.extend(errors);
+                                    resp
                                 }
                             };
                             let resp = ctx_field
@@ -303,7 +316,7 @@ impl Subscription {
                                 .extensions
                                 .execute(ctx_field.query_env.operation_name.as_deref(), f)
                                 .await;
-                            let is_err = !resp.errors.is_empty();
+                            let is_err = matches!(resp.data, Value::Null);
                             yielder.yield_ok(resp).await;
                             if is_err {
                                 break;
