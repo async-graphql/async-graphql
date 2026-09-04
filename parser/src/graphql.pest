@@ -145,7 +145,7 @@ boolean = { "true" | "false" }
 
 null = { "null" }
 
-enum_value = ${ !(boolean | null) ~ name }
+enum_value = ${ !((boolean | null) ~ !name_continue) ~ name }
 
 const_list = { "[" ~ const_value* ~ "]" }
 list       = { "[" ~       value* ~ "]" }
@@ -167,4 +167,5 @@ const_argument = { name ~ ":" ~ const_value }
 argument       = { name ~ ":" ~       value }
 
 name_start = @{ (ASCII_ALPHA | "_") }
-name = @{ name_start ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
+name_continue = @{ (ASCII_ALPHA | ASCII_DIGIT | "_") }
+name = @{ name_start ~ name_continue* }

@@ -341,4 +341,28 @@ mod tests {
         assert!(GraphQLParser::parse(Rule::const_list, "[123.0123e7abc]").is_err());
         assert!(GraphQLParser::parse(Rule::const_list, "[123.0123e77abc]").is_err());
     }
+
+    #[test]
+    fn test_enum_value_may_begin_with_a_literal() {
+        // The specification defines EnumValue as "Name but not `true` or
+        // `false` or `null`" -- the three names, not the three prefixes.
+        for value in [
+            "nullable",
+            "trueish",
+            "falsey",
+            "null_",
+            "nullPrefixTestTable_pkey",
+        ] {
+            let parsed = GraphQLParser::parse(Rule::enum_value, value)
+                .unwrap_or_else(|e| panic!("{value} should be an enum value: {e}"));
+            assert_eq!(parsed.as_str(), value);
+        }
+
+        for value in ["true", "false", "null"] {
+            assert!(
+                GraphQLParser::parse(Rule::enum_value, value).is_err(),
+                "{value} is not an enum value"
+            );
+        }
+    }
 }
