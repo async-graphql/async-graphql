@@ -606,9 +606,33 @@ async fn resolve_value(
             )
             .await
         }
+        (Type::Interface(interface), FieldValueInner::NullWithTy { ty }) => {
+            let is_contains_obj = schema
+                .0
+                .env
+                .registry
+                .types
+                .get(&interface.name)
+                .and_then(|meta_type| {
+                    meta_type
+                        .possible_types()
+                        .map(|possible_types| possible_types.contains(ty.as_ref()))
+                })
+                .unwrap_or_default();
+            if !is_contains_obj {
+                return Err(ctx.set_error_path(
+                    Error::new(format!(
+                        "internal: object \"{}\" does not implement interface \"{}\"",
+                        ty, interface.name,
+                    ))
+                    .into_server_error(ctx.item.pos),
+                ));
+            }
+            Ok(Some(Value::Null))
+        }
         (Type::Interface(interface), _) => Err(ctx.set_error_path(
             Error::new(format!(
-                "internal: invalid value for interface \"{}\", expected \"FieldValue::WithType\"",
+                "internal: invalid value for interface \"{}\", expected \"FieldValue::WithType\" or \"FieldValue::null_with_type\"",
                 interface.name
             ))
             .into_server_error(ctx.item.pos),
@@ -652,9 +676,21 @@ async fn resolve_value(
             )
             .await
         }
+        (Type::Union(union), FieldValueInner::NullWithTy { ty }) => {
+            if !union.possible_types.contains(ty.as_ref()) {
+                return Err(ctx.set_error_path(
+                    Error::new(format!(
+                        "internal: union \"{}\" does not contain object \"{}\"",
+                        union.name, ty,
+                    ))
+                    .into_server_error(ctx.item.pos),
+                ));
+            }
+            Ok(Some(Value::Null))
+        }
         (Type::Union(union), _) => Err(ctx.set_error_path(
             Error::new(format!(
-                "internal: invalid value for union \"{}\", expected \"FieldValue::WithType\"",
+                "internal: invalid value for union \"{}\", expected \"FieldValue::WithType\" or \"FieldValue::null_with_type\"",
                 union.name
             ))
             .into_server_error(ctx.item.pos),

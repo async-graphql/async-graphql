@@ -452,4 +452,295 @@ mod tests {
             })
         );
     }
+
+    #[tokio::test]
+    async fn null_with_type_interface() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(300))) })
+            }))
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query")
+            .field(Field::new(
+                "found",
+                TypeRef::named_nn(interface.type_name()),
+                |_| FieldFuture::new(async {
+                    Ok(Some(FieldValue::null_with_type("MyObjA")))
+                }),
+            ))
+            .field(Field::new(
+                "notFound",
+                TypeRef::named_nn(interface.type_name()),
+                |_| FieldFuture::new(async {
+                    Ok(Some(FieldValue::null_with_type("MyObjB")))
+                }),
+            ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                found { __typename ... on MyObjA { a } ... on MyObjB { b } }
+                notFound { __typename ... on MyObjA { a } ... on MyObjB { b } }
+            }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "found": null,
+                "notFound": null,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_invalid_interface() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(interface.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("NonExistent")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("object \"NonExistent\" does not implement interface \"MyInterface\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_in_list() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(300))) })
+            }))
+            .field(Field::new("b", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query").field(Field::new(
+            "entities",
+            TypeRef::named_nn_list_nn(interface.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::list(vec![
+                    FieldValue::null_with_type("MyObjA"),
+                    FieldValue::null_with_type("MyObjB"),
+                    FieldValue::NULL.with_type("MyObjA"),
+                ])))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                entities { __typename ... on MyObjA { a } ... on MyObjB { b } }
+            }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "entities": [
+                    null,
+                    null,
+                    { "__typename": "MyObjA", "a": 100 },
+                ]
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_scalar_name() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(interface.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("Int")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("object \"Int\" does not implement interface \"MyInterface\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_empty_name() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(interface.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("object \"\" does not implement interface \"MyInterface\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_invalid_in_list() {
+        let obj_a = Object::new("MyObjA")
+            .implement("MyInterface")
+            .field(Field::new("a", TypeRef::named(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let interface = Interface::new("MyInterface")
+            .field(InterfaceField::new("a", TypeRef::named(TypeRef::INT)));
+
+        let query = Object::new("Query").field(Field::new(
+            "entities",
+            TypeRef::named_nn_list_nn(interface.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::list(vec![
+                    FieldValue::null_with_type("MyObjA"),
+                    FieldValue::null_with_type("NonExistent"),
+                ])))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(interface)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                entities { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("object \"NonExistent\" does not implement interface \"MyInterface\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
 }

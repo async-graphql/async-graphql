@@ -395,4 +395,279 @@ mod tests {
             })
         );
     }
+
+    #[tokio::test]
+    async fn null_with_type_union() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let union = Union::new("MyUnion")
+            .possible_type(obj_a.type_name())
+            .possible_type(obj_b.type_name());
+
+        let query = Object::new("Query")
+            .field(Field::new(
+                "found",
+                TypeRef::named_nn(union.type_name()),
+                |_| FieldFuture::new(async {
+                    Ok(Some(FieldValue::null_with_type("MyObjA")))
+                }),
+            ))
+            .field(Field::new(
+                "notFound",
+                TypeRef::named_nn(union.type_name()),
+                |_| FieldFuture::new(async {
+                    Ok(Some(FieldValue::null_with_type("MyObjB")))
+                }),
+            ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                found { ... on MyObjA { a } ... on MyObjB { b } }
+                notFound { ... on MyObjA { a } ... on MyObjB { b } }
+            }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "found": null,
+                "notFound": null,
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_invalid_type() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let union = Union::new("MyUnion").possible_type(obj_a.type_name());
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(union.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("NonExistent")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("union \"MyUnion\" does not contain object \"NonExistent\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_in_list() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let obj_b = Object::new("MyObjB")
+            .field(Field::new("b", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(200))) })
+            }));
+
+        let union = Union::new("MyUnion")
+            .possible_type(obj_a.type_name())
+            .possible_type(obj_b.type_name());
+
+        let query = Object::new("Query").field(Field::new(
+            "entities",
+            TypeRef::named_nn_list_nn(union.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::list(vec![
+                    FieldValue::null_with_type("MyObjA"),
+                    FieldValue::null_with_type("MyObjB"),
+                    FieldValue::NULL.with_type("MyObjA"),
+                ])))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(obj_b)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                entities { ... on MyObjA { a } ... on MyObjB { b } }
+            }
+        "#;
+        assert_eq!(
+            schema.execute(query).await.into_result().unwrap().data,
+            value!({
+                "entities": [
+                    null,
+                    null,
+                    { "a": 100 },
+                ]
+            })
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_scalar_name() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let union = Union::new("MyUnion").possible_type(obj_a.type_name());
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(union.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("Int")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("union \"MyUnion\" does not contain object \"Int\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_empty_name() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let union = Union::new("MyUnion").possible_type(obj_a.type_name());
+
+        let query = Object::new("Query").field(Field::new(
+            "value",
+            TypeRef::named_nn(union.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::null_with_type("")))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                value { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("union \"MyUnion\" does not contain object \"\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    async fn null_with_type_invalid_in_list() {
+        let obj_a = Object::new("MyObjA")
+            .field(Field::new("a", TypeRef::named_nn(TypeRef::INT), |_| {
+                FieldFuture::new(async { Ok(Some(Value::from(100))) })
+            }));
+
+        let union = Union::new("MyUnion").possible_type(obj_a.type_name());
+
+        let query = Object::new("Query").field(Field::new(
+            "entities",
+            TypeRef::named_nn_list_nn(union.type_name()),
+            |_| FieldFuture::new(async {
+                Ok(Some(FieldValue::list(vec![
+                    FieldValue::null_with_type("MyObjA"),
+                    FieldValue::null_with_type("NonExistent"),
+                ])))
+            }),
+        ));
+
+        let schema = Schema::build(query.type_name(), None, None)
+            .register(obj_a)
+            .register(union)
+            .register(query)
+            .finish()
+            .unwrap();
+
+        let query = r#"
+            {
+                entities { ... on MyObjA { a } }
+            }
+        "#;
+        let result = schema.execute(query).await.into_result().unwrap_err();
+        assert!(
+            result
+                .first()
+                .unwrap()
+                .message
+                .contains("union \"MyUnion\" does not contain object \"NonExistent\""),
+            "unexpected error: {:?}",
+            result
+        );
+    }
 }

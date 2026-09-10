@@ -32,10 +32,17 @@ pub(crate) enum FieldValueInner<'a> {
     /// A list
     List(Vec<FieldValue<'a>>),
     /// A typed Field value
+    #[doc(hidden)]
     WithType {
         /// Field value
         value: Box<FieldValue<'a>>,
         /// Object name
+        ty: Cow<'static, str>,
+    },
+    /// A null value with a type name for union/interface resolution
+    #[doc(hidden)]
+    NullWithTy {
+        /// Type name for validation (union/interface member)
         ty: Cow<'static, str>,
     },
 }
@@ -47,6 +54,7 @@ impl Debug for FieldValue<'_> {
             FieldValueInner::BorrowedAny(ty, _)
             | FieldValueInner::OwnedAny(ty, _)
             | FieldValueInner::WithType { ty, .. } => write!(f, "{}", ty),
+            FieldValueInner::NullWithTy { ty } => write!(f, "null({})", ty),
             FieldValueInner::List(list) => match list.first() {
                 Some(v) => {
                     write!(f, "[{:?}, ...]", v)
@@ -202,6 +210,25 @@ impl<'a> FieldValue<'a> {
             value: Box::new(self),
             ty: ty.into(),
         })
+    }
+
+    /// Create a null FieldValue with a type name for union/interface resolution.
+    ///
+    /// Used by Apollo Federation entities resolver to return null for not-found entities.
+    ///
+    /// The type name is validated at runtime against the union/interface's possible types.
+    /// If the type is not a member of the union/interface, a runtime error is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_graphql::dynamic::*;
+    ///
+    /// // Return null for a not-found entity
+    /// Ok(Some(FieldValue::null_with_type("Astronaut")))
+    /// ```
+    pub fn null_with_type(ty: impl Into<Cow<'static, str>>) -> Self {
+        Self(FieldValueInner::NullWithTy { ty: ty.into() })
     }
 
     /// If the FieldValue is a value, returns the associated
