@@ -118,3 +118,54 @@ pub async fn test_field_object_merge2() {
         })
     );
 }
+
+#[tokio::test]
+pub async fn test_field_nested_list_merge() {
+    #[derive(SimpleObject)]
+    struct MyObject {
+        a: i32,
+        b: i32,
+        c: i32,
+    }
+
+    struct Query;
+
+    #[Object]
+    impl Query {
+        async fn obj(&self) -> Vec<Vec<MyObject>> {
+            vec![
+                vec![MyObject { a: 1, b: 2, c: 3 }, MyObject { a: 4, b: 5, c: 6 }],
+                vec![MyObject { a: 7, b: 8, c: 9 }],
+            ]
+        }
+    }
+
+    let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
+    let query = r#"
+        {
+            obj { a }
+            ... { obj { b } }
+            ... A
+        }
+
+        fragment A on Query {
+            obj { c }
+        }
+    "#;
+    let res = schema.execute(query).await;
+    assert!(res.errors.is_empty());
+    assert_eq!(
+        res.data,
+        value!({
+            "obj": [
+                [
+                    { "a": 1, "b": 2, "c": 3 },
+                    { "a": 4, "b": 5, "c": 6 },
+                ],
+                [
+                    { "a": 7, "b": 8, "c": 9 },
+                ],
+            ]
+        })
+    );
+}

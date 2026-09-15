@@ -150,27 +150,25 @@ pub(crate) fn create_value_object(values: Vec<(Name, Value)>) -> Value {
 
 fn insert_value(target: &mut IndexMap<Name, Value>, name: Name, value: Value) {
     if let Some(prev_value) = target.get_mut(&name) {
-        if let Value::Object(target_map) = prev_value {
-            if let Value::Object(obj) = value {
-                for (key, value) in obj.into_iter() {
-                    insert_value(target_map, key, value);
-                }
-            }
-        } else if let Value::List(target_list) = prev_value
-            && let Value::List(list) = value
-        {
-            for (idx, value) in list.into_iter().enumerate() {
-                if let Some(Value::Object(target_map)) = target_list.get_mut(idx)
-                    && let Value::Object(obj) = value
-                {
-                    for (key, value) in obj.into_iter() {
-                        insert_value(target_map, key, value);
-                    }
-                }
-            }
-        }
+        merge_value(prev_value, value);
     } else {
         target.insert(name, value);
+    }
+}
+
+fn merge_value(target: &mut Value, value: Value) {
+    match (target, value) {
+        (Value::Object(target_map), Value::Object(obj)) => {
+            for (key, value) in obj.into_iter() {
+                insert_value(target_map, key, value);
+            }
+        }
+        (Value::List(target_list), Value::List(list)) => {
+            for (target, value) in target_list.iter_mut().zip(list) {
+                merge_value(target, value);
+            }
+        }
+        _ => {}
     }
 }
 
