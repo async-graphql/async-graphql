@@ -1,5 +1,5 @@
 use jiff::{
-    Span, Timestamp, Zoned,
+    SignedDuration, Span, Timestamp, Zoned,
     civil::{Date, Time},
 };
 
@@ -75,6 +75,14 @@ impl ScalarType for Zoned {
     }
 }
 
+/// A calendar-aware duration, e.g. `P1Y2M10DT2H30M`.
+///
+/// `Span` can represent calendar units (years, months, weeks, days) in
+/// addition to time units, but is therefore not a fixed amount of time on
+/// its own (a "month" varies in length). For an exact, calendar-independent
+/// duration such as a timeout, TTL, or latency, prefer `SignedDuration`
+/// instead. See jiff's design docs for the distinction:
+/// <https://github.com/BurntSushi/jiff/blob/master/DESIGN.md#why-are-there-two-duration-types>.
 #[Scalar(
     internal,
     name = "Duration",
@@ -93,10 +101,37 @@ impl ScalarType for Span {
     }
 }
 
+/// An exact elapsed duration in seconds and nanoseconds, e.g. `PT2H30M`.
+///
+/// Unlike `Duration` (`Span`), `SignedDuration` has no calendar units, so it
+/// represents a fixed amount of time regardless of calendar context. This
+/// makes it the more natural choice for timeouts, TTLs, latencies, and other
+/// exact elapsed-time fields. It intentionally rejects calendar-unit
+/// durations it cannot interpret unambiguously, e.g. `P40D`, `P1M`, `P1W`,
+/// `P1Y1D`. See jiff's design docs for the distinction:
+/// <https://github.com/BurntSushi/jiff/blob/master/DESIGN.md#why-are-there-two-duration-types>.
+#[Scalar(
+    internal,
+    name = "SignedDuration",
+    specified_by_url = "https://en.wikipedia.org/wiki/ISO_8601#Durations"
+)]
+impl ScalarType for SignedDuration {
+    fn parse(value: Value) -> InputValueResult<Self> {
+        match &value {
+            Value::String(s) => Ok(s.parse()?),
+            _ => Err(InputValueError::expected_type(value)),
+        }
+    }
+
+    fn to_value(&self) -> Value {
+        Value::String(self.to_string())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use jiff::{
-        Span, Timestamp, ToSpan, Zoned,
+        SignedDuration, Span, Timestamp, ToSpan, Zoned,
         civil::{Date, Time},
     };
 
@@ -167,6 +202,45 @@ mod tests {
             let value = Value::String(value.to_string());
             let parsed = <Span as ScalarType>::parse(value).unwrap();
             assert_eq!(parsed.fieldwise(), expected.fieldwise());
+        }
+    }
+
+    #[test]
+    fn test_signed_duration_to_value() {
+        let cases = [
+            (SignedDuration::from_hours(960), "PT960H"),
+            (SignedDuration::from_secs(-5), "-PT5S"),
+            (SignedDuration::ZERO, "PT0S"),
+            (SignedDuration::new(3661, 100_000_000), "PT1H1M1.1S"),
+        ];
+
+        for (value, expected) in cases {
+            let value = value.to_value();
+
+            if let Value::String(s) = value {
+                assert_eq!(s, expected);
+            } else {
+                panic!(
+                    "Unexpected Value type when formatting SignedDuration: {:?}",
+                    value
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_signed_duration_parse() {
+        let cases = [
+            ("PT960H", SignedDuration::from_hours(960)),
+            ("-PT5S", SignedDuration::from_secs(-5)),
+            ("PT0S", SignedDuration::ZERO),
+            ("PT1H1M1.1S", SignedDuration::new(3661, 100_000_000)),
+        ];
+
+        for (value, expected) in cases {
+            let value = Value::String(value.to_string());
+            let parsed = <SignedDuration as ScalarType>::parse(value).unwrap();
+            assert_eq!(parsed, expected);
         }
     }
 
