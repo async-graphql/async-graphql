@@ -865,6 +865,8 @@ pub struct MergedSubscription {
 
 #[derive(Debug, Copy, Clone, FromMeta)]
 pub enum RenameRule {
+    #[darling(rename = "none")]
+    None,
     #[darling(rename = "lowercase")]
     Lower,
     #[darling(rename = "UPPERCASE")]
@@ -882,6 +884,7 @@ pub enum RenameRule {
 impl RenameRule {
     fn rename(&self, name: impl AsRef<str>) -> String {
         match self {
+            Self::None => name.as_ref().to_owned(),
             Self::Lower => name.as_ref().to_lowercase(),
             Self::Upper => name.as_ref().to_uppercase(),
             Self::Pascal => name.as_ref().to_pascal_case(),
