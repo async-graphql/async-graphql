@@ -549,16 +549,18 @@ pub fn generate(
 
             let resolve_block = if is_async {
                 quote! {
-                    let f = async move {
-                        #(#get_params)*
-                        #guard
-                        #resolve_obj
-                    };
-                    let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
-                    let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
-                    return #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
-                        .await
-                        .map(::std::option::Option::Some);
+                    return ::std::boxed::Box::pin(async move {
+                        let f = async move {
+                            #(#get_params)*
+                            #guard
+                            #resolve_obj
+                        };
+                        let obj = f.await.map_err(|err| ctx.set_error_path(err))?;
+                        let ctx_obj = ctx.with_selection_set(&ctx.item.node.selection_set);
+                        #crate_name::OutputType::resolve(&obj, &ctx_obj, ctx.item)
+                            .await
+                            .map(::std::option::Option::Some)
+                    }).await;
                 }
             } else {
                 quote! {
