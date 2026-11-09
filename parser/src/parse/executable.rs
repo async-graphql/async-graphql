@@ -1,16 +1,5 @@
 use super::*;
 
-const MAX_RECURSION_DEPTH: usize = 64;
-
-macro_rules! recursion_depth {
-    ($remaining_depth:ident) => {{
-        if $remaining_depth == 0 {
-            return Err(Error::RecursionLimitExceeded);
-        }
-        $remaining_depth - 1
-    }};
-}
-
 /// Parse a GraphQL query document.
 ///
 /// # Errors
