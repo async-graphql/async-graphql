@@ -16,6 +16,17 @@ use crate::{
     types::*,
 };
 
+const MAX_RECURSION_DEPTH: usize = 64;
+
+macro_rules! recursion_depth {
+    ($remaining_depth:ident) => {{
+        if $remaining_depth == 0 {
+            return Err(Error::RecursionLimitExceeded);
+        }
+        $remaining_depth - 1
+    }};
+}
+
 mod executable;
 #[allow(clippy::redundant_static_lifetimes)]
 #[rustfmt::skip]
@@ -56,7 +67,7 @@ fn parse_default_value(
 ) -> Result<Positioned<ConstValue>> {
     debug_assert_eq!(pair.as_rule(), Rule::default_value);
 
-    parse_const_value(exactly_one(pair.into_inner()), pc)
+    parse_const_value(exactly_one(pair.into_inner()), pc, MAX_RECURSION_DEPTH)
 }
 
 fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Type>> {
@@ -71,6 +82,7 @@ fn parse_type(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positione
 fn parse_const_value(
     pair: Pair<Rule>,
     pc: &mut PositionCalculator,
+    remaining_depth: usize,
 ) -> Result<Positioned<ConstValue>> {
     debug_assert_eq!(pair.as_rule(), Rule::const_value);
 
@@ -86,7 +98,9 @@ fn parse_const_value(
             Rule::enum_value => ConstValue::Enum(parse_enum_value(pair, pc)?.node),
             Rule::const_list => ConstValue::List(
                 pair.into_inner()
-                    .map(|pair| Ok(parse_const_value(pair, pc)?.node))
+                    .map(|pair| {
+                        Ok(parse_const_value(pair, pc, recursion_depth!(remaining_depth))?.node)
+                    })
                     .collect::<Result<_>>()?,
             ),
             Rule::const_object => ConstValue::Object(
@@ -97,7 +111,11 @@ fn parse_const_value(
                         let mut pairs = pair.into_inner();
 
                         let name = parse_name(pairs.next().unwrap(), pc)?;
-                        let value = parse_const_value(pairs.next().unwrap(), pc)?;
+                        let value = parse_const_value(
+                            pairs.next().unwrap(),
+                            pc,
+                            recursion_depth!(remaining_depth),
+                        )?;
 
                         debug_assert_eq!(pairs.next(), None);
 
@@ -110,7 +128,11 @@ fn parse_const_value(
         pos,
     ))
 }
-fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Positioned<Value>> {
+fn parse_value(
+    pair: Pair<Rule>,
+    pc: &mut PositionCalculator,
+    remaining_depth: usize,
+) -> Result<Positioned<Value>> {
     debug_assert_eq!(pair.as_rule(), Rule::value);
 
     let pos = pc.step(&pair);
@@ -126,7 +148,7 @@ fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
             Rule::enum_value => Value::Enum(parse_enum_value(pair, pc)?.node),
             Rule::list => Value::List(
                 pair.into_inner()
-                    .map(|pair| Ok(parse_value(pair, pc)?.node))
+                    .map(|pair| Ok(parse_value(pair, pc, recursion_depth!(remaining_depth))?.node))
                     .collect::<Result<_>>()?,
             ),
             Rule::object => Value::Object(
@@ -136,7 +158,11 @@ fn parse_value(pair: Pair<Rule>, pc: &mut PositionCalculator) -> Result<Position
                         let mut pairs = pair.into_inner();
 
                         let name = parse_name(pairs.next().unwrap(), pc)?;
-                        let value = parse_value(pairs.next().unwrap(), pc)?;
+                        let value = parse_value(
+                            pairs.next().unwrap(),
+                            pc,
+                            recursion_depth!(remaining_depth),
+                        )?;
 
                         debug_assert_eq!(pairs.next(), None);
 
@@ -292,7 +318,7 @@ fn parse_const_arguments(
             let mut pairs = pair.into_inner();
 
             let name = parse_name(pairs.next().unwrap(), pc)?;
-            let value = parse_const_value(pairs.next().unwrap(), pc)?;
+            let value = parse_const_value(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
 
             debug_assert_eq!(pairs.next(), None);
 
@@ -311,7 +337,7 @@ fn parse_arguments(
             let mut pairs = pair.into_inner();
 
             let name = parse_name(pairs.next().unwrap(), pc)?;
-            let value = parse_value(pairs.next().unwrap(), pc)?;
+            let value = parse_value(pairs.next().unwrap(), pc, MAX_RECURSION_DEPTH)?;
 
             debug_assert_eq!(pairs.next(), None);
 
