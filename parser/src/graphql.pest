@@ -141,9 +141,9 @@ string_character = {
 // slightly and disallow non-scalar value code points at the parsing level.
 unicode_scalar_value_hex = { !(^"d" ~ ('8'..'9' | 'a'..'f' | 'A'..'F')) ~ ASCII_HEX_DIGIT{4} }
 
-boolean = { "true" | "false" }
+boolean = @{ ("true" | "false") ~ !name_continue }
 
-null = { "null" }
+null = @{ "null" ~ !name_continue }
 
 enum_value = ${ !(boolean | null) ~ name }
 
@@ -167,4 +167,5 @@ const_argument = { name ~ ":" ~ const_value }
 argument       = { name ~ ":" ~       value }
 
 name_start = @{ (ASCII_ALPHA | "_") }
-name = @{ name_start ~ (ASCII_ALPHA | ASCII_DIGIT | "_")* }
+name_continue = @{ (ASCII_ALPHA | ASCII_DIGIT | "_") }
+name = @{ name_start ~ name_continue* }

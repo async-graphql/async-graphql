@@ -341,4 +341,66 @@ mod tests {
         assert!(GraphQLParser::parse(Rule::const_list, "[123.0123e7abc]").is_err());
         assert!(GraphQLParser::parse(Rule::const_list, "[123.0123e77abc]").is_err());
     }
+
+    #[test]
+    fn test_enum_value_may_begin_with_a_literal() {
+        // The specification defines EnumValue as "Name but not `true` or
+        // `false` or `null`" -- the three names, not the three prefixes.
+        for value in [
+            "nullable",
+            "trueish",
+            "falsey",
+            "null_",
+            "nullPrefixTestTable_pkey",
+        ] {
+            let parsed = GraphQLParser::parse(Rule::enum_value, value)
+                .unwrap_or_else(|e| panic!("{value} should be an enum value: {e}"));
+            assert_eq!(parsed.as_str(), value);
+        }
+
+        for value in ["true", "false", "null"] {
+            assert!(
+                GraphQLParser::parse(Rule::enum_value, value).is_err(),
+                "{value} is not an enum value"
+            );
+        }
+    }
+
+    fn first_argument_value(query: &str) -> Value {
+        let doc = crate::parse_query(query).unwrap();
+        let DocumentOperations::Single(op) = doc.operations else {
+            panic!("expected a single operation");
+        };
+        let Selection::Field(field) = &op.node.selection_set.node.items[0].node else {
+            panic!("expected a field");
+        };
+        field.node.arguments[0].1.node.clone()
+    }
+
+    #[test]
+    fn test_enum_value_with_literal_prefix_in_value_positions() {
+        let name = |s: &str| Value::Enum(Name::new(s));
+
+        assert_eq!(first_argument_value("{ f(a: truenyc) }"), name("truenyc"));
+        assert_eq!(first_argument_value("{ f(a: nullable) }"), name("nullable"));
+        assert_eq!(first_argument_value("{ f(a: true) }"), Value::Boolean(true));
+        assert_eq!(first_argument_value("{ f(a: null) }"), Value::Null);
+
+        let Value::List(items) = first_argument_value("{ f(a: [truenyc]) }") else {
+            panic!("expected a list");
+        };
+        assert_eq!(items, vec![name("truenyc")]);
+
+        let Value::Object(fields) = first_argument_value("{ f(a: {b: falsey}) }") else {
+            panic!("expected an object");
+        };
+        assert_eq!(fields.get(&Name::new("b")), Some(&name("falsey")));
+    }
+
+    #[test]
+    fn test_enum_value_with_literal_prefix_in_defaults() {
+        assert!(crate::parse_query("query Q($v: E = truenyc) { f(a: $v) }").is_ok());
+        assert!(crate::parse_schema("type Query { f(s: E = truenyc): Int }").is_ok());
+        assert!(crate::parse_schema("input I { s: E = nullable }").is_ok());
+    }
 }
