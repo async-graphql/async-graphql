@@ -365,4 +365,42 @@ mod tests {
             );
         }
     }
+
+    fn first_argument_value(query: &str) -> Value {
+        let doc = crate::parse_query(query).unwrap();
+        let DocumentOperations::Single(op) = doc.operations else {
+            panic!("expected a single operation");
+        };
+        let Selection::Field(field) = &op.node.selection_set.node.items[0].node else {
+            panic!("expected a field");
+        };
+        field.node.arguments[0].1.node.clone()
+    }
+
+    #[test]
+    fn test_enum_value_with_literal_prefix_in_value_positions() {
+        let name = |s: &str| Value::Enum(Name::new(s));
+
+        assert_eq!(first_argument_value("{ f(a: truenyc) }"), name("truenyc"));
+        assert_eq!(first_argument_value("{ f(a: nullable) }"), name("nullable"));
+        assert_eq!(first_argument_value("{ f(a: true) }"), Value::Boolean(true));
+        assert_eq!(first_argument_value("{ f(a: null) }"), Value::Null);
+
+        let Value::List(items) = first_argument_value("{ f(a: [truenyc]) }") else {
+            panic!("expected a list");
+        };
+        assert_eq!(items, vec![name("truenyc")]);
+
+        let Value::Object(fields) = first_argument_value("{ f(a: {b: falsey}) }") else {
+            panic!("expected an object");
+        };
+        assert_eq!(fields.get(&Name::new("b")), Some(&name("falsey")));
+    }
+
+    #[test]
+    fn test_enum_value_with_literal_prefix_in_defaults() {
+        assert!(crate::parse_query("query Q($v: E = truenyc) { f(a: $v) }").is_ok());
+        assert!(crate::parse_schema("type Query { f(s: E = truenyc): Int }").is_ok());
+        assert!(crate::parse_schema("input I { s: E = nullable }").is_ok());
+    }
 }
