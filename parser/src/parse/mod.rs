@@ -365,4 +365,56 @@ mod tests {
             );
         }
     }
+
+    #[test]
+    fn test_enum_value_beginning_with_a_literal_in_a_document() {
+        // In `value` and `const_value` the literals are tried before
+        // `enum_value`, so `null` must not match the front of `nullable`:
+        // a rule that only guards `enum_value` is never reached.
+        for value in [
+            "nullable",
+            "trueish",
+            "falsey",
+            "null_",
+            "nullPrefixTestTable_pkey",
+        ] {
+            for rule in [Rule::value, Rule::const_value] {
+                let parsed = GraphQLParser::parse(rule, value)
+                    .unwrap_or_else(|e| panic!("{value} should be a {rule:?}: {e}"));
+                // Parsing a rule on its own may stop early; the whole name
+                // must be the value, not a literal at its front.
+                assert_eq!(parsed.as_str(), value, "{rule:?}");
+            }
+            parse_query(format!("{{ f(a: {value}) }}"))
+                .unwrap_or_else(|e| panic!("{{ f(a: {value}) }} should parse: {e}"));
+            parse_query(format!("query($v: E = {value}) {{ f(a: $v) }}"))
+                .unwrap_or_else(|e| panic!("a default of {value} should parse: {e}"));
+            parse_schema(format!("enum E {{ {value} }}"))
+                .unwrap_or_else(|e| panic!("enum member {value} should parse: {e}"));
+        }
+
+        // The literals themselves are still literals.
+        for (value, rule) in [
+            ("true", Rule::boolean),
+            ("false", Rule::boolean),
+            ("null", Rule::null),
+        ] {
+            let pair = GraphQLParser::parse(Rule::value, value)
+                .unwrap()
+                .next()
+                .unwrap()
+                .into_inner()
+                .next()
+                .unwrap();
+            assert_eq!(pair.as_rule(), rule, "{value}");
+        }
+
+        // And none of the three may be declared as an enum member.
+        for value in ["true", "false", "null"] {
+            assert!(
+                parse_schema(format!("enum E {{ {value} }}")).is_err(),
+                "{value} is not an enum member"
+            );
+        }
+    }
 }
