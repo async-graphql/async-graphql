@@ -34,6 +34,7 @@ impl SubscriptionType for EmptySubscription {
             rust_typename: Some(std::any::type_name::<Self>()),
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 

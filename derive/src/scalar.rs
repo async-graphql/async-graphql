@@ -59,6 +59,11 @@ pub fn generate(
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
+    let policy = scalar_args
+        .policy
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
     let specified_by_url = match &scalar_args.specified_by_url {
         Some(specified_by_url) => {
             quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#specified_by_url)) }
@@ -88,6 +93,7 @@ pub fn generate(
                     specified_by_url: #specified_by_url,
                     directive_invocations: ::std::vec::Vec::new(),
                     requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                    policy: ::std::vec![ #(#policy),* ],
                 })
             }
 
@@ -122,6 +128,7 @@ pub fn generate(
                     specified_by_url: #specified_by_url,
                     directive_invocations: ::std::vec::Vec::new(),
                     requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                    policy: ::std::vec![ #(#policy),* ],
                 })
             }
 

@@ -132,13 +132,14 @@ impl SchemaInner {
                 }
 
                 for field in obj.fields.values() {
-                    // The field must not have a name which begins with the characters "__" (two
-                    // underscores)
+                    // The field must not have a name which begins with the
+                    // characters "__" (two underscores)
                     if field.name.starts_with("__") {
                         return Err(format!("Field \"{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", obj.name, field.name).into());
                     }
 
-                    // The field must return a type where IsOutputType(fieldType) returns true.
+                    // The field must return a type where
+                    // IsOutputType(fieldType) returns true.
                     if let Some(ty) = self.types.get(field.ty.type_name())
                         && !ty.is_output_type()
                     {
@@ -150,7 +151,8 @@ impl SchemaInner {
                     }
 
                     for arg in field.arguments.values() {
-                        // The argument must not have a name which begins with the characters "__"
+                        // The argument must not have a name which begins with
+                        // the characters "__"
                         // (two underscores).
                         if arg.name.starts_with("__") {
                             return Err(format!("Argument \"{}.{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", obj.name, field.name, arg.name).into());
@@ -189,13 +191,14 @@ impl SchemaInner {
         for ty in self.types.values() {
             if let Type::InputObject(obj) = ty {
                 for field in obj.fields.values() {
-                    // The field must not have a name which begins with the characters "__" (two
-                    // underscores)
+                    // The field must not have a name which begins with the
+                    // characters "__" (two underscores)
                     if field.name.starts_with("__") {
                         return Err(format!("Field \"{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", obj.name, field.name).into());
                     }
 
-                    // The input field must accept a type where IsInputType(inputFieldType) returns
+                    // The input field must accept a type where
+                    // IsInputType(inputFieldType) returns
                     // true.
                     if let Some(ty) = self.types.get(field.ty.type_name())
                         && !ty.is_input_type()
@@ -264,9 +267,11 @@ impl SchemaInner {
                     .get(field.ty.type_name())
                     .and_then(Type::as_input_object)
                 {
-                    // don't visit the reference if we've already visited it in this call chain
-                    //  (prevents getting stuck in local cycles and overflowing stack)
-                    //  true return from insert indicates the value was not previously there
+                    // don't visit the reference if we've already visited it in
+                    // this call chain  (prevents getting
+                    // stuck in local cycles and overflowing stack)
+                    //  true return from insert indicates the value was not
+                    // previously there
                     if ref_chain.insert(this_name) {
                         self.check_input_object_reference(current, obj, ref_chain)?;
                         ref_chain.remove(this_name);
@@ -283,13 +288,14 @@ impl SchemaInner {
         for ty in self.types.values() {
             if let Type::Interface(interface) = ty {
                 for field in interface.fields.values() {
-                    // The field must not have a name which begins with the characters "__" (two
-                    // underscores)
+                    // The field must not have a name which begins with the
+                    // characters "__" (two underscores)
                     if field.name.starts_with("__") {
                         return Err(format!("Field \"{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", interface.name, field.name).into());
                     }
 
-                    // The field must return a type where IsOutputType(fieldType) returns true.
+                    // The field must return a type where
+                    // IsOutputType(fieldType) returns true.
                     if let Some(ty) = self.types.get(field.ty.type_name())
                         && !ty.is_output_type()
                     {
@@ -301,7 +307,8 @@ impl SchemaInner {
                     }
 
                     for arg in field.arguments.values() {
-                        // The argument must not have a name which begins with the characters "__"
+                        // The argument must not have a name which begins with
+                        // the characters "__"
                         // (two underscores).
                         if arg.name.starts_with("__") {
                             return Err(format!("Argument \"{}.{}.{}\" must not have a name which begins with the characters \"__\" (two underscores)", interface.name, field.name, arg.name).into());
@@ -320,8 +327,9 @@ impl SchemaInner {
                         }
                     }
 
-                    // An interface type may declare that it implements one or more unique
-                    // interfaces, but may not implement itself.
+                    // An interface type may declare that it implements one or
+                    // more unique interfaces, but may not
+                    // implement itself.
                     if interface.implements.contains(&interface.name) {
                         return Err(format!(
                             "Interface \"{}\" may not implement itself",
@@ -419,8 +427,9 @@ fn check_is_valid_implementation(
             }
         }
 
-        // field must return a type which is equal to or a sub-type of (covariant) the
-        // return type of implementedField field’s return type
+        // field must return a type which is equal to or a sub-type of
+        // (covariant) the return type of implementedField field’s
+        // return type
         if !impl_field.ty().is_subtype(&field.ty) {
             return Err(format!(
                 "Field \"{}.{}\" is not sub-type of \"{}.{}\"",

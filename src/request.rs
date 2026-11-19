@@ -119,8 +119,8 @@ impl Request {
             }
         }
 
-        // forbid_unsafe effectively bans optimize away else branch here so use unwrap
-        // but this unwrap never panics
+        // forbid_unsafe effectively bans optimize away else branch here so use
+        // unwrap but this unwrap never panics
         Ok(self.parsed_query.as_ref().unwrap())
     }
 

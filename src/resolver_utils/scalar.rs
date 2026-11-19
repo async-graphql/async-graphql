@@ -171,6 +171,7 @@ macro_rules! scalar_internal {
                         specified_by_url: $specified_by_url,
                         directive_invocations: ::std::vec::Vec::new(),
                         requires_scopes: ::std::vec::Vec::new(),
+                        policy: ::std::vec::Vec::new(),
                     }
                 })
             }
@@ -221,6 +222,7 @@ macro_rules! scalar_internal_output {
                         specified_by_url: $specified_by_url,
                         directive_invocations: ::std::vec::Vec::new(),
                         requires_scopes: ::std::vec::Vec::new(),
+                        policy: ::std::vec::Vec::new(),
                     }
                 })
             }
@@ -262,6 +264,7 @@ macro_rules! scalar_internal_output {
                         specified_by_url: $specified_by_url,
                         directive_invocations: ::std::vec::Vec::new(),
                         requires_scopes: ::std::vec::Vec::new(),
+                        policy: ::std::vec::Vec::new(),
                     }
                 })
             }

@@ -48,6 +48,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
+    let policy = object_args
+        .policy
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
 
     let object_directives = gen_directive_calls(
         &crate_name,
@@ -177,6 +182,11 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             .iter()
             .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
             .collect::<Vec<_>>();
+        let policy = field
+            .policy
+            .iter()
+            .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+            .collect::<Vec<_>>();
         let override_from = match &field.override_from {
             Some(from) => {
                 quote! { ::std::option::Option::Some(::std::string::ToString::to_string(#from)) }
@@ -237,6 +247,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
         let has_complexity = field.complexity.is_some();
         let has_directives = !field.directives.is_empty();
         let has_requires_scopes = !field.requires_scopes.is_empty();
+        let has_policy = !field.policy.is_empty();
 
         let visible = visible_fn(&field.visible);
         let directives = gen_directive_calls(
@@ -301,6 +312,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
             if has_requires_scopes {
                 field_sets
                     .push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+            }
+            if has_policy {
+                field_sets.push(quote!(field.policy = ::std::vec![ #(#policy),* ];));
             }
 
             schema_fields.push(quote! {
@@ -446,6 +460,7 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     let has_tags = !object_args.tags.is_empty();
     let has_directives = !object_directives.is_empty();
     let has_requires_scopes = !object_args.requires_scopes.is_empty();
+    let has_policy = !object_args.policy.is_empty();
     let field_count = schema_fields.len();
 
     let mut object_builder_base = Vec::new();
@@ -483,6 +498,9 @@ pub fn generate(object_args: &args::SimpleObject) -> GeneratorResult<TokenStream
     }
     if has_requires_scopes {
         object_builder_base.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
+    if has_policy {
+        object_builder_base.push(quote!(.policy(::std::vec![ #(#policy),* ])));
     }
 
     let mut object_builder = object_builder_base.clone();

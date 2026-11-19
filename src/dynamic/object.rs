@@ -51,6 +51,7 @@ pub struct Object {
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
     requires_scopes: Vec<String>,
+    policy: Vec<String>,
 }
 
 impl Object {
@@ -71,6 +72,7 @@ impl Object {
             tags: Vec::new(),
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
@@ -192,6 +194,7 @@ impl Object {
                     compute_complexity: None,
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                     requires_scopes: field.requires_scopes.clone(),
+                    policy: field.policy.clone(),
                 },
             );
         }
@@ -219,6 +222,7 @@ impl Object {
                 rust_typename: None,
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
                 requires_scopes: self.requires_scopes.clone(),
+                policy: self.policy.clone(),
             },
         );
 

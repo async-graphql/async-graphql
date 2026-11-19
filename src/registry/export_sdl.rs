@@ -193,11 +193,11 @@ impl Registry {
             writeln!(sdl, "extend schema @link(").ok();
             writeln!(
                 sdl,
-                "{}url: \"https://specs.apollo.dev/federation/v2.5\",",
+                "{}url: \"https://specs.apollo.dev/federation/v2.6\",",
                 tab(&options)
             )
             .ok();
-            writeln!(sdl, "{}import: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\", \"@requiresScopes\"]", tab(&options)).ok();
+            writeln!(sdl, "{}import: [\"@key\", \"@tag\", \"@shareable\", \"@inaccessible\", \"@override\", \"@external\", \"@provides\", \"@requires\", \"@composeDirective\", \"@interfaceObject\", \"@requiresScopes\", \"@policy\"]", tab(&options)).ok();
             writeln!(sdl, ")").ok();
 
             if options.compose_directive {
@@ -344,6 +344,9 @@ impl Registry {
                 if !&field.requires_scopes.is_empty() {
                     write_requires_scopes(sdl, &field.requires_scopes);
                 }
+                if !&field.policy.is_empty() {
+                    write_policy(sdl, &field.policy);
+                }
             }
 
             writeln!(sdl).ok();
@@ -360,6 +363,7 @@ impl Registry {
                 specified_by_url,
                 directive_invocations,
                 requires_scopes,
+                policy,
                 ..
             } => {
                 let mut export_scalar = !SYSTEM_SCALARS.contains(&name.as_str());
@@ -393,6 +397,9 @@ impl Registry {
                         if !requires_scopes.is_empty() {
                             write_requires_scopes(sdl, requires_scopes);
                         }
+                        if !policy.is_empty() {
+                            write_policy(sdl, policy);
+                        }
                     }
 
                     for directive in directive_invocations {
@@ -415,6 +422,7 @@ impl Registry {
                 tags,
                 directive_invocations: raw_directives,
                 requires_scopes,
+                policy,
                 ..
             } => {
                 if Some(name.as_str()) == self.subscription_type.as_deref()
@@ -485,6 +493,9 @@ impl Registry {
                     if !requires_scopes.is_empty() {
                         write_requires_scopes(sdl, requires_scopes);
                     }
+                    if !policy.is_empty() {
+                        write_policy(sdl, policy);
+                    }
                 }
 
                 writeln!(sdl, " {{").ok();
@@ -501,6 +512,7 @@ impl Registry {
                 tags,
                 directive_invocations,
                 requires_scopes,
+                policy,
                 ..
             } => {
                 if let Some(description) = description {
@@ -529,6 +541,9 @@ impl Registry {
                     if !requires_scopes.is_empty() {
                         write_requires_scopes(sdl, requires_scopes);
                     }
+                    if !policy.is_empty() {
+                        write_policy(sdl, policy);
+                    }
                 }
 
                 for directive in directive_invocations {
@@ -549,6 +564,7 @@ impl Registry {
                 tags,
                 directive_invocations,
                 requires_scopes,
+                policy,
                 ..
             } => {
                 if let Some(description) = description {
@@ -566,6 +582,9 @@ impl Registry {
 
                     if !requires_scopes.is_empty() {
                         write_requires_scopes(sdl, requires_scopes);
+                    }
+                    if !policy.is_empty() {
+                        write_policy(sdl, policy);
                     }
                 }
 
@@ -767,10 +786,27 @@ fn write_deprecated(sdl: &mut String, deprecation: &Deprecation) {
 }
 
 fn write_requires_scopes(sdl: &mut String, requires_scopes: &[String]) {
+    write_nested_string_list_directive(sdl, "requiresScopes", "scopes", requires_scopes);
+}
+
+fn write_policy(sdl: &mut String, policy: &[String]) {
+    write_nested_string_list_directive(sdl, "policy", "policies", policy);
+}
+
+/// Writes a directive taking a `[[String!]!]!` argument, where each entry of
+/// `values` is a whitespace-separated list forming one inner list.
+fn write_nested_string_list_directive(
+    sdl: &mut String,
+    directive: &str,
+    arg: &str,
+    values: &[String],
+) {
     write!(
         sdl,
-        " @requiresScopes(scopes: [{}])",
-        requires_scopes
+        " @{}({}: [{}])",
+        directive,
+        arg,
+        values
             .iter()
             .map(|x| {
                 "[".to_string()
@@ -837,8 +873,8 @@ mod tests {
     fn test_compose_directive_dsl() {
         let expected = r#"directive @custom_type_directive on FIELD_DEFINITION
 extend schema @link(
-	url: "https://specs.apollo.dev/federation/v2.5",
-	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject", "@requiresScopes"]
+	url: "https://specs.apollo.dev/federation/v2.6",
+	import: ["@key", "@tag", "@shareable", "@inaccessible", "@override", "@external", "@provides", "@requires", "@composeDirective", "@interfaceObject", "@requiresScopes", "@policy"]
 )
 
 extend schema @link(

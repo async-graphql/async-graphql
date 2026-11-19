@@ -172,7 +172,8 @@ impl<'de> de::Deserializer<'de> for ConstValue {
                         ));
                     }
                 };
-                // enums are encoded in json as maps with a single key:value pair
+                // enums are encoded in json as maps with a single key:value
+                // pair
                 if iter.next().is_some() {
                     return Err(serde::de::Error::invalid_value(
                         Unexpected::Map,

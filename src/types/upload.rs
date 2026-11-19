@@ -151,6 +151,7 @@ impl InputType for Upload {
             ),
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 

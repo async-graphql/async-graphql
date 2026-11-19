@@ -59,6 +59,7 @@ impl<T: DeserializeOwned + Serialize + Send + Sync> InputType for Json<T> {
             specified_by_url: None,
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 
@@ -92,6 +93,7 @@ impl<T: Serialize + Send + Sync> OutputType for Json<T> {
             specified_by_url: None,
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 
@@ -123,6 +125,7 @@ impl InputType for serde_json::Value {
                 specified_by_url: None,
                 directive_invocations: Default::default(),
                 requires_scopes: Default::default(),
+                policy: Default::default(),
             }
         })
     }
@@ -158,6 +161,7 @@ impl OutputType for serde_json::Value {
                 specified_by_url: None,
                 directive_invocations: Default::default(),
                 requires_scopes: Default::default(),
+                policy: Default::default(),
             }
         })
     }

@@ -237,6 +237,8 @@ pub struct SimpleObjectField {
     pub complexity: Option<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
 }
 
 #[derive(FromDeriveInput)]
@@ -290,6 +292,8 @@ pub struct SimpleObject {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
     #[darling(rename = "crate")]
     pub crate_path: Option<Path>,
 }
@@ -343,6 +347,8 @@ pub struct Object {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
     #[darling(rename = "crate")]
     pub crate_path: Option<Path>,
 }
@@ -373,6 +379,8 @@ pub struct ObjectField {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -416,6 +424,8 @@ pub struct Enum {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
     #[darling(rename = "crate")]
     pub crate_path: Option<Path>,
 }
@@ -681,6 +691,8 @@ pub struct InterfaceField {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
 }
 
 #[derive(FromVariant)]
@@ -724,6 +736,8 @@ pub struct Interface {
     pub input_name: Option<String>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
     #[darling(rename = "crate")]
     pub crate_path: Option<Path>,
 }
@@ -743,6 +757,8 @@ pub struct Scalar {
     pub specified_by_url: Option<String>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
     #[darling(rename = "crate")]
     pub crate_path: Option<Path>,
 }
@@ -1024,6 +1040,8 @@ pub struct ComplexObjectField {
     pub directives: Vec<Expr>,
     #[darling(default, multiple)]
     pub requires_scopes: Vec<String>,
+    #[darling(default, multiple)]
+    pub policy: Vec<String>,
 }
 
 #[derive(FromMeta, Default)]

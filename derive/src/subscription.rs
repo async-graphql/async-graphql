@@ -472,6 +472,7 @@ pub fn generate(
                     rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                     directive_invocations: ::std::vec![ #(#directives),* ],
                     requires_scopes: ::std::vec![],
+                    policy: ::std::vec![],
                 })
             }
 

@@ -83,6 +83,11 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
+    let policy = interface_args
+        .policy
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
 
     let directives = gen_directive_calls(
         &crate_name,
@@ -215,6 +220,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         override_from,
         directives,
         requires_scopes,
+        policy,
     } in &interface_args.fields
     {
         let (name, method_name) = if let Some(method) = method {
@@ -396,6 +402,10 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
             .iter()
             .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
             .collect::<Vec<_>>();
+        let policy = policy
+            .iter()
+            .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+            .collect::<Vec<_>>();
         let has_external = *external;
         let has_provides = provides.is_empty();
         let has_requires = requires.is_empty();
@@ -405,6 +415,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         let has_tags = !tags.is_empty();
         let has_directives = !directives.is_empty();
         let has_requires_scopes = !requires_scopes.is_empty();
+        let has_policy = !policy.is_empty();
 
         let directives = gen_directive_calls(
             &crate_name,
@@ -448,6 +459,9 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
         }
         if has_requires_scopes {
             field_sets.push(quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];));
+        }
+        if has_policy {
+            field_sets.push(quote!(field.policy = ::std::vec![ #(#policy),* ];));
         }
 
         schema_fields.push(quote! {
@@ -546,6 +560,7 @@ pub fn generate(interface_args: &args::Interface) -> GeneratorResult<TokenStream
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#directives),* ],
                         requires_scopes: ::std::vec![ #(#requires_scopes),* ],
+                        policy: ::std::vec![ #(#policy),* ],
                     }
                 })
             }

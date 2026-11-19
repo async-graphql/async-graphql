@@ -61,7 +61,8 @@ impl<'a> FindConflicts<'a, '_> {
                             .visited
                             .insert(fragment_spread.node.fragment_name.node.as_str())
                         {
-                            // To avoid recursing itself, this error is detected by the
+                            // To avoid recursing itself, this error is detected
+                            // by the
                             // `NoFragmentCycles` validator.
                             continue;
                         }

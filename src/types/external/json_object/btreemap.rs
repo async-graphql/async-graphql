@@ -34,6 +34,7 @@ where
             specified_by_url: None,
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 
@@ -93,6 +94,7 @@ where
             specified_by_url: None,
             directive_invocations: Default::default(),
             requires_scopes: Default::default(),
+            policy: Default::default(),
         })
     }
 

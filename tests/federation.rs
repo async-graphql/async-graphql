@@ -1021,6 +1021,173 @@ pub async fn test_entity_requires_scopes() {
 }
 
 #[tokio::test]
+pub async fn test_entity_policy() {
+    struct MyCustomObjPolicy;
+
+    #[Object(policy = "requires policy with", policy = "multiple policies")]
+    impl MyCustomObjPolicy {
+        async fn a(&self) -> i32 {
+            todo!()
+        }
+
+        #[graphql(policy = "custom:field")]
+        async fn custom_object_policy(&self) -> i32 {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    struct MyObjFieldPolicy {
+        #[graphql(policy = "fielda:scoped read:all", policy = "read:others")]
+        obj_field_policy_a: i32,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(policy = "myobj:read")]
+    struct MyObjPolicy {
+        a: i32,
+    }
+
+    #[derive(Enum, PartialEq, Eq, Copy, Clone)]
+    #[graphql(policy = "enum:read")]
+    enum MyEnumPolicy {
+        OptionA,
+        OptionB,
+        OptionC,
+    }
+
+    #[derive(SimpleObject)]
+    struct MyInterfaceObjA {
+        policy_interface_value: String,
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(policy = "objB:read")]
+    struct MyInterfaceObjB {
+        policy_interface_value: String,
+    }
+
+    #[derive(Interface)]
+    #[graphql(field(
+        name = "policy_interface_value",
+        ty = "String",
+        policy = "read:interface"
+    ))]
+    #[graphql(policy = "read:all")]
+    enum MyInterfacePolicy {
+        MyInterfaceObjA(MyInterfaceObjA),
+        MyInterfaceObjB(MyInterfaceObjB),
+    }
+
+    struct MyNumberPolicy(i32);
+
+    #[Scalar(policy = "scalar:read")]
+    impl ScalarType for MyNumberPolicy {
+        fn parse(_value: Value) -> InputValueResult<Self> {
+            todo!()
+        }
+
+        fn to_value(&self) -> Value {
+            todo!()
+        }
+    }
+
+    #[derive(SimpleObject)]
+    #[graphql(complex)]
+    struct MyComplexObjPolicy {
+        complex_a: i32,
+    }
+
+    #[ComplexObject]
+    impl MyComplexObjPolicy {
+        #[graphql(policy = "read:complex")]
+        async fn complex_b(&self) -> i32 {
+            self.complex_a
+        }
+    }
+
+    struct Query;
+
+    #[Object(extends)]
+    impl Query {
+        #[graphql(policy = "scoped:field")]
+        async fn policy_field(&self, _id: i32) -> i32 {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_field_policy(&self, _id: i32) -> MyObjFieldPolicy {
+            todo!()
+        }
+
+        #[graphql(entity)]
+        async fn find_obj_policy(&self, _id: i32) -> MyObjPolicy {
+            todo!()
+        }
+
+        async fn policy_enum(&self, _id: i32) -> MyEnumPolicy {
+            todo!()
+        }
+
+        async fn policy_interface(&self) -> MyInterfacePolicy {
+            todo!()
+        }
+
+        async fn policy_scalar(&self) -> MyNumberPolicy {
+            todo!()
+        }
+
+        async fn policy_custom_object(&self) -> MyCustomObjPolicy {
+            todo!()
+        }
+
+        async fn policy_complex_object(&self) -> MyComplexObjPolicy {
+            MyComplexObjPolicy { complex_a: 10 }
+        }
+    }
+
+    let schema_sdl = Schema::new(Query, EmptyMutation, EmptySubscription)
+        .sdl_with_options(SDLExportOptions::new().federation());
+
+    // FIELD_DEFINITION
+    assert!(
+        schema_sdl.contains(r#"policyField(id: Int!): Int! @policy(policies: [["scoped:field"]])"#)
+    );
+    assert!(schema_sdl.contains(
+        r#"objFieldPolicyA: Int! @policy(policies: [["fielda:scoped", "read:all"], ["read:others"]])"#
+    ));
+    assert!(
+        schema_sdl
+            .contains(r#"policyInterfaceValue: String! @policy(policies: [["read:interface"]])"#)
+    );
+    assert!(
+        schema_sdl.contains(r#"customObjectPolicy: Int! @policy(policies: [["custom:field"]])"#)
+    );
+    assert!(schema_sdl.contains(r#"complexB: Int! @policy(policies: [["read:complex"]])"#));
+    // INTERFACE
+    assert!(
+        schema_sdl.contains(r#"interface MyInterfacePolicy @policy(policies: [["read:all"]])"#)
+    );
+    // OBJECT
+    assert!(schema_sdl
+        .contains(r#"type MyCustomObjPolicy @policy(policies: [["requires", "policy", "with"], ["multiple", "policies"]]) {"#));
+    assert!(
+        schema_sdl.contains(
+            r#"type MyObjPolicy @key(fields: "id") @policy(policies: [["myobj:read"]]) {"#
+        )
+    );
+    assert!(schema_sdl.contains(
+        r#"type MyInterfaceObjB implements MyInterfacePolicy @policy(policies: [["objB:read"]])"#
+    ));
+    // SCALAR
+    assert!(schema_sdl.contains(r#"scalar MyNumberPolicy @policy(policies: [["scalar:read"]])"#));
+    // ENUM
+    assert!(schema_sdl.contains(r#"enum MyEnumPolicy @policy(policies: [["enum:read"]])"#));
+    // no trailing spaces
+    assert!(!schema_sdl.contains(" \n"));
+}
+
+#[tokio::test]
 pub async fn test_interface_object() {
     #[derive(SimpleObject)]
     struct VariantA {

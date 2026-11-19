@@ -99,11 +99,11 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
         build_merge_tree_type(&crate_name_tokens, &type_tokens)
     };
 
-    // Generate flat resolve_field: iterate members in reverse order (last-declared
-    // wins) to match the priority ordering of the MergedObject chain used in
-    // type registration. This avoids deeply nested async state machines that
-    // can hit the compiler's recursion limit when computing future layouts
-    // across crate boundaries.
+    // Generate flat resolve_field: iterate members in reverse order
+    // (last-declared wins) to match the priority ordering of the
+    // MergedObject chain used in type registration. This avoids deeply
+    // nested async state machines that can hit the compiler's recursion
+    // limit when computing future layouts across crate boundaries.
     let flat_resolve_field = {
         let checks: Vec<_> = (0..types.len())
             .rev()
@@ -194,6 +194,7 @@ pub fn generate(object_args: &args::MergedObject) -> GeneratorResult<TokenStream
                         rust_typename: ::std::option::Option::Some(::std::any::type_name::<Self>()),
                         directive_invocations: ::std::vec![ #(#directives),* ],
                         requires_scopes: ::std::vec![],
+                        policy: ::std::vec![],
                     }
                 })
             }

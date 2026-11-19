@@ -164,6 +164,7 @@ impl Subscription {
                     compute_complexity: None,
                     directive_invocations: vec![],
                     requires_scopes: vec![],
+                    policy: vec![],
                 },
             );
         }
@@ -187,6 +188,7 @@ impl Subscription {
                 rust_typename: None,
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
         );
 

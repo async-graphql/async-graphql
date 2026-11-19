@@ -12,8 +12,8 @@ use merge_recursion_merged_schema::Query;
 async fn cross_crate_merged_object_resolves() {
     let schema = Schema::new(Query, EmptyMutation, EmptySubscription);
 
-    // Query the first and last merged members to verify dispatch works across all
-    // positions
+    // Query the first and last merged members to verify dispatch works across
+    // all positions
     let query = r#"{ mutationObj { top01 { mid01 { lf01 } } top13 { mid13 { lf13 } } } }"#;
     let res = schema.execute(query).await;
     let data = res.into_result().unwrap().data;

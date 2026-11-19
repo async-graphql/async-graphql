@@ -66,8 +66,9 @@ impl<'a> Visitor<'a> for ArgumentsOfCorrectType<'a> {
                 .node
                 .clone()
                 .into_const_with(|var_name| {
-                    // Don't check variables if we're in an unselected operation, since the
-                    // variables don't apply to this operation.
+                    // Don't check variables if we're in an unselected
+                    // operation, since the variables don't
+                    // apply to this operation.
                     (!self.in_unselected_operation)
                         .then_some(ctx.variables)
                         .flatten()

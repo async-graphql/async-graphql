@@ -259,6 +259,10 @@ pub struct MetaField {
     /// the authenticated supergraph users with the appropriate JWT scopes
     /// when using Apollo Federation.
     pub requires_scopes: Vec<String>,
+    /// Indicates to composition that the target element is accessible only to
+    /// the authenticated supergraph users with the appropriate authorization
+    /// policies when using Apollo Federation.
+    pub policy: Vec<String>,
 }
 
 impl MetaField {
@@ -281,6 +285,7 @@ impl MetaField {
             compute_complexity: None,
             directive_invocations: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 }
@@ -335,6 +340,7 @@ impl MetaTypeId {
                 specified_by_url: None,
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
             MetaTypeId::Object => MetaType::Object {
                 name: "".to_string(),
@@ -353,6 +359,7 @@ impl MetaTypeId {
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
             MetaTypeId::Interface => MetaType::Interface {
                 name: "".to_string(),
@@ -367,6 +374,7 @@ impl MetaTypeId {
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
             MetaTypeId::Union => MetaType::Union {
                 name: "".to_string(),
@@ -388,6 +396,7 @@ impl MetaTypeId {
                 rust_typename: Some(rust_typename),
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
             MetaTypeId::InputObject => MetaType::InputObject {
                 name: "".to_string(),
@@ -456,6 +465,10 @@ pub enum MetaType {
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// authorization policies when using Apollo Federation.
+        policy: Vec<String>,
     },
     /// Object
     ///
@@ -525,6 +538,10 @@ pub enum MetaType {
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// authorization policies when using Apollo Federation.
+        policy: Vec<String>,
     },
     /// Interface
     ///
@@ -573,6 +590,10 @@ pub enum MetaType {
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// authorization policies when using Apollo Federation.
+        policy: Vec<String>,
     },
     /// Union
     ///
@@ -633,6 +654,10 @@ pub enum MetaType {
         /// to the authenticated supergraph users with the appropriate
         /// JWT scopes when using Apollo Federation.
         requires_scopes: Vec<String>,
+        /// Indicates to composition that the target element is accessible only
+        /// to the authenticated supergraph users with the appropriate
+        /// authorization policies when using Apollo Federation.
+        policy: Vec<String>,
     },
     /// Input object
     ///
@@ -686,6 +711,7 @@ pub struct ObjectBuilder {
     rust_typename: Option<&'static str>,
     directive_invocations: Vec<MetaDirectiveInvocation>,
     requires_scopes: Vec<String>,
+    policy: Vec<String>,
 }
 
 impl ObjectBuilder {
@@ -707,6 +733,7 @@ impl ObjectBuilder {
             rust_typename: None,
             directive_invocations: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
@@ -797,6 +824,12 @@ impl ObjectBuilder {
         self
     }
 
+    #[must_use]
+    pub fn policy(mut self, policy: Vec<String>) -> Self {
+        self.policy = policy;
+        self
+    }
+
     pub fn build(self) -> MetaType {
         MetaType::Object {
             name: self.name,
@@ -815,6 +848,7 @@ impl ObjectBuilder {
             rust_typename: self.rust_typename,
             directive_invocations: self.directive_invocations,
             requires_scopes: self.requires_scopes,
+            policy: self.policy,
         }
     }
 }
@@ -830,6 +864,7 @@ pub struct EnumBuilder {
     rust_typename: Option<&'static str>,
     directive_invocations: Vec<MetaDirectiveInvocation>,
     requires_scopes: Vec<String>,
+    policy: Vec<String>,
 }
 
 impl EnumBuilder {
@@ -844,6 +879,7 @@ impl EnumBuilder {
             rust_typename: None,
             directive_invocations: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
@@ -892,6 +928,12 @@ impl EnumBuilder {
         self
     }
 
+    #[must_use]
+    pub fn policy(mut self, policy: Vec<String>) -> Self {
+        self.policy = policy;
+        self
+    }
+
     pub fn build(self) -> MetaType {
         MetaType::Enum {
             name: self.name,
@@ -903,6 +945,7 @@ impl EnumBuilder {
             rust_typename: self.rust_typename,
             directive_invocations: self.directive_invocations,
             requires_scopes: self.requires_scopes,
+            policy: self.policy,
         }
     }
 }
@@ -1405,8 +1448,8 @@ impl Registry {
                 }
             }
             None => {
-                // Inserting a fake type before calling the function allows recursive types to
-                // exist.
+                // Inserting a fake type before calling the function allows
+                // recursive types to exist.
                 self.types
                     .insert(name.to_string(), type_id.create_fake_type(rust_typename));
                 let ty = f(self);
@@ -1545,6 +1588,7 @@ impl Registry {
                     compute_complexity: None,
                     directive_invocations: vec![],
                     requires_scopes: vec![],
+                    policy: vec![],
                 },
             );
         }
@@ -1603,6 +1647,7 @@ impl Registry {
                         compute_complexity: None,
                         directive_invocations: vec![],
                         requires_scopes: vec![],
+                        policy: vec![],
                     },
                 );
             }
@@ -1633,6 +1678,7 @@ impl Registry {
                     override_from: None,
                     directive_invocations: vec![],
                     requires_scopes: vec![],
+                    policy: vec![],
                 },
             );
 
@@ -1674,6 +1720,7 @@ impl Registry {
                     compute_complexity: None,
                     directive_invocations: vec![],
                     requires_scopes: vec![],
+                    policy: vec![],
                 },
             );
         }
@@ -1709,6 +1756,7 @@ impl Registry {
                             compute_complexity: None,
                             directive_invocations: vec![],
                             requires_scopes: vec![],
+                            policy: vec![],
                         },
                     );
                     fields
@@ -1726,6 +1774,7 @@ impl Registry {
                 rust_typename: Some("async_graphql::federation::Service"),
                 directive_invocations: vec![],
                 requires_scopes: vec![],
+                policy: vec![],
             },
         );
 

@@ -42,7 +42,8 @@ impl<'a> VariableInAllowedPosition<'a> {
                 if let Some(def) = var_defs.iter().find(|def| def.node.name.node == *var_name) {
                     let expected_type =
                         if def.node.var_type.node.nullable && def.node.default_value.is_some() {
-                            // A nullable type with a default value functions as a non-nullable
+                            // A nullable type with a default value functions as
+                            // a non-nullable
                             format!("{}!", def.node.var_type.node)
                         } else {
                             def.node.var_type.node.to_string()

@@ -43,6 +43,11 @@ pub fn generate(
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
+    let policy = object_args
+        .policy
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
 
     let directives = gen_directive_calls(
         &crate_name,
@@ -369,6 +374,11 @@ pub fn generate(
                     .iter()
                     .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
                     .collect::<Vec<_>>();
+                let policy = method_args
+                    .policy
+                    .iter()
+                    .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+                    .collect::<Vec<_>>();
 
                 unresolvable_key.push_str(&field_name);
                 unresolvable_key.push(' ');
@@ -428,6 +438,7 @@ pub fn generate(
                 let has_complexity = method_args.complexity.is_some();
                 let has_directives = !method_args.directives.is_empty();
                 let has_requires_scopes = !method_args.requires_scopes.is_empty();
+                let has_policy = !method_args.policy.is_empty();
 
                 let args = extract_input_args::<args::Argument>(&crate_name, method)?;
                 let mut schema_args = Vec::new();
@@ -640,6 +651,9 @@ pub fn generate(
                         quote!(field.requires_scopes = ::std::vec![ #(#requires_scopes),* ];),
                     );
                 }
+                if has_policy {
+                    field_sets.push(quote!(field.policy = ::std::vec![ #(#policy),* ];));
+                }
 
                 schema_fields.push(quote! {
                     #(#cfg_attrs)*
@@ -789,6 +803,7 @@ pub fn generate(
     let has_tags = !object_args.tags.is_empty();
     let has_directives = !directives.is_empty();
     let has_requires_scopes = !object_args.requires_scopes.is_empty();
+    let has_policy = !object_args.policy.is_empty();
     let field_count = schema_fields.len();
 
     let mut object_builder_base = Vec::new();
@@ -830,6 +845,9 @@ pub fn generate(
     let mut object_builder = object_builder_base.clone();
     if has_requires_scopes {
         object_builder.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
+    if has_policy {
+        object_builder.push(quote!(.policy(::std::vec![ #(#policy),* ])));
     }
     let object_builder_concretes = object_builder_base;
 

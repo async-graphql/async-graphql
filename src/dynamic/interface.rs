@@ -98,6 +98,7 @@ pub struct InterfaceField {
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
     pub(crate) requires_scopes: Vec<String>,
+    pub(crate) policy: Vec<String>,
 }
 
 impl InterfaceField {
@@ -118,6 +119,7 @@ impl InterfaceField {
             override_from: None,
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
@@ -153,6 +155,7 @@ pub struct Interface {
     tags: Vec<String>,
     pub(crate) directives: Vec<Directive>,
     requires_scopes: Vec<String>,
+    policy: Vec<String>,
 }
 
 impl Interface {
@@ -170,6 +173,7 @@ impl Interface {
             tags: Vec::new(),
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
@@ -253,6 +257,7 @@ impl Interface {
                     compute_complexity: None,
                     directive_invocations: to_meta_directive_invocation(field.directives.clone()),
                     requires_scopes: field.requires_scopes.clone(),
+                    policy: field.policy.clone(),
                 },
             );
         }
@@ -276,6 +281,7 @@ impl Interface {
                 rust_typename: None,
                 directive_invocations: to_meta_directive_invocation(self.directives.clone()),
                 requires_scopes: self.requires_scopes.clone(),
+                policy: self.policy.clone(),
             },
         );
 

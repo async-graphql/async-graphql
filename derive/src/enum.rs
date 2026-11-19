@@ -50,6 +50,11 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
         .iter()
         .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
         .collect::<Vec<_>>();
+    let policy = enum_args
+        .policy
+        .iter()
+        .map(|scopes| quote!(::std::string::ToString::to_string(#scopes)))
+        .collect::<Vec<_>>();
 
     let directives = gen_directive_calls(
         &crate_name,
@@ -210,6 +215,7 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     let has_tags = !enum_args.tags.is_empty();
     let has_directives = !enum_args.directives.is_empty();
     let has_requires_scopes = !enum_args.requires_scopes.is_empty();
+    let has_policy = !enum_args.policy.is_empty();
     let mut enum_builder_calls = Vec::new();
     if has_desc {
         let desc = desc.as_ref().expect("checked desc");
@@ -232,6 +238,9 @@ pub fn generate(enum_args: &args::Enum) -> GeneratorResult<TokenStream> {
     }
     if has_requires_scopes {
         enum_builder_calls.push(quote!(.requires_scopes(::std::vec![ #(#requires_scopes),* ])));
+    }
+    if has_policy {
+        enum_builder_calls.push(quote!(.policy(::std::vec![ #(#policy),* ])));
     }
     let expanded = quote! {
         #[allow(clippy::all, clippy::pedantic)]

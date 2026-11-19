@@ -334,6 +334,7 @@ pub struct Field {
     pub(crate) override_from: Option<String>,
     pub(crate) directives: Vec<Directive>,
     pub(crate) requires_scopes: Vec<String>,
+    pub(crate) policy: Vec<String>,
 }
 
 impl Debug for Field {
@@ -374,6 +375,7 @@ impl Field {
             override_from: None,
             directives: Vec::new(),
             requires_scopes: Vec::new(),
+            policy: Vec::new(),
         }
     }
 
